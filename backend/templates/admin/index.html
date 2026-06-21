@@ -1,0 +1,76 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="container-fluid pt-4" dir="rtl">
+    <!-- Status Cards Row -->
+    <div class="row">
+        <!-- New Orders Card (🔴 Red) -->
+        <div class="col-lg-4 col-md-6 col-12 mb-4">
+            <div class="small-box bg-danger" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
+                <div class="inner p-4 text-white text-right">
+                    <h3 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 8px; text-align: right;">{{ new_orders_count }}</h3>
+                    <p style="font-size: 1.1rem; opacity: 0.9; text-align: right;">سفارشات جدید منتظر بسته‌بندی</p>
+                </div>
+                <div class="icon" style="position: absolute; top: 15px; left: 15px; font-size: 4rem; opacity: 0.2; color: #fff;">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <a href="/admin/orders/order/?status__exact=paid" class="small-box-footer d-block text-center py-2 text-white" style="background: rgba(0, 0, 0, 0.1); text-decoration: none;">
+                    مشاهده سفارشات جدید <i class="fas fa-arrow-circle-left mr-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Low Stock Card (🟡 Yellow) -->
+        <div class="col-lg-4 col-md-6 col-12 mb-4">
+            <div class="small-box bg-warning" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
+                <div class="inner p-4 text-dark text-right">
+                    <h3 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 8px; text-align: right;">{{ low_stock_count }}</h3>
+                    <p style="font-size: 1.1rem; opacity: 0.9; text-align: right;">موجودی رو به اتمام (زیر ۵ عدد)</p>
+                </div>
+                <div class="icon" style="position: absolute; top: 15px; left: 15px; font-size: 4rem; opacity: 0.2; color: #000;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <a href="/admin/catalog/product/?stock__lt=5" class="small-box-footer d-block text-center py-2 text-dark" style="background: rgba(0, 0, 0, 0.05); text-decoration: none;">
+                    مدیریت موجودی انبار <i class="fas fa-arrow-circle-left mr-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Today's Income Card (🟢 Green) -->
+        <div class="col-lg-4 col-md-6 col-12 mb-4">
+            <div class="small-box bg-success" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
+                <div class="inner p-4 text-white text-right">
+                    <h3 style="font-size: 2rem; font-weight: bold; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">{{ today_income_formatted }}</h3>
+                    <p style="font-size: 1.1rem; opacity: 0.9; text-align: right;">درآمد امروز فروشگاه</p>
+                </div>
+                <div class="icon" style="position: absolute; top: 15px; left: 15px; font-size: 4rem; opacity: 0.2; color: #fff;">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="small-box-footer text-center py-2 text-white" style="background: rgba(0, 0, 0, 0.1); font-size: 0.9rem;">
+                    ثبت شده در تاریخ امروز
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links or Instructions for Admin -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card card-outline card-primary" style="border-radius: 8px;">
+                <div class="card-header text-right">
+                    <h3 class="card-title text-right w-100" style="float: right; font-weight: bold;">راهنمای مدیریت سریع فروشگاه</h3>
+                </div>
+                <div class="card-body text-right">
+                    <p>به پنل مدیریت لومیا بیوتی خوش آمدید. برای کاربری راحت شما، این پنل بر اساس «معماری حذف نویز» طراحی شده است:</p>
+                    <ul class="list-unstyled pr-0">
+                        <li class="mb-2"><i class="fas fa-check-circle text-success ml-2"></i><strong>بخش فروشگاه:</strong> برای مدیریت محصولات، دسته‌بندی‌ها، برندها و نظرات مشتریان استفاده می‌شود. همچنین سفارشات جدید در این بخش به صورت گام‌به‌گام مدیریت می‌شوند.</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success ml-2"></i><strong>بخش محتوا:</strong> برای انتشار مطالب در وبلاگ و قرار دادن تصاویر جدید برای ویترین اینستاگرام تعبیه شده است.</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success ml-2"></i><strong>تنظیمات فنی:</strong> محلی امن برای وارد کردن کد مرچنت زرین‌پال و توکن کاوه‌نگار (جهت پیامک‌های رهگیری پستی) است.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

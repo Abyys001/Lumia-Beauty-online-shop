@@ -1,0 +1,94 @@
+<template>
+  <div class="py-16 md:py-24 bg-lumia-light/30">
+    <div class="container-lumia max-w-3xl">
+      <!-- Title -->
+      <div class="text-center mb-16">
+        <span class="text-xs uppercase tracking-widest text-lumia-gold font-bold">پاسخ به سوالات شما</span>
+        <h1 class="text-4xl md:text-5xl font-black text-lumia-dark mt-2">سوالات متداول</h1>
+        <div class="w-20 h-0.5 bg-lumia-gold mx-auto my-4"></div>
+        <p class="text-base-content/70 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
+          بیشترین سوالاتی که مشتریان گرامی لومیا بیوتی قبل یا بعد از خرید با آن‌ها مواجه می‌شوند را در این بخش پاسخ داده‌ایم.
+        </p>
+      </div>
+
+      <!-- FAQ Container -->
+      <div class="space-y-4">
+        <!-- Section: Authenticity -->
+        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۱. اصالت کالا و کیفیت</h2>
+        
+        <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
+          <input type="radio" name="faq-accordion" checked="checked" />
+          <div class="collapse-title text-sm font-bold text-lumia-dark">
+            چگونه از اصالت ادکلن‌ها و محصولات بهداشتی در لومیا بیوتی مطمئن شوم؟
+          </div>
+          <div class="collapse-content text-xs text-base-content/70 leading-relaxed">
+            <p>تمامی محصولات موجود در لومیا بیوتی دارای ضمانت ۱۰۰٪ اصالت فیزیکی و فاکتور رسمی شرکتی هستند. در صورت درخواست، بارکد و بچ‌کد (Batch Code) انحصاری محصول جهت استعلام از سایت‌های رسمی خارجی در اختیار شما قرار می‌گیرد. همچنین کلیه محصولات با پلمب اصلی کارخانه و هولوگرام رسمی تحویل داده می‌شوند.</p>
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
+          <input type="radio" name="faq-accordion" />
+          <div class="collapse-title text-sm font-bold text-lumia-dark">
+            بچ‌کد (Batch Code) محصولات در کدام قسمت قرار دارد؟
+          </div>
+          <div class="collapse-content text-xs text-base-content/70 leading-relaxed">
+            <p>بچ‌کد معمولاً به صورت حک‌شده یا چاپ‌ شده با فونت متمایز، در کف جعبه بیرونی و همچنین کف شیشه عطر یا قوطی محصول بهداشتی قرار دارد. شما می‌توانید با وارد کردن این کد در وب‌سایت‌های معتبر جهانی مانند checkfresh.com تاریخ دقیق تولید و انقضای محصول را استعلام کنید.</p>
+          </div>
+        </div>
+
+        <!-- Section: Shipping -->
+        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۲. ارسال سفارش‌ها و هزینه‌ها</h2>
+
+        <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
+          <input type="radio" name="faq-accordion" />
+          <div class="collapse-title text-sm font-bold text-lumia-dark">
+            مدت زمان ارسال سفارش‌ها در تهران و شهرستان چقدر است؟
+          </div>
+          <div class="collapse-content text-xs text-base-content/70 leading-relaxed">
+            <p>سفارش‌های شهر تهران به انتخاب شما در بازه زمانی ۲ الی ۴ ساعته از طریق پیک اکسپرس یا در اولین روز کاری از طریق پست پیشتاز تحویل داده می‌شوند. سفارش‌های شهرستان نیز با پست پیشتاز ارسال شده و ظرف ۲ الی ۴ روز کاری به دستتان خواهند رسید.</p>
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
+          <input type="radio" name="faq-accordion" />
+          <div class="collapse-title text-sm font-bold text-lumia-dark">
+            شرایط ارسال رایگان به چه صورت است؟
+          </div>
+          <div class="collapse-content text-xs text-base-content/70 leading-relaxed">
+            <p>خریدهای بالای ۵۰۰,۰۰۰ تومان در سراسر کشور مشمول ارسال رایگان خواهند بود. برای خریدهای زیر این مبلغ، هزینه ثابت ۵۰,۰۰۰ تومان بابت بسته‌بندی ایمن و ارسال پستی دریافت می‌گردد.</p>
+          </div>
+        </div>
+
+        <!-- Section: Return -->
+        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۳. رویه‌های بازگشت کالا و عودت وجه</h2>
+
+        <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
+          <input type="radio" name="faq-accordion" />
+          <div class="collapse-title text-sm font-bold text-lumia-dark">
+            آیا امکان مرجوع کردن کالا بعد از خرید وجود دارد؟
+          </div>
+          <div class="collapse-content text-xs text-base-content/70 leading-relaxed">
+            <p>بله، در صورتی که پلمب محصول باز نشده باشد و جعبه آن در وضعیت اولیه خود قرار داشته باشد، شما تا ۷ روز تقویمی فرصت دارید درخواست مرجوعی خود را ثبت نمایید. توجه داشته باشید به دلیل رعایت پروتکل‌های بهداشتی، محصولات آرایشی و پوستی که پلمب یا برچسب اطمینان آن‌ها باز شده باشد، به هیچ عنوان قابل مرجوعی نیستند.</p>
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
+          <input type="radio" name="faq-accordion" />
+          <div class="collapse-title text-sm font-bold text-lumia-dark">
+            در صورت تایید مرجوعی، عودت وجه چقدر زمان می‌برد؟
+          </div>
+          <div class="collapse-content text-xs text-base-content/70 leading-relaxed">
+            <p>پس از دریافت کالای مرجوعی توسط انبار لومیا بیوتی و تایید سلامت فیزیکی پلمب آن، مبلغ پرداختی شما ظرف حداکثر ۲۴ الی ۴۸ ساعت کاری به شماره کارت بانکی (به نام خریدار اولیه) واریز خواهد شد.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+useSeoMeta({
+  title: 'سوالات متداول | لومیا بیوتی',
+  description: 'پاسخ به سوالات پرتکرار مشتریان لومیا بیوتی در زمینه‌های ضمانت اصالت کالا، بررسی بچ‌کد، شیوه‌ها و زمان ارسال سفارشات، رویه بازگشت کالا و پرداخت وجه.',
+})
+</script>

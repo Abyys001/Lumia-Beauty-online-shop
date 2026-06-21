@@ -1,0 +1,67 @@
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.catalog.models import Product
+
+from .models import Cart, CartItem
+from .serializers import AddToCartSerializer, CartSerializer, UpdateCartItemSerializer
+from .services import get_or_create_cart
+
+
+class CartView(APIView):
+    def get(self, request):
+        cart = get_or_create_cart(request)
+        return Response(CartSerializer(cart).data)
+
+    def post(self, request):
+        serializer = AddToCartSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cart = get_or_create_cart(request)
+        product = get_object_or_404(Product, id=serializer.validated_data['product_id'], is_active=True)
+        quantity = serializer.validated_data['quantity']
+
+        if product.stock < quantity:
+            return Response({'detail': 'موجودی کافی نیست'}, status=status.HTTP_400_BAD_REQUEST)
+
+        item, created = CartItem.objects.get_or_create(cart=cart, product=product, defaults={'quantity': quantity})
+        if not created:
+            new_qty = item.quantity + quantity
+            if product.stock < new_qty:
+                return Response({'detail': 'موجودی کافی نیست'}, status=status.HTTP_400_BAD_REQUEST)
+            item.quantity = new_qty
+            item.save()
+
+        return Response(CartSerializer(cart).data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        cart = get_or_create_cart(request)
+        cart.items.all().delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CartItemView(APIView):
+    def patch(self, request, item_id):
+        cart = get_or_create_cart(request)
+        item = get_object_or_404(CartItem, id=item_id, cart=cart)
+        serializer = UpdateCartItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        quantity = serializer.validated_data['quantity']
+
+        if quantity == 0:
+            item.delete()
+        else:
+            if item.product.stock < quantity:
+                return Response({'detail': 'موجودی کافی نیست'}, status=status.HTTP_400_BAD_REQUEST)
+            item.quantity = quantity
+            item.save()
+
+        cart.refresh_from_db()
+        return Response(CartSerializer(cart).data)
+
+    def delete(self, request, item_id):
+        cart = get_or_create_cart(request)
+        item = get_object_or_404(CartItem, id=item_id, cart=cart)
+        item.delete()
+        return Response(CartSerializer(cart).data)

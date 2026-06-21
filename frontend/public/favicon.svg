@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <!-- Gold Gradient definition -->
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C5A029" />
+      <stop offset="30%" stop-color="#FFFDD0" />
+      <stop offset="70%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#AA7F1A" />
+    </linearGradient>
+  </defs>
+  <!-- Background circle (luxury black and golden borders) -->
+  <circle cx="50" cy="50" r="46" fill="#1C1A17" stroke="url(#gold)" stroke-width="2.5" />
+  <circle cx="50" cy="50" r="41" fill="none" stroke="url(#gold)" stroke-width="0.5" stroke-dasharray="2 3" />
+  
+  <!-- Stylized leaf branches -->
+  <path d="M50 8 C40 18, 22 36, 26 50 C28 58, 38 64, 50 78 C62 64, 72 58, 74 50 C78 36, 60 18, 50 8 Z" 
+        fill="none" stroke="url(#gold)" stroke-width="1.2" stroke-opacity="0.25" />
+        
+  <!-- Intertwined L and B letters in Calligraphy styling -->
+  <!-- L letter -->
+  <path d="M38 30 C38 27, 43 25, 45 25 C47 25, 47 27, 44 32 L39 52 C37 60, 36 67, 44 67 C48 67, 52 64, 55 61" 
+        fill="none" stroke="url(#gold)" stroke-width="3" stroke-linecap="round" />
+  <!-- B letter -->
+  <path d="M47 36 C55 36, 58 40, 56 46 C54 51, 48 51, 48 51 C55 51, 60 56, 58 62 C56 67, 47 67, 42 66" 
+        fill="none" stroke="url(#gold)" stroke-width="3" stroke-linecap="round" />
+        
+  <!-- Floating cosmetic essence droplet -->
+  <path d="M50 18 C51.5 21, 53 23, 53 24.5 C53 26, 51.5 27, 50 27 C48.5 27, 47 26, 47 24.5 C47 23, 48.5 21, 50 18 Z" 
+        fill="url(#gold)" />
+</svg>

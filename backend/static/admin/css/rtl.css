@@ -1,0 +1,34 @@
+body {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+}
+
+#jazzy-logo {
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+}
+
+.content-wrapper,
+.main-sidebar,
+.main-header {
+  direction: rtl;
+}
+
+.navbar-nav {
+  flex-direction: row-reverse;
+}
+
+.form-group label {
+  text-align: right;
+  display: block;
+}
+
+table {
+  direction: rtl;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  float: right;
+  padding-left: 0.5rem;
+  padding-right: 0;
+}

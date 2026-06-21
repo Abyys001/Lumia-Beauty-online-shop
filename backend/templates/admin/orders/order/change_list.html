@@ -1,0 +1,211 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block content %}
+<div class="container-fluid py-3" dir="rtl">
+    <div class="d-flex justify-content-between align-items-center mb-4" style="flex-direction: row-reverse;">
+        <h2 class="text-right m-0 font-weight-bold" style="color: #2c3e50; font-size: 1.8rem;">مدیریت فرآیند سفارشات (چرخه عمر سفارش)</h2>
+        <!-- Keep default actions/buttons if needed, or hide them for non-technical user -->
+    </div>
+
+    <!-- Two-Column Kanban Board -->
+    <div class="row">
+        <!-- Column 1: Preparing / Processing -->
+        <div class="col-md-6 col-12 mb-4">
+            <div class="card" style="border-radius: 12px; border-top: 4px solid #dc3545; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: none; border-right: none; border-bottom: none;">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title text-right m-0 font-weight-bold text-danger w-100" style="float: right;">
+                        <i class="fas fa-box-open ml-2"></i> ۱. سفارشات در حال آماده‌سازی و بسته‌بندی
+                    </h5>
+                </div>
+                <div class="card-body p-3" style="background-color: #f8f9fa; min-height: 600px; max-height: 800px; overflow-y: auto; border-radius: 0 0 12px 12px;">
+                    <div id="preparing-orders-list">
+                        {% for order in cl.result_list %}
+                            {% if order.status == 'paid' or order.status == 'processing' or order.status == 'pending' %}
+                            <div class="card mb-3 order-card" data-order-id="{{ order.id }}" style="border-radius: 10px; border-right: 5px solid #dc3545; border-left: 1px solid #e9ecef; border-top: 1px solid #e9ecef; border-bottom: 1px solid #e9ecef; box-shadow: 0 2px 8px rgba(0,0,0,0.02); background: white;">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2" style="flex-direction: row-reverse;">
+                                        <span class="badge badge-danger px-2 py-1 font-weight-bold" style="font-size: 0.8rem; border-radius: 4px;">منتظر بسته‌بندی</span>
+                                        <h6 class="font-weight-bold m-0" style="color: #2c3e50; font-size: 1rem;">سفارش {{ order.order_number }}</h6>
+                                    </div>
+                                    <hr class="my-2" style="border-color: #f1f3f5;">
+                                    <div class="text-right text-muted mb-2" style="font-size: 0.85rem; line-height: 1.6;">
+                                        <p class="m-0"><strong>خریدار:</strong> {{ order.shipping_name }}</p>
+                                        <p class="m-0"><strong>موبایل:</strong> {{ order.shipping_phone }}</p>
+                                        <p class="m-0"><strong>آدرس:</strong> {{ order.shipping_province }}، {{ order.shipping_city }}، {{ order.shipping_address }}</p>
+                                    </div>
+                                    
+                                    <div class="bg-light p-2 mb-3 text-right" style="border-radius: 6px; font-size: 0.85rem; border: 1px solid #e9ecef;">
+                                        <strong style="color: #495057; display: block; margin-bottom: 4px;">اقلام خرید:</strong>
+                                        <ul class="m-0 pr-3 pl-0" style="list-style-type: square; color: #495057;">
+                                            {% for item in order.items.all %}
+                                            <li>{{ item.product_name }} <span class="text-danger font-weight-bold">({{ item.quantity }} عدد)</span></li>
+                                            {% empty %}
+                                            <li class="text-muted">بدون آیتم</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center" style="flex-direction: row-reverse;">
+                                        <span class="font-weight-bold text-success" style="font-size: 1.1rem;">{{ order.total_formatted }} تومان</span>
+                                        <button onclick="shipOrder('{{ order.id }}')" class="btn btn-sm btn-danger font-weight-bold px-3 py-1_5" style="border-radius: 6px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(220, 53, 69, 0.15);">
+                                            <i class="fas fa-shipping-fast ml-1"></i> ۲. تحویل به پست
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% empty %}
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-clipboard-list fa-3x mb-3" style="opacity: 0.3;"></i>
+                                <p>سفارش فعالی جهت آماده‌سازی وجود ندارد.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 2: Shipped / Archived -->
+        <div class="col-md-6 col-12 mb-4">
+            <div class="card" style="border-radius: 12px; border-top: 4px solid #28a745; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: none; border-right: none; border-bottom: none;">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title text-right m-0 font-weight-bold text-success w-100" style="float: right;">
+                        <i class="fas fa-check-circle ml-2"></i> ۳. سفارشات ارسال شده (بایگانی)
+                    </h5>
+                </div>
+                <div class="card-body p-3" style="background-color: #f8f9fa; min-height: 600px; max-height: 800px; overflow-y: auto; border-radius: 0 0 12px 12px;">
+                    <div id="shipped-orders-list">
+                        {% for order in cl.result_list %}
+                            {% if order.status == 'shipped' %}
+                            <div class="card mb-3 order-card" style="border-radius: 10px; border-right: 5px solid #28a745; border-left: 1px solid #e9ecef; border-top: 1px solid #e9ecef; border-bottom: 1px solid #e9ecef; box-shadow: 0 2px 8px rgba(0,0,0,0.01); background: white; opacity: 0.95;">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2" style="flex-direction: row-reverse;">
+                                        <span class="badge badge-success px-2 py-1 font-weight-bold" style="font-size: 0.8rem; border-radius: 4px;">ارسال شده</span>
+                                        <h6 class="font-weight-bold m-0" style="color: #2c3e50; font-size: 1rem;">سفارش {{ order.order_number }}</h6>
+                                    </div>
+                                    <hr class="my-2" style="border-color: #f1f3f5;">
+                                    <div class="text-right text-muted mb-2" style="font-size: 0.85rem; line-height: 1.6;">
+                                        <p class="m-0"><strong>گیرنده:</strong> {{ order.shipping_name }}</p>
+                                        <p class="m-0"><strong>موبایل:</strong> {{ order.shipping_phone }}</p>
+                                        <p class="m-0"><strong>کد رهگیری پست:</strong> <code class="text-success font-weight-bold" style="font-size: 0.95rem; background: #e8f5e9; padding: 2px 6px; border-radius: 4px; letter-spacing: 1px;">{{ order.tracking_number }}</code></p>
+                                    </div>
+                                    
+                                    <div class="bg-light p-2 mb-3 text-right" style="border-radius: 6px; font-size: 0.85rem; border: 1px solid #e9ecef;">
+                                        <ul class="m-0 pr-3 pl-0" style="color: #6c757d;">
+                                            {% for item in order.items.all %}
+                                            <li>{{ item.product_name }} <span class="text-muted">({{ item.quantity }} عدد)</span></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center" style="flex-direction: row-reverse;">
+                                        <span class="font-weight-bold text-success" style="font-size: 1.1rem;">{{ order.total_formatted }} تومان</span>
+                                        <span class="text-muted" style="font-size: 0.8rem;"><i class="fas fa-shipping-fast ml-1"></i> تحویل اداره پست شده</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% empty %}
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-archive fa-3x mb-3" style="opacity: 0.3;"></i>
+                                <p>سفارش بایگانی شده‌ای یافت نشد.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Tracking Number -->
+<div class="modal fade" id="shipModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-danger text-white text-right d-flex justify-content-between py-3" style="flex-direction: row-reverse; border: none;">
+                <h5 class="modal-title font-weight-bold" style="font-size: 1.1rem;"><i class="fas fa-shipping-fast ml-2"></i> ثبت کد رهگیری پستی</h5>
+                <button type="button" class="close text-white m-0 p-0" data-dismiss="modal" aria-label="Close" style="opacity: 0.8; font-size: 1.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-right p-4">
+                <p class="mb-3" style="color: #495057;">کد رهگیری ۲۴ رقمی صادر شده توسط شرکت پست را در کادر زیر وارد کنید. پس از ثبت، پیامک کد رهگیری به صورت خودکار برای خریدار ارسال می‌شود:</p>
+                <div class="form-group mb-0">
+                    <input type="text" id="trackingInput" class="form-control text-center font-weight-bold" style="font-size: 1.3rem; letter-spacing: 2px; border-radius: 8px; border: 2px solid #ced4da;" placeholder="مثال: 123456789012345678901234" maxlength="24" required>
+                    <div id="trackingError" class="text-danger mt-2 font-weight-bold" style="display: none; font-size: 0.9rem;"></div>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between p-3" style="border: none; background: #f8f9fa;">
+                <button type="button" class="btn btn-light font-weight-bold px-4" data-dismiss="modal" style="border-radius: 8px; color: #6c757d;">انصراف</button>
+                <button type="button" onclick="submitShipment()" class="btn btn-danger font-weight-bold px-4" style="border-radius: 8px; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.2);">تایید و تغییر وضعیت</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentOrderId = null;
+
+function shipOrder(orderId) {
+    currentOrderId = orderId;
+    document.getElementById('trackingInput').value = '';
+    document.getElementById('trackingError').style.display = 'none';
+    $('#shipModal').modal('show');
+}
+
+function submitShipment() {
+    const trackingInput = document.getElementById('trackingInput').value.trim();
+    const errorDiv = document.getElementById('trackingError');
+    
+    if (!trackingInput || trackingInput.length !== 24 || isNaN(trackingInput)) {
+        errorDiv.textContent = 'کد رهگیری پست باید دقیقاً ۲۴ رقم باشد!';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    errorDiv.style.display = 'none';
+    
+    // Send request using fetch
+    fetch(`/admin/orders/order/${currentOrderId}/ship/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ tracking_number: trackingInput })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#shipModal').modal('hide');
+            // Reload page to reflect changes
+            location.reload();
+        } else {
+            errorDiv.textContent = data.error || 'خطایی رخ داد!';
+            errorDiv.style.display = 'block';
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        errorDiv.textContent = 'خطای ارتباط با سرور!';
+        errorDiv.style.display = 'block';
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
