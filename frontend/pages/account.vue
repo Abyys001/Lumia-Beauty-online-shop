@@ -6,7 +6,7 @@
     </div>
 
     <template v-else>
-      <div class="flex items-center justify-between mb-8">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
         <div>
           <h1 class="section-title">حساب کاربری</h1>
           <p class="text-base-content/60">{{ auth.user?.full_name || auth.user?.phone }}</p>
@@ -14,7 +14,7 @@
         <button class="btn btn-outline btn-sm rounded-full" @click="logout">خروج</button>
       </div>
 
-      <div role="tablist" class="tabs tabs-boxed bg-base-200 rounded-full w-fit mb-8">
+      <div role="tablist" class="tabs tabs-boxed bg-base-200 rounded-full w-full sm:w-fit mb-6 sm:mb-8 overflow-x-auto">
         <button
           role="tab"
           class="tab rounded-full"
@@ -83,7 +83,7 @@
       </div>
 
       <!-- Profile -->
-      <div v-if="tab === 'profile'" class="card-lumia p-6 max-w-md">
+      <div v-if="tab === 'profile'" class="card-lumia p-6 max-w-full sm:max-w-md">
         <form @submit.prevent="saveProfile">
           <div class="space-y-4">
             <div>

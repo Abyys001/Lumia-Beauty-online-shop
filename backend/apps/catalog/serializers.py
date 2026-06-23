@@ -4,7 +4,18 @@ from rest_framework import serializers
 from .models import Brand, Category, InstagramPost, Product, ProductAttribute, ProductImage, Review
 
 
+class RelativeURLField(serializers.ImageField):
+    """Always return the relative /media/... URL so SSR-generated image paths
+    resolve correctly in the browser (Nginx already serves /media/)."""
+    def to_representation(self, value):
+        if not value:
+            return None
+        return value.url
+
+
 class ProductImageSerializer(serializers.ModelSerializer):
+    image = RelativeURLField()
+
     class Meta:
         model = ProductImage
         fields = ['id', 'image', 'alt_text', 'is_primary', 'sort_order']
@@ -20,16 +31,19 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
+    image = RelativeURLField(required=False, allow_null=True)
 
     class Meta:
         model = Review
-        fields = ['id', 'user_name', 'rating', 'comment', 'created_at']
+        fields = ['id', 'user_name', 'rating', 'comment', 'image', 'created_at']
 
     def get_user_name(self, obj):
         return obj.user.full_name or 'کاربر'
 
 
 class BrandSerializer(serializers.ModelSerializer):
+    logo = RelativeURLField()
+
     class Meta:
         model = Brand
         fields = ['id', 'name', 'slug', 'logo']
@@ -37,6 +51,7 @@ class BrandSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
+    image = RelativeURLField()
 
     class Meta:
         model = Category
@@ -68,11 +83,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_primary_image(self, obj):
         img = obj.images.filter(is_primary=True).first() or obj.images.first()
-        if img:
-            request = self.context.get('request')
-            url = img.image.url
-            return request.build_absolute_uri(url) if request else url
-        return None
+        return img.image.url if img else None
 
 
 class ProductDetailSerializer(ProductListSerializer):
@@ -85,7 +96,8 @@ class ProductDetailSerializer(ProductListSerializer):
 
     class Meta(ProductListSerializer.Meta):
         fields = ProductListSerializer.Meta.fields + [
-            'description', 'sku', 'images', 'attributes', 'reviews',
+            'name_en', 'description', 'sku', 'license_holder',
+            'images', 'attributes', 'reviews',
             'average_rating', 'brand', 'category', 'meta_title', 'meta_description',
             'created_at', 'updated_at',
         ]
@@ -104,7 +116,7 @@ class ProductDetailSerializer(ProductListSerializer):
 class ReviewCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = ['rating', 'comment']
+        fields = ['rating', 'comment', 'image']
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
@@ -113,6 +125,8 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 
 class InstagramPostSerializer(serializers.ModelSerializer):
+    image = RelativeURLField()
+
     class Meta:
         model = InstagramPost
         fields = ['id', 'image', 'post_url', 'caption']

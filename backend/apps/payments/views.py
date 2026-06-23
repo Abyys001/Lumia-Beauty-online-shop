@@ -35,6 +35,8 @@ class ZarinpalRequestView(APIView):
 
 
 class ZarinpalVerifyView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         authority = request.query_params.get('Authority', '')
         status_param = request.query_params.get('Status', '')

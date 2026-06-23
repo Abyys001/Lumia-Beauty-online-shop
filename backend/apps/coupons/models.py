@@ -59,3 +59,6 @@ class CouponUsage(models.Model):
     class Meta:
         verbose_name = 'استفاده از کد تخفیف'
         verbose_name_plural = 'استفاده‌های کد تخفیف'
+        constraints = [
+            models.UniqueConstraint(fields=['coupon', 'user', 'order'], name='unique_coupon_usage_per_order'),
+        ]

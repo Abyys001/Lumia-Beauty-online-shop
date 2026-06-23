@@ -14,7 +14,7 @@
       <span v-if="post.category" class="inline-block text-xs font-extrabold text-primary mb-3 uppercase tracking-wider">
         {{ post.category.name }}
       </span>
-      <h1 class="text-3xl md:text-4xl font-extrabold text-base-content mb-4 leading-tight">
+      <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-base-content mb-4 leading-tight">
         {{ post.title }}
       </h1>
       
@@ -39,7 +39,7 @@
     </figure>
 
     <!-- Article Content -->
-    <div class="prose max-w-none text-base-content/85 leading-relaxed text-right dir-rtl whitespace-pre-line text-lg font-serif mb-16 px-2">
+    <div class="prose max-w-none text-base-content/85 leading-relaxed text-right dir-rtl whitespace-pre-line text-base sm:text-lg font-serif mb-16 px-2">
       {{ post.content }}
     </div>
 
@@ -59,7 +59,7 @@
     <div v-if="productsData?.results?.length" class="border-t border-base-200 pt-12">
       <h3 class="text-2xl font-bold mb-8 text-right">محصولات پیشنهادی این مقاله</h3>
       
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
         <NuxtLink
           v-for="product in productsData.results.slice(0, 3)"
           :key="product.id"
@@ -98,24 +98,31 @@
       </div>
     </div>
   </article>
+  <div v-else class="container-lumia py-20 text-center space-y-4">
+    <span class="text-5xl">📰</span>
+    <h1 class="text-2xl font-bold text-lumia-dark">مقاله پیدا نشد</h1>
+    <p class="text-sm text-base-content/60">این مقاله وجود ندارد یا منتشر نشده است.</p>
+    <NuxtLink to="/blog" class="btn btn-primary rounded-full">بازگشت به مجله</NuxtLink>
+  </div>
 </template>
 
 <script setup lang="ts">
-import type { BlogPost, Product } from '~/types'
+import type { BlogPost, PaginatedResponse, Product } from '~/types'
 
 const route = useRoute()
 const { apiFetch, formatDate, formatPrice } = useApi()
 
 // Fetch Post Details
-const { data: post } = await useAsyncData(
+const { data: post } = await usePublicData(
   `blog-${route.params.slug}`,
   () => apiFetch<BlogPost>(`/blog/posts/${route.params.slug}/`),
+  { default: () => null as BlogPost | null },
 )
 
-// Fetch Suggested Products
-const { data: productsData } = await useAsyncData(
+const { data: productsData } = await usePublicData(
   'blog-related-products',
-  () => apiFetch<{ results: Product[] }>('/products/?is_featured=true&limit=3')
+  () => apiFetch<PaginatedResponse<Product>>('/products/', { query: { ordering: '-sales_count', page_size: 3 } }),
+  { default: () => ({ count: 0, next: null, previous: null, results: [] }) },
 )
 
 // Read time estimation

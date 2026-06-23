@@ -1,4 +1,5 @@
 from django.conf import settings
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -8,6 +9,7 @@ from apps.catalog.models import Product
 
 class SitemapAPIView(APIView):
     """Returns URLs for sitemap generation."""
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
         base = settings.FRONTEND_URL.rstrip('/')

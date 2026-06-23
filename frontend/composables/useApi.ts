@@ -10,6 +10,15 @@ export function formatDate(date: string): string {
   }).format(new Date(date))
 }
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp * 1000 < Date.now()
+  } catch {
+    return true
+  }
+}
+
 export function useApi() {
   const config = useRuntimeConfig()
 
@@ -19,7 +28,11 @@ export function useApi() {
       ...(options.headers as Record<string, string> || {}),
     }
     if (auth.accessToken) {
-      headers.Authorization = `Bearer ${auth.accessToken}`
+      if (!import.meta.server && isTokenExpired(auth.accessToken)) {
+        auth.logout()
+      } else {
+        headers.Authorization = `Bearer ${auth.accessToken}`
+      }
     }
 
     let baseURL = config.public.apiBase

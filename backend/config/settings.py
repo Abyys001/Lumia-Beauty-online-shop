@@ -6,18 +6,35 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-insecure-key-change-me')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = [
-    h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-    if h.strip()
-]
+def env_bool(name, default=False):
+    return os.environ.get(name, str(default)).lower() in ('true', '1', 'yes', 'on')
+
+
+def env_list(name, default=''):
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-insecure-key-change-me')
+DEBUG = env_bool('DJANGO_DEBUG', True)
+
+if not DEBUG and (
+    not SECRET_KEY
+    or SECRET_KEY in {'dev-insecure-key-change-me', 'dev-secret-key-change-in-production'}
+    or len(set(SECRET_KEY)) < 8
+    or len(SECRET_KEY) < 50
+):
+    raise ImproperlyConfigured('DJANGO_SECRET_KEY must be a strong, unique value when DJANGO_DEBUG=False.')
+
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ImproperlyConfigured('DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG=False.')
 
 INSTALLED_APPS = [
-    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,6 +52,8 @@ INSTALLED_APPS = [
     'apps.payments',
     'apps.blog',
     'apps.coupons',
+    'apps.admin_api',
+    'apps.cms',
 ]
 
 MIDDLEWARE = [
@@ -120,12 +139,12 @@ if DEBUG:
         'http://localhost:8002', 'http://127.0.0.1:8002',
     ]
 else:
-    CORS_ALLOWED_ORIGINS = [
-        origin.strip()
-        for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost').split(',')
-        if origin.strip()
-    ]
-    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+    CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS')
+    CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
+    if not CORS_ALLOWED_ORIGINS:
+        raise ImproperlyConfigured('CORS_ALLOWED_ORIGINS must be set when DJANGO_DEBUG=False.')
+    if not CSRF_TRUSTED_ORIGINS:
+        raise ImproperlyConfigured('CSRF_TRUSTED_ORIGINS must be set when DJANGO_DEBUG=False.')
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -159,8 +178,18 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': os.environ.get('DRF_THROTTLE_ANON', '120/min'),
+        'user': os.environ.get('DRF_THROTTLE_USER', '600/min'),
+        'otp': os.environ.get('DRF_THROTTLE_OTP', '6/min'),
+    },
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
@@ -180,56 +209,51 @@ ZARINPAL_MERCHANT_ID = os.environ.get('ZARINPAL_MERCHANT_ID', '')
 ZARINPAL_SANDBOX = os.environ.get('ZARINPAL_SANDBOX', 'True').lower() in ('true', '1', 'yes')
 ZARINPAL_CALLBACK_URL = os.environ.get('ZARINPAL_CALLBACK_URL', 'http://localhost/api/payments/zarinpal/verify/')
 
-KAVENEGAR_API_KEY = os.environ.get('KAVENEGAR_API_KEY', '')
-KAVENEGAR_TEMPLATE = os.environ.get('KAVENEGAR_TEMPLATE', 'verify')
+ADMIN_BYPASS_PHONE = os.environ.get('ADMIN_BYPASS_PHONE', '')
+SMS_PROVIDER = os.environ.get('SMS_PROVIDER', 'mock')
+SMS_IR_API_KEY = os.environ.get('SMS_IR_API_KEY', '')
+SMS_IR_TEMPLATE_ID = os.environ.get('SMS_IR_TEMPLATE_ID', '100000')
+SMS_IR_BASE_URL = os.environ.get('SMS_IR_BASE_URL', 'https://api.sms.ir/v1')
 
 FRONTEND_URL = os.environ.get('NUXT_PUBLIC_SITE_URL', 'http://localhost')
 
-OTP_EXPIRY_SECONDS = 120
-OTP_RATE_LIMIT = 3
-OTP_RATE_WINDOW_SECONDS = 600
+OTP_EXPIRY_SECONDS = int(os.environ.get('OTP_EXPIRATION_SECONDS', '120'))
+OTP_RATE_LIMIT = int(os.environ.get('OTP_RATE_LIMIT_COUNT', '5'))
+OTP_RATE_WINDOW_SECONDS = int(os.environ.get('OTP_RATE_LIMIT_WINDOW_MINUTES', '15')) * 60
+OTP_VERIFY_RATE_LIMIT = int(os.environ.get('OTP_MAX_ATTEMPTS', '5'))
+OTP_VERIFY_RATE_WINDOW_SECONDS = 900
+OTP_DEBUG_CODE = DEBUG and env_bool('DJANGO_OTP_DEBUG_CODE', False)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'loggers': {
+        'accounts.otp': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        'accounts.sms': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
+}
+MAX_CART_ITEM_QUANTITY = int(os.environ.get('MAX_CART_ITEM_QUANTITY', '20'))
 
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_REFERRER_POLICY = 'same-origin'
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', '0'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+    SECURE_HSTS_PRELOAD = env_bool('DJANGO_SECURE_HSTS_PRELOAD', False)
 
-JAZZMIN_SETTINGS = {
-    'site_title': 'Lumia Beauty',
-    'site_header': 'Lumia Beauty',
-    'site_brand': 'لومیا بیوتی',
-    'welcome_sign': 'به پنل مدیریت لومیا بیوتی خوش آمدید',
-    'copyright': 'Lumia Beauty',
-    'search_model': ['catalog.Product', 'orders.Order'],
-    'topmenu_links': [
-        {'name': 'مشاهده سایت', 'url': '/', 'new_window': True},
-    ],
-    'language_chooser': False,
-    'show_sidebar': True,
-    'navigation_expanded': True,
-    'order_with_respect_to': [
-        'catalog', 'orders', 'payments', 'accounts', 'coupons', 'blog', 'cart',
-    ],
-    'icons': {
-        'accounts.User': 'fas fa-users',
-        'catalog.Product': 'fas fa-spray-can',
-        'catalog.Category': 'fas fa-folder',
-        'catalog.Brand': 'fas fa-tag',
-        'orders.Order': 'fas fa-shopping-bag',
-        'payments.Payment': 'fas fa-credit-card',
-        'coupons.Coupon': 'fas fa-percent',
-        'blog.Post': 'fas fa-newspaper',
-    },
-    'custom_css': 'admin/css/rtl.css',
-}
-
-JAZZMIN_UI_TWEAKS = {
-    'theme': 'flatly',
-    'dark_mode_theme': None,
-    'navbar': 'navbar-white navbar-light',
-    'sidebar': 'sidebar-dark-primary',
-    'accent': 'accent-rose',
-    'brand_colour': 'navbar-light',
-}

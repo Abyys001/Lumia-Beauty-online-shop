@@ -506,6 +506,36 @@ def seed():
     post2.save()
 
     print("Blog articles created.")
+
+    from apps.cms.models import HomeHero, TrustBadge
+    if not HomeHero.objects.exists():
+        hero_img = get_real_or_mock_image('hero_banner.png', 'Lumia Beauty Hero', size=(1920, 1080))
+        HomeHero.objects.create(
+            headline='رایحه‌ای که امضای توست؛',
+            subheadline='روتینی که پوستت لایق آن است',
+            description='در لومیا بیوتی، اصالت محصول، پاکیزگی بسته‌بندی و مشاوره تخصصی در هم آمیخته‌اند.',
+            badge_text='شکوه اصالت و زیبایی',
+            cta_text='کشف رایحه تو',
+            cta_url='/shop',
+            cta_secondary_text='مجله زیبایی لومیا',
+            cta_secondary_url='/blog',
+            fallback_image=hero_img,
+            is_active=True,
+        )
+    badges = [
+        ('shield', 'تضمین ۱۰۰٪ اصالت کالا', 'ضمانت بازگشت و تاییدیه اصالت', 1),
+        ('shipping', 'ارسال فوق‌سریع و بهداشتی', 'بسته‌بندی ایمن ضدعفونی شده', 2),
+        ('consult', 'مشاوره انتخاب عطر و روتین', 'پشتیبانی رایگان متخصصان', 3),
+        ('payment', 'درگاه پرداخت امن زرین‌پال', 'پرداخت آنلاین با تمامی کارت‌ها', 4),
+    ]
+    for icon, title, desc, order in badges:
+        TrustBadge.objects.get_or_create(title=title, defaults={'icon': icon, 'description': desc, 'sort_order': order})
+    print("CMS content created.")
+
+    from apps.accounts.services.sms_config import SmsConfigService
+    SmsConfigService.bootstrap_from_env()
+    print("SMS/OTP settings bootstrapped.")
+
     print("Database seeding completed successfully!")
 
 if __name__ == "__main__":

@@ -1,11 +1,22 @@
 from django.contrib import admin
 from django.urls import path
 from django.http import JsonResponse
+from django.utils.html import format_html
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
 import json
 
 from .models import Order, OrderItem
+
+_ORDER_STATUS_COLORS = {
+    'pending':    '#6c757d',
+    'paid':       '#28a745',
+    'processing': '#17a2b8',
+    'shipped':    '#007bff',
+    'delivered':  '#6f42c1',
+    'cancelled':  '#dc3545',
+    'refunded':   '#fd7e14',
+}
 
 
 class OrderItemInline(admin.TabularInline):
@@ -14,14 +25,22 @@ class OrderItemInline(admin.TabularInline):
     readonly_fields = ['product', 'product_name', 'product_price', 'quantity', 'subtotal']
 
 
-
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['order_number', 'shipping_name', 'shipping_phone', 'status', 'total', 'created_at']
+    list_display = ['order_number', 'shipping_name', 'shipping_phone', 'colored_status', 'total', 'created_at']
     list_filter = ['status', 'created_at']
     search_fields = ['order_number', 'shipping_phone', 'shipping_name']
     readonly_fields = ['order_number', 'subtotal', 'total', 'created_at', 'updated_at']
     inlines = [OrderItemInline]
+    list_per_page = 20
+
+    def colored_status(self, obj):
+        color = _ORDER_STATUS_COLORS.get(obj.status, '#6c757d')
+        return format_html(
+            '<span style="background:{};color:#fff;padding:3px 10px;border-radius:12px;font-size:0.82em;white-space:nowrap;">{}</span>',
+            color, obj.get_status_display()
+        )
+    colored_status.short_description = 'وضعیت'
 
     def get_urls(self):
         urls = super().get_urls()
@@ -57,16 +76,11 @@ class OrderAdmin(admin.ModelAdmin):
         return JsonResponse({'success': False, 'error': 'درخواست نامعتبر است.'}, status=405)
 
     def send_shipment_sms(self, order):
-        from apps.catalog.models import StoreSettings
-        settings_obj = StoreSettings.get_settings()
-        api_key = settings_obj.kavenegar_api_key
-
-        print("\n" + "="*80)
-        print("SIMULATING KAVENEGAR SMS TRANSMISSION:")
-        print(f"API Key: {api_key or 'NOT SET (DEVELOPMENT FALLBACK)'}")
+        print("\n" + "=" * 80)
+        print("SIMULATING SHIPMENT SMS:")
         print(f"Recipient Phone: {order.shipping_phone}")
         print("Message content:")
         print(f"سلام {order.shipping_name} عزیز، سفارش شما با شماره {order.order_number} تحویل پست شد.")
         print(f"کد رهگیری ۲۴ رقمی پست شما: {order.tracking_number}")
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 

@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="text-center mb-16">
         <span class="text-xs uppercase tracking-widest text-lumia-gold font-bold">داستان یک تمایز لوکس</span>
-        <h1 class="text-4xl md:text-5xl font-black text-lumia-dark mt-2">درباره لومیا بیوتی</h1>
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-lumia-dark mt-2">درباره لومیا بیوتی</h1>
         <div class="w-20 h-0.5 bg-lumia-gold mx-auto my-4"></div>
         <p class="text-base-content/70 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
           فلسفه لومیا بیوتی، پیوند میان اصالت، سلامت پوست و جادوی رایحه‌های لوکس است. ما ویترینی از برترین برندهای نیش و طراح جهان را برای شما گردآوری کرده‌ایم.
@@ -25,10 +25,10 @@
             </p>
           </div>
           <div class="relative group aspect-square rounded-3xl overflow-hidden shadow-lg border border-lumia-cream">
-            <NuxtImg
+            <AppImage
               src="/images/hero_banner.png"
               alt="Lumia Beauty Heritage"
-              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              img-class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
             <div class="absolute inset-0 bg-gradient-to-t from-lumia-dark/40 to-transparent"></div>
           </div>
@@ -60,7 +60,7 @@
         </div>
 
         <!-- Editorial Quote -->
-        <div class="bg-lumia-dark text-white p-8 md:p-12 rounded-3xl text-center relative overflow-hidden border border-lumia-gold/20">
+        <div class="bg-lumia-dark text-white p-4 sm:p-6 md:p-8 lg:p-12 rounded-3xl text-center relative overflow-hidden border border-lumia-gold/20">
           <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-lumia-gold/10 rounded-full blur-2xl"></div>
           <div class="absolute -left-10 -top-10 w-40 h-40 bg-lumia-gold/10 rounded-full blur-2xl"></div>
           <span class="text-4xl text-lumia-gold font-serif">“</span>

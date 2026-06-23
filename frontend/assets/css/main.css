@@ -9,6 +9,7 @@
 
   body {
     @apply font-sans bg-base-100 text-base-content antialiased;
+    font-display: swap;
   }
 }
 
@@ -31,5 +32,10 @@
 
   .section-subtitle {
     @apply text-base-content/60 mb-8;
+  }
+
+  .content-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 400px;
   }
 }

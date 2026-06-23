@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from apps.catalog.serializers import ProductListSerializer
@@ -28,8 +29,8 @@ class CartSerializer(serializers.ModelSerializer):
 
 class AddToCartSerializer(serializers.Serializer):
     product_id = serializers.UUIDField()
-    quantity = serializers.IntegerField(min_value=1, default=1)
+    quantity = serializers.IntegerField(min_value=1, max_value=settings.MAX_CART_ITEM_QUANTITY, default=1)
 
 
 class UpdateCartItemSerializer(serializers.Serializer):
-    quantity = serializers.IntegerField(min_value=0)
+    quantity = serializers.IntegerField(min_value=0, max_value=settings.MAX_CART_ITEM_QUANTITY)

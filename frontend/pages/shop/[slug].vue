@@ -1,6 +1,6 @@
 <template>
   <div v-if="product" class="container-lumia py-8">
-    <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
+    <div class="grid md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-12">
       <!-- Right Column: Visuals & Gallery -->
       <div class="space-y-4">
         <!-- Main Image with Hover Zoom -->
@@ -23,7 +23,7 @@
           <button
             v-for="img in product.images"
             :key="img.id"
-            class="w-20 h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200"
+            class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200"
             :class="selectedImage === img.image ? 'border-primary scale-[1.03] shadow-md' : 'border-transparent opacity-70 hover:opacity-100'"
             @click="selectedImage = img.image"
           >
@@ -38,8 +38,9 @@
           <NuxtLink v-if="product.brand" :to="`/shop?brand=${product.brand.slug}`" class="text-sm font-bold text-primary hover:underline mb-1 inline-block">
             {{ product.brand.name }}
           </NuxtLink>
-          <h1 class="text-3xl font-extrabold text-base-content mb-2">{{ product.name }}</h1>
-          <p v-if="product.slug" class="text-sm text-base-content/40 font-mono" style="letter-spacing: 0.5px;">{{ product.slug.replace(/-/g, ' ').toUpperCase() }}</p>
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-base-content mb-2">{{ product.name }}</h1>
+          <p v-if="product.name_en" class="text-sm text-base-content/50 font-light tracking-wide">{{ product.name_en }}</p>
+          <p v-else-if="product.slug" class="text-sm text-base-content/40 font-mono" style="letter-spacing: 0.5px;">{{ product.slug.replace(/-/g, ' ').toUpperCase() }}</p>
           
           <div class="flex items-center gap-2 mt-4 justify-start" style="flex-direction: row-reverse;">
             <span class="text-sm font-semibold text-base-content/60">({{ totalReviews }} نظر ثبت شده)</span>
@@ -109,12 +110,16 @@
     </div>
 
     <!-- Detailed Info & Specifications -->
-    <div class="grid md:grid-cols-2 gap-10 mt-16 border-t border-base-200 pt-10">
+    <div class="grid md:grid-cols-2 gap-6 md:gap-10 mt-16 border-t border-base-200 pt-10">
       <div>
         <h2 class="text-xl font-bold mb-4 text-right">مشخصات فنی و ویژگی‌ها</h2>
         <div class="border border-base-200 rounded-2xl overflow-hidden">
           <table class="w-full text-right border-collapse">
             <tbody>
+              <tr v-if="product.license_holder" class="border-b border-base-200">
+                <td class="p-3 font-semibold text-sm text-base-content/60">صادرکننده مجوز</td>
+                <td class="p-3 text-sm font-medium">{{ product.license_holder }}</td>
+              </tr>
               <tr class="border-b border-base-200 bg-base-100/50">
                 <td class="p-3 font-semibold text-sm w-1/3 text-base-content/60">برند محصول</td>
                 <td class="p-3 text-sm font-medium">{{ product.brand?.name || 'لومیا بیوتی' }}</td>
@@ -150,7 +155,7 @@
     <div class="mt-16 border-t border-base-200 pt-10">
       <h2 class="text-2xl font-bold mb-8 text-right">نظرات کاربران</h2>
       
-      <div class="grid md:grid-cols-3 gap-8">
+      <div class="grid md:grid-cols-3 gap-4 md:gap-8">
         <!-- Star Rating Summary -->
         <div class="bg-base-100 p-6 rounded-2xl border border-base-200 text-right">
           <h3 class="font-bold text-lg mb-4">خلاصه امتیازات</h3>
@@ -208,7 +213,17 @@
                   class="textarea textarea-bordered w-full text-right"
                   placeholder="تجربه خود را از استفاده این محصول بنویسید..."
                   required
-                ></textarea>
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-base-content/70 mb-2">عکس محصول (اختیاری):</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="file-input file-input-bordered file-input-sm w-full"
+                  @change="onReviewImage"
+                />
               </div>
               
               <div v-if="submitError" class="alert alert-error text-sm py-2">
@@ -232,7 +247,7 @@
           <div v-else class="flex flex-col items-center justify-center py-8 text-center bg-base-200/30 rounded-xl border border-dashed border-base-300">
             <i class="fas fa-lock text-base-content/30 text-2xl mb-2"></i>
             <p class="text-base-content/60 text-sm mb-3">برای ثبت نظر، ابتدا باید وارد حساب کاربری خود شوید.</p>
-            <NuxtLink to="/login" class="btn btn-primary btn-sm px-6 font-bold" style="border-radius: 8px;">ورود / ثبت‌نام</NuxtLink>
+            <NuxtLink to="/auth" class="btn btn-primary btn-sm px-6 font-bold" style="border-radius: 8px;">ورود / ثبت‌نام</NuxtLink>
           </div>
         </div>
       </div>
@@ -258,17 +273,25 @@
               </div>
             </div>
             <p class="text-sm text-base-content/80 leading-relaxed">{{ review.comment }}</p>
+            <img v-if="review.image" :src="review.image" alt="عکس نظر" class="mt-3 rounded-xl max-h-40 object-cover" />
           </div>
         </div>
         <p v-else class="text-center text-muted py-8 bg-base-100 rounded-2xl border border-base-200">اولین نفری باشید که برای این محصول نظر ثبت می‌کند!</p>
       </div>
     </div>
   </div>
+  <div v-else class="container-lumia py-20 text-center space-y-4">
+    <span class="text-5xl">📦</span>
+    <h1 class="text-2xl font-bold text-lumia-dark">محصول پیدا نشد</h1>
+    <p class="text-sm text-base-content/60">این محصول وجود ندارد یا از فروشگاه حذف شده است.</p>
+    <NuxtLink to="/shop" class="btn btn-primary rounded-full">بازگشت به فروشگاه</NuxtLink>
+  </div>
 </template>
 
 <script setup lang="ts">
 import type { Product } from '~/types'
 import { useAuthStore } from '~/stores/auth'
+import { useCartStore } from '~/stores/cart'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -287,13 +310,15 @@ const zoomY = ref(0)
 // Review form state
 const newRating = ref(5)
 const newComment = ref('')
+const reviewImage = ref<File | null>(null)
 const submitting = ref(false)
 const submitError = ref<string | null>(null)
 const submitSuccess = ref(false)
 
-const { data: product } = await useAsyncData(
+const { data: product } = await usePublicData(
   `product-${route.params.slug}`,
   () => apiFetch<Product>(`/products/${route.params.slug}/`),
+  { default: () => null as Product | null },
 )
 
 if (product.value) {
@@ -335,6 +360,8 @@ if (product.value) {
     ogTitle: product.value.name,
     ogDescription: product.value.short_description,
     ogImage: product.value.primary_image || undefined,
+    ogType: 'product',
+    twitterCard: 'summary_large_image',
   })
 
   // Convert price to Rials if using IRR (Tomans to Rials is * 10)
@@ -424,28 +451,34 @@ async function submitReview() {
   submitting.value = true
   submitError.value = null
   submitSuccess.value = false
-  
+
   try {
+    const formData = new FormData()
+    formData.append('rating', String(newRating.value))
+    formData.append('comment', newComment.value.trim())
+    if (reviewImage.value) formData.append('image', reviewImage.value)
+
     await apiFetch(`/products/${product.value?.slug}/reviews/`, {
       method: 'POST',
-      body: {
-        rating: newRating.value,
-        comment: newComment.value.trim()
-      }
+      body: formData,
     })
     submitSuccess.value = true
     newComment.value = ''
     newRating.value = 5
-    
-    // Refresh product details
+    reviewImage.value = null
+
     const updatedProduct = await apiFetch<Product>(`/products/${product.value?.slug}/`)
-    if (updatedProduct) {
-      product.value = updatedProduct
-    }
-  } catch (err: any) {
-    submitError.value = err.data?.detail || err.data?.non_field_errors?.[0] || 'خطایی در ثبت نظر رخ داد.'
+    if (updatedProduct) product.value = updatedProduct
+  } catch (err: unknown) {
+    const e = err as { data?: { detail?: string; non_field_errors?: string[] } }
+    submitError.value = e.data?.detail || e.data?.non_field_errors?.[0] || 'خطایی در ثبت نظر رخ داد.'
   } finally {
     submitting.value = false
   }
+}
+
+function onReviewImage(e: Event) {
+  const input = e.target as HTMLInputElement
+  reviewImage.value = input.files?.[0] || null
 }
 </script>

@@ -43,7 +43,7 @@ class Order(models.Model):
     shipping_province = models.CharField('استان', max_length=100)
     shipping_city = models.CharField('شهر', max_length=100)
     shipping_address = models.TextField('آدرس')
-    shipping_postal_code = models.CharField('کد پستی', max_length=10)
+    shipping_postal_code = models.CharField('کد پستی', max_length=10, blank=True)
     tracking_number = models.CharField('کد رهگیری پست', max_length=24, blank=True, null=True)
 
     note = models.TextField('یادداشت', blank=True)

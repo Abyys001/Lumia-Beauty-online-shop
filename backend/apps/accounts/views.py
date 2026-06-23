@@ -1,58 +1,73 @@
+import logging
+
 from django.conf import settings
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import User
-from .otp import check_otp_rate_limit, generate_otp_code, store_otp, verify_otp
 from .serializers import OTPRequestSerializer, OTPVerifySerializer, UserSerializer
-from .services import KavenegarService
+from .services.otp_service import OtpService
+
+logger = logging.getLogger('accounts.otp')
+
+
+def _client_ip(request) -> str | None:
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
 
 
 class OTPRequestView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = 'otp'
+
     def post(self, request):
         serializer = OTPRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         phone = serializer.validated_data['phone']
+        ip = _client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
 
-        if not check_otp_rate_limit(phone):
-            return Response(
-                {'detail': 'تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند دقیقه صبر کنید.'},
-                status=status.HTTP_429_TOO_MANY_REQUESTS,
-            )
+        result = OtpService.request_otp(phone, ip_address=ip, user_agent=user_agent)
 
-        code = generate_otp_code()
-        store_otp(phone, code)
-        sent = KavenegarService.send_otp(phone, code)
+        if result.bypass_tokens and result.user:
+            return Response({
+                'access': result.bypass_tokens['access'],
+                'refresh': result.bypass_tokens['refresh'],
+                'user': UserSerializer(result.user).data,
+            })
 
-        response_data = {'detail': 'کد تأیید ارسال شد'}
-        if settings.DEBUG:
-            response_data['debug_code'] = code
+        if not result.success:
+            return Response({'detail': result.detail}, status=result.status_code)
 
-        if not sent and not settings.DEBUG:
-            return Response({'detail': 'خطا در ارسال پیامک'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        response_data = {'detail': result.detail}
+        if result.debug_code:
+            response_data['debug_code'] = result.debug_code
 
         return Response(response_data)
 
 
 class OTPVerifyView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = 'otp'
+
     def post(self, request):
         serializer = OTPVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         phone = serializer.validated_data['phone']
         code = serializer.validated_data['code']
+        ip = _client_ip(request)
 
-        if not verify_otp(phone, code):
-            return Response({'detail': 'کد تأیید نامعتبر یا منقضی شده است'}, status=status.HTTP_400_BAD_REQUEST)
+        result = OtpService.verify_otp(phone, code, ip_address=ip)
 
-        user, _ = User.objects.get_or_create(phone=phone)
-        refresh = RefreshToken.for_user(user)
+        if not result.success:
+            return Response({'detail': result.detail}, status=result.status_code)
 
         return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-            'user': UserSerializer(user).data,
+            'access': result.tokens['access'],
+            'refresh': result.tokens['refresh'],
+            'user': UserSerializer(result.user).data,
         })
 
 

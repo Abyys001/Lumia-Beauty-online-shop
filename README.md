@@ -20,55 +20,45 @@
 ├── backend/          # Django + DRF
 ├── frontend/         # Nuxt 3
 ├── nginx/            # کانفیگ Nginx
-├── docker-compose.yml
-└── docker-compose.prod.yml
+└── docker-compose.yml  # توسعه و production (با APP_ENV)
 ```
 
-## راه‌اندازی توسعه
+## راه‌اندازی
 
 ```bash
 # 1. کپی متغیرهای محیطی
 cp .env.example .env
 
-# 2. اجرای سرویس‌ها
-docker compose up --build -d
+# 2. اولین بار (نصب وابستگی‌ها در image)
+docker compose up -d --build
 
-# 3. ایجاد سوپرادمین
+# 3. روزمره توسعه — بدون build؛ تغییرات کد خودکار اعمال می‌شود
+docker compose up -d
+
+# 4. ایجاد سوپرادمین
 docker compose exec backend python manage.py createsuperuser
 ```
 
 سایت: http://localhost  
 پنل ادمین: http://localhost/admin/
 
-## راه‌اندازی Production (سرور ایران)
+### Production
 
-### پیش‌نیازها
-- Ubuntu 22.04+
-- Docker و Docker Compose
-- دامنه `.ir` (مثلاً `lumiabeauty.ir`)
+در `.env` تنظیم کنید:
+```
+APP_ENV=production
+DJANGO_DEBUG=False
+DJANGO_SECRET_KEY=<کلید-امن>
+ZARINPAL_SANDBOX=False
+```
 
-### مراحل دپلوی
-
+سپس:
 ```bash
-# 1. کلون پروژه
-git clone https://github.com/Abyys001/Lumia-Beauty-online-shop.git
-cd Lumia-Beauty-online-shop
-
-# 2. تنظیم .env برای production
-cp .env.example .env
-# DJANGO_DEBUG=False
-# DJANGO_SECRET_KEY=<کلید-امن-تصادفی>
-# ZARINPAL_SANDBOX=False
-# ZARINPAL_MERCHANT_ID=<مرچنت-کد>
-# KAVENEGAR_API_KEY=<کلید-API>
-
-# 3. اجرا
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-
-# 4. Migration و superuser
-docker compose exec backend python manage.py migrate
+docker compose up -d --build
 docker compose exec backend python manage.py createsuperuser
 ```
+
+بعد از تغییر کد روی سرور: `git pull` و `docker compose restart backend frontend` (بدون `--build`).
 
 ### SSL با Certbot
 

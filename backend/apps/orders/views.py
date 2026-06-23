@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import Address
 from apps.cart.services import get_or_create_cart
+from apps.catalog.models import Product
 from apps.coupons.services import apply_coupon, validate_coupon
 
 from .models import Order, OrderItem
@@ -24,13 +25,21 @@ class CreateOrderView(APIView):
         data = serializer.validated_data
 
         cart = get_or_create_cart(request)
-        if not cart.items.exists():
+        cart_items = list(cart.items.select_for_update().select_related('product'))
+        if not cart_items:
             return Response({'detail': 'سبد خرید خالی است'}, status=status.HTTP_400_BAD_REQUEST)
 
-        for item in cart.items.select_related('product'):
-            if item.product.stock < item.quantity:
+        product_ids = [item.product_id for item in cart_items]
+        locked_products = {
+            product.id: product
+            for product in Product.objects.select_for_update().filter(id__in=product_ids)
+        }
+
+        for item in cart_items:
+            product = locked_products[item.product_id]
+            if product.stock < item.quantity:
                 return Response(
-                    {'detail': f'موجودی {item.product.name} کافی نیست'},
+                    {'detail': f'موجودی {product.name} کافی نیست'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -64,14 +73,15 @@ class CreateOrderView(APIView):
             note=data.get('note', ''),
         )
 
-        for item in cart.items.select_related('product'):
+        for item in cart_items:
+            product = locked_products[item.product_id]
             OrderItem.objects.create(
                 order=order,
-                product=item.product,
-                product_name=item.product.name,
-                product_price=item.product.price,
+                product=product,
+                product_name=product.name,
+                product_price=product.price,
                 quantity=item.quantity,
-                subtotal=item.subtotal,
+                subtotal=product.price * item.quantity,
             )
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
@@ -91,13 +101,19 @@ class CreateOrderView(APIView):
             except Address.DoesNotExist:
                 return None
 
-        required = [
-            'shipping_name', 'shipping_phone', 'shipping_province',
-            'shipping_city', 'shipping_address', 'shipping_postal_code',
-        ]
-        if all(data.get(f) for f in required):
-            return {field: data[field] for field in required}
-        return None
+        required = ['shipping_phone', 'shipping_province', 'shipping_city', 'shipping_address']
+        if not all(data.get(f) for f in required):
+            return None
+
+        user_name = user.full_name if user else ''
+        return {
+            'shipping_name': data.get('shipping_name') or user_name or 'مشتری',
+            'shipping_phone': data['shipping_phone'],
+            'shipping_province': data['shipping_province'],
+            'shipping_city': data['shipping_city'],
+            'shipping_address': data['shipping_address'],
+            'shipping_postal_code': data.get('shipping_postal_code', ''),
+        }
 
 
 class OrderDetailView(generics.RetrieveAPIView):

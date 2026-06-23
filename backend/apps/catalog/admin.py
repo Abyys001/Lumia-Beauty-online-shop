@@ -93,12 +93,24 @@ class BrandAdmin(admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
-    list_display = ['name', 'category', 'brand', 'price', 'stock', 'is_active', 'is_featured', 'sales_count']
+    list_display = ['thumbnail', 'name', 'category', 'brand', 'price', 'stock', 'is_active', 'is_featured', 'sales_count']
     list_filter = ['is_active', 'is_featured', 'category', 'brand']
     search_fields = ['name', 'sku', 'slug']
     prepopulated_fields = {'slug': ('name',)}
     inlines = [ProductImageInline, ProductAttributeInline]
     list_editable = ['is_active', 'is_featured', 'stock']
+    list_per_page = 20
+    save_on_top = True
+
+    def thumbnail(self, obj):
+        img = obj.images.first()
+        if img:
+            return format_html(
+                '<img src="{}" style="height:40px;width:40px;object-fit:cover;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.15);" />',
+                img.image.url
+            )
+        return '—'
+    thumbnail.short_description = 'تصویر'
 
     fieldsets = (
         ('اطلاعات اصلی', {
@@ -136,7 +148,7 @@ class InstagramPostAdmin(admin.ModelAdmin):
 
 @admin.register(StoreSettings)
 class StoreSettingsAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'zarinpal_merchant_id', 'kavenegar_api_key']
+    list_display = ['__str__', 'zarinpal_merchant_id']
 
     def has_add_permission(self, request):
         # Allow only 1 instance

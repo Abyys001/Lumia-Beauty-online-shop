@@ -51,13 +51,14 @@
         >
           {{ b.name }}
         </button>
+
       </div>
     </div>
 
     <!-- Price Range -->
     <div class="space-y-3">
       <h4 class="font-semibold text-sm text-lumia-dark">محدوده قیمت (تومان)</h4>
-      <div class="grid grid-cols-2 gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div>
           <label class="text-xxs text-base-content/50 block mb-1">از قیمت</label>
           <input
@@ -88,9 +89,9 @@
         <button
           v-for="note in scentNotes"
           :key="note"
-          class="px-3 py-1 rounded-lg text-xxs transition-all"
-          :class="filters.scent === note 
-            ? 'bg-lumia-dark text-white font-medium' 
+          class="px-3 py-1.5 rounded-lg text-xs transition-all"
+          :class="filters.scent === note
+            ? 'bg-lumia-dark text-white font-medium'
             : 'bg-lumia-cream/30 text-base-content/70 hover:bg-lumia-cream/60'"
           @click="update('scent', filters.scent === note ? '' : note)"
         >
@@ -106,9 +107,9 @@
         <button
           v-for="skin in skinTypes"
           :key="skin"
-          class="px-3 py-1 rounded-lg text-xxs transition-all"
-          :class="filters.skin_type === skin 
-            ? 'bg-lumia-dark text-white font-medium' 
+          class="px-3 py-1.5 rounded-lg text-xs transition-all"
+          :class="filters.skin_type === skin
+            ? 'bg-lumia-dark text-white font-medium'
             : 'bg-lumia-cream/30 text-base-content/70 hover:bg-lumia-cream/60'"
           @click="update('skin_type', filters.skin_type === skin ? '' : skin)"
         >
@@ -166,13 +167,20 @@ const flatCategories = computed(() => {
   return list
 })
 
-const brands = [
-  { name: 'لومیا اسنس', slug: 'lumia-essence' },
-  { name: 'شنل', slug: 'chanel' },
-  { name: 'دیور', slug: 'dior' },
-  { name: 'سراوی', slug: 'cerave' },
-  { name: 'لانیژ', slug: 'laneige' }
-]
+const brands = ref<{ name: string; slug: string }[]>([])
+
+onMounted(async () => {
+  try {
+    const { apiFetch } = useApi()
+    brands.value = await apiFetch<{ name: string; slug: string }[]>('/brands/')
+  } catch {
+    brands.value = [
+      { name: 'لومیا اسنس', slug: 'lumia-essence' },
+      { name: 'شنل', slug: 'chanel' },
+      { name: 'دیور', slug: 'dior' },
+    ]
+  }
+})
 
 const scentNotes = ['خنک', 'گرم', 'تلخ', 'شیرین', 'مرکباتی', 'چوبی', 'گلی', 'چرمی']
 const skinTypes = ['چرب', 'خشک', 'حساس', 'نرمال', 'انواع پوست']

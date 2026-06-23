@@ -4,7 +4,7 @@ from .models import Address, User, normalize_phone
 
 
 class OTPRequestSerializer(serializers.Serializer):
-    phone = serializers.CharField(max_length=11)
+    phone = serializers.CharField(max_length=15)
 
     def validate_phone(self, value):
         phone = normalize_phone(value)
@@ -14,11 +14,14 @@ class OTPRequestSerializer(serializers.Serializer):
 
 
 class OTPVerifySerializer(serializers.Serializer):
-    phone = serializers.CharField(max_length=11)
+    phone = serializers.CharField(max_length=15)
     code = serializers.CharField(max_length=6, min_length=6)
 
     def validate_phone(self, value):
-        return normalize_phone(value)
+        phone = normalize_phone(value)
+        if not phone.startswith('09') or len(phone) != 11:
+            raise serializers.ValidationError('شماره موبایل معتبر نیست')
+        return phone
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -26,8 +29,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'phone', 'first_name', 'last_name', 'full_name', 'email', 'date_joined']
-        read_only_fields = ['id', 'phone', 'date_joined']
+        fields = ['id', 'phone', 'first_name', 'last_name', 'full_name', 'email', 'date_joined', 'is_staff']
+        read_only_fields = ['id', 'phone', 'date_joined', 'is_staff']
 
 
 class AddressSerializer(serializers.ModelSerializer):

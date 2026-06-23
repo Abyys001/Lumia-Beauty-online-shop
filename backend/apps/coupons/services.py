@@ -1,11 +1,15 @@
-from django.utils import timezone
+from django.db.models import F
 
 from .models import Coupon, CouponUsage
 
 
-def validate_coupon(code, user, subtotal):
+def validate_coupon(code, user, subtotal, lock=False):
+    queryset = Coupon.objects
+    if lock:
+        queryset = queryset.select_for_update()
+
     try:
-        coupon = Coupon.objects.get(code__iexact=code.strip())
+        coupon = queryset.get(code__iexact=code.strip())
     except Coupon.DoesNotExist:
         return None, 'کد تخفیف نامعتبر است'
 
@@ -37,6 +41,14 @@ def apply_coupon(coupon, subtotal):
 
 
 def record_coupon_usage(coupon, user, order):
-    CouponUsage.objects.create(coupon=coupon, user=user, order=order)
-    coupon.used_count += 1
-    coupon.save(update_fields=['used_count'])
+    if coupon.max_uses and coupon.used_count >= coupon.max_uses:
+        return 'کد تخفیف منقضی شده یا غیرفعال است'
+
+    user_usage = CouponUsage.objects.filter(coupon=coupon, user=user).count()
+    if user_usage >= coupon.per_user_limit:
+        return 'شما قبلاً از این کد استفاده کرده‌اید'
+
+    _, created = CouponUsage.objects.get_or_create(coupon=coupon, user=user, order=order)
+    if created:
+        Coupon.objects.filter(pk=coupon.pk).update(used_count=F('used_count') + 1)
+    return None

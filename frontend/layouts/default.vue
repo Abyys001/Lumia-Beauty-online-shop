@@ -5,13 +5,22 @@
       <slot />
     </main>
     <AppFooter />
+    <FloatingWhatsApp />
+    <PwaInstallBanner />
+    <MobileNav />
     <CartDrawer />
   </div>
 </template>
 
 <script setup lang="ts">
+import { useAuthStore } from '~/stores/auth'
+import { useCartStore } from '~/stores/cart'
+
 const cart = useCartStore()
+const auth = useAuthStore()
 onMounted(() => {
-  cart.fetchCart()
+  if (auth.isAuthenticated) {
+    cart.fetchCart()
+  }
 })
 </script>

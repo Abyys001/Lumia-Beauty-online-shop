@@ -15,6 +15,7 @@
           placeholder="۰۹۱۲۳۴۵۶۷۸۹"
           dir="ltr"
           required
+          @input="phone = toEnDigits(phone)"
         />
         <button type="submit" class="btn btn-primary w-full rounded-full" :disabled="loading">
           <span v-if="loading" class="loading loading-spinner loading-sm" />
@@ -57,6 +58,12 @@ const auth = useAuthStore()
 const router = useRouter()
 const { apiFetch } = useApi()
 
+function toEnDigits(s: string): string {
+  return s
+    .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0))
+    .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
+}
+
 const step = ref<'phone' | 'code'>('phone')
 const phone = ref('')
 const code = ref('')
@@ -68,10 +75,15 @@ async function requestOtp() {
   loading.value = true
   error.value = ''
   try {
-    const result = await apiFetch<{ detail: string; debug_code?: string }>('/auth/otp/request/', {
+    const result = await apiFetch<{ detail?: string; debug_code?: string; access?: string; refresh?: string; user?: User }>('/auth/otp/request/', {
       method: 'POST',
       body: { phone: phone.value },
     })
+    if (result.access && result.refresh && result.user) {
+      auth.setTokens(result.access, result.refresh, result.user)
+      router.push(result.user.is_staff ? '/admin' : '/account')
+      return
+    }
     debugCode.value = result.debug_code || ''
     step.value = 'code'
   } catch (e: unknown) {
@@ -91,7 +103,7 @@ async function verifyOtp() {
       body: { phone: phone.value, code: code.value },
     })
     auth.setTokens(result.access, result.refresh, result.user)
-    router.push('/account')
+    router.push(result.user.is_staff ? '/admin' : '/account')
   } catch (e: unknown) {
     const err = e as { data?: { detail?: string } }
     error.value = err.data?.detail || 'کد نامعتبر'

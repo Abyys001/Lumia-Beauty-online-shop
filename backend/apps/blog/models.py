@@ -41,6 +41,7 @@ class Post(models.Model):
     tags = models.ManyToManyField(Tag, blank=True, related_name='posts')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     is_published = models.BooleanField('منتشر شده', default=False, db_index=True)
+    is_featured = models.BooleanField('ویژه/شاخص', default=False, db_index=True)
     meta_title = models.CharField('عنوان سئو', max_length=200, blank=True)
     meta_description = models.TextField('توضیحات سئو', blank=True)
     published_at = models.DateTimeField('تاریخ انتشار', null=True, blank=True)

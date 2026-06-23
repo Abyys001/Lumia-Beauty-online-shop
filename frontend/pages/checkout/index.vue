@@ -1,19 +1,12 @@
 <template>
   <div class="container-lumia py-8">
-    <h1 class="text-3xl font-extrabold text-base-content text-right mb-8">تکمیل خرید و تسویه حساب</h1>
+    <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-base-content text-right mb-6 sm:mb-8">تکمیل خرید و تسویه حساب</h1>
 
     <!-- Not Authenticated State -->
-    <div v-if="!auth.isAuthenticated" class="max-w-md mx-auto text-center bg-base-100 p-8 rounded-3xl border border-base-200 shadow-sm">
-      <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary text-2xl">
-        <i class="fas fa-user-lock"></i>
-      </div>
-      <h3 class="font-bold text-lg mb-2">نیاز به ورود به حساب کاربری</h3>
-      <p class="text-sm text-base-content/60 mb-6">برای ثبت نهایی سفارش و اتصال به درگاه بانکی، ابتدا باید به حساب کاربری خود وارد شوید.</p>
-      <NuxtLink to="/auth" class="btn btn-primary w-full font-bold py-3" style="border-radius: 12px;">ورود / ثبت‌نام</NuxtLink>
-    </div>
+    <CheckoutAuth v-if="!auth.isAuthenticated" @authenticated="onAuthenticated" />
 
     <!-- Authenticated Checkout Form -->
-    <div v-else class="grid lg:grid-cols-3 gap-8">
+    <div v-else class="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
       <!-- Right Column: Shipping Address & Coupon Code (col-span-2) -->
       <div class="lg:col-span-2 space-y-6">
         <!-- Address card -->
@@ -44,7 +37,7 @@
           
           <!-- Address Fields -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input v-model="form.shipping_name" class="input input-bordered rounded-xl text-right" placeholder="نام و نام خانوادگی گیرنده" :disabled="!!selectedAddress" :required="!selectedAddress" />
+            <input v-model="form.shipping_name" class="input input-bordered rounded-xl text-right" placeholder="نام گیرنده (اختیاری)" :disabled="!!selectedAddress" />
             <input v-model="form.shipping_phone" class="input input-bordered rounded-xl text-right" placeholder="شماره موبایل گیرنده" :disabled="!!selectedAddress" :required="!selectedAddress" />
             
             <!-- Province Dropdown -->
@@ -59,7 +52,7 @@
               <option v-for="city in availableCities" :key="city" :value="city">{{ city }}</option>
             </select>
             
-            <input v-model="form.shipping_postal_code" class="input input-bordered rounded-xl text-right" placeholder="کد پستی (۱۰ رقمی)" :disabled="!!selectedAddress" :required="!selectedAddress" />
+            <input v-model="form.shipping_postal_code" class="input input-bordered rounded-xl text-right" placeholder="کد پستی (اختیاری)" :disabled="!!selectedAddress" />
             <textarea v-model="form.shipping_address" class="textarea textarea-bordered rounded-xl md:col-span-2 text-right" placeholder="آدرس دقیق پستی، پلاک و واحد" :disabled="!!selectedAddress" :required="!selectedAddress" />
           </div>
         </div>
@@ -139,6 +132,7 @@
 <script setup lang="ts">
 import type { Address, Order } from '~/types'
 import { useAuthStore } from '~/stores/auth'
+import { useCartStore } from '~/stores/cart'
 
 const auth = useAuthStore()
 const cart = useCartStore()
@@ -192,6 +186,10 @@ const { data: addresses } = await useAsyncData('addresses', () =>
 )
 
 onMounted(() => cart.fetchCart())
+
+function onAuthenticated() {
+  navigateTo('/checkout', { replace: true })
+}
 
 const finalTotal = computed(() => {
   const shipping = freeShipping.value || cart.total >= 500000 ? 0 : 50000

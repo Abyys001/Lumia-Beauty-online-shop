@@ -21,6 +21,11 @@ export default defineNuxtConfig({
           content: 'خرید عطر نیش, ادکلن اصل, محصولات مراقبت از پوست, روتین پوست, آبرسان پوست, محصولات ضد حساسیت, خرید لوازم آرایشی اورجینال, لومیا بیوتی',
         },
         { name: 'format-detection', content: 'telephone=no' },
+        { name: 'theme-color', content: '#D4AF37' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { name: 'apple-mobile-web-app-title', content: 'لومیا بیوتی' },
         { property: 'og:locale', content: 'fa_IR' },
         { property: 'og:type', content: 'website' },
         { property: 'og:site_name', content: 'لومیا بیوتی' },
@@ -32,7 +37,6 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32.png' },
         { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/favicon-192.png' },
         { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
-        { rel: 'manifest', href: '/site.webmanifest' },
         {
           rel: 'stylesheet',
           href: 'https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css',
@@ -50,7 +54,60 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     '@nuxtjs/sitemap',
     'nuxt-schema-org',
+    '@vite-pwa/nuxt',
   ],
+
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'لومیا بیوتی',
+      short_name: 'Lumia',
+      description: 'فروشگاه آنلاین محصولات آرایشی، بهداشتی و عطر لوکس',
+      theme_color: '#D4AF37',
+      background_color: '#1C1A17',
+      display: 'standalone',
+      lang: 'fa',
+      dir: 'rtl',
+      start_url: '/',
+      scope: '/',
+      icons: [
+        {
+          src: '/favicon-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'maskable any',
+        },
+        {
+          src: '/favicon-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable any',
+        },
+      ],
+    },
+    workbox: {
+      navigateFallback: '/',
+      navigateFallbackDenylist: [/^\/admin/, /^\/checkout/, /^\/auth/, /^\/django-admin/],
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,webp,woff2}'],
+      runtimeCaching: [
+        {
+          urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'lumia-api',
+            networkTimeoutSeconds: 10,
+            expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+          },
+        },
+      ],
+    },
+    client: {
+      installPrompt: true,
+    },
+    devOptions: {
+      enabled: false,
+    },
+  },
 
   runtimeConfig: {
     apiInternal: process.env.NUXT_API_INTERNAL_URL || 'http://localhost/api',
@@ -67,7 +124,7 @@ export default defineNuxtConfig({
   },
 
   image: {
-    format: ['webp'],
+    format: ['avif', 'webp'],
     quality: 80,
     domains: ['localhost', '127.0.0.1', 'backend', 'backend:8000'],
     alias: {
@@ -100,6 +157,20 @@ export default defineNuxtConfig({
       '/api': {
         target: process.env.NUXT_API_PROXY || 'http://backend:8000/api',
         changeOrigin: true,
+      },
+    },
+  },
+
+  vite: {
+    server: {
+      watch: {
+        usePolling: true,
+        interval: 300,
+      },
+      hmr: {
+        ...(process.env.NUXT_VITE_CLIENT_PORT && {
+          clientPort: parseInt(process.env.NUXT_VITE_CLIENT_PORT),
+        }),
       },
     },
   },

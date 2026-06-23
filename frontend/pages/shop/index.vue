@@ -30,7 +30,7 @@
         <div class="hidden lg:block w-72 shrink-0">
           <FilterSidebar
             :filters="filters"
-            :categories="categoriesData?.results || []"
+            :categories="categoriesData || []"
             @update="setFilter"
             @reset="resetFilters"
           />
@@ -62,7 +62,7 @@
           </div>
 
           <!-- Product Cards Grid -->
-          <div v-if="pending" class="grid grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-if="pending" class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             <div v-for="i in 6" :key="i" class="skeleton h-80 rounded-3xl" />
           </div>
 
@@ -74,7 +74,7 @@
           </div>
 
           <div v-else class="space-y-8">
-            <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               <ProductCard 
                 v-for="product in data.results" 
                 :key="product.id" 
@@ -115,7 +115,7 @@
       class="fixed inset-0 z-50 lg:hidden bg-lumia-dark/40 backdrop-blur-xs flex justify-end"
       @click.self="mobileFiltersOpen = false"
     >
-      <div class="w-80 h-full bg-white p-6 overflow-y-auto flex flex-col justify-between shadow-2xl animate-slide-left">
+      <div class="w-full max-w-xs sm:w-80 h-full bg-white p-6 overflow-y-auto flex flex-col justify-between shadow-2xl animate-slide-left">
         <div class="space-y-6">
           <div class="flex items-center justify-between pb-3 border-b border-lumia-cream">
             <h3 class="font-bold text-lg text-lumia-dark">فیلترهای محصولات</h3>
@@ -123,7 +123,7 @@
           </div>
           <FilterSidebar
             :filters="filters"
-            :categories="categoriesData?.results || []"
+            :categories="categoriesData || []"
             @update="setFilter"
             @reset="resetFilters"
           />
@@ -153,6 +153,7 @@ const currentPage = ref(1)
 const filters = ref<Record<string, string>>({
   category: (route.query.category as string) || '',
   brand: (route.query.brand as string) || '',
+  mood: (route.query.mood as string) || '',
   min_price: (route.query.min_price as string) || '',
   max_price: (route.query.max_price as string) || '',
   scent: (route.query.scent as string) || '',
@@ -165,6 +166,7 @@ watch(() => route.query, (newQuery) => {
   filters.value = {
     category: (newQuery.category as string) || '',
     brand: (newQuery.brand as string) || '',
+    mood: (newQuery.mood as string) || '',
     min_price: (newQuery.min_price as string) || '',
     max_price: (newQuery.max_price as string) || '',
     scent: (newQuery.scent as string) || '',
@@ -186,15 +188,17 @@ const queryParams = computed(() => {
 })
 
 // Categories fetch
-const { data: categoriesData } = await useAsyncData('categories', () =>
-  apiFetch<PaginatedResponse<Category>>('/categories/'),
+const { data: categoriesData } = await usePublicData(
+  'categories',
+  () => apiFetch<Category[]>('/categories/'),
+  { default: () => [] },
 )
 
 // Products fetch
-const { data, pending } = await useAsyncData(
+const { data, pending } = await usePublicData(
   'products',
   () => apiFetch<PaginatedResponse<Product>>('/products/', { query: queryParams.value }),
-  { watch: [queryParams] },
+  { default: () => ({ count: 0, next: null, previous: null, results: [] }), watch: [queryParams] },
 )
 
 const totalPages = computed(() => {
@@ -256,6 +260,7 @@ function getFilterLabel(key: string, val: string) {
   const labels: Record<string, string> = {
     category: 'دسته: ' + val,
     brand: 'برند: ' + val,
+    mood: 'طبع: ' + val,
     min_price: 'حداقل قیمت: ' + Number(val).toLocaleString() + ' تومان',
     max_price: 'حداکثر قیمت: ' + Number(val).toLocaleString() + ' تومان',
     scent: 'رایحه: ' + val,

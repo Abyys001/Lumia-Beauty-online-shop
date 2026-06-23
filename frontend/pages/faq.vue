@@ -4,7 +4,7 @@
       <!-- Title -->
       <div class="text-center mb-16">
         <span class="text-xs uppercase tracking-widest text-lumia-gold font-bold">پاسخ به سوالات شما</span>
-        <h1 class="text-4xl md:text-5xl font-black text-lumia-dark mt-2">سوالات متداول</h1>
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-lumia-dark mt-2">سوالات متداول</h1>
         <div class="w-20 h-0.5 bg-lumia-gold mx-auto my-4"></div>
         <p class="text-base-content/70 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
           بیشترین سوالاتی که مشتریان گرامی لومیا بیوتی قبل یا بعد از خرید با آن‌ها مواجه می‌شوند را در این بخش پاسخ داده‌ایم.

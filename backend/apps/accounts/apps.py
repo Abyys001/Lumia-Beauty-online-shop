@@ -5,3 +5,7 @@ class AccountsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.accounts'
     verbose_name = 'حساب کاربری'
+
+    def ready(self):
+        from apps.accounts.services.sms_config import SmsConfigService
+        SmsConfigService.bootstrap_from_env()

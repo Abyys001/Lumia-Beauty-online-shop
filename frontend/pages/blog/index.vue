@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="text-center max-w-2xl mx-auto mb-12">
       <span class="text-primary font-bold tracking-widest text-xs uppercase block mb-2">مجله زیبایی لومیا</span>
-      <h1 class="text-4xl font-extrabold text-base-content mb-3">رازهای سلامت پوست و مو</h1>
+      <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-base-content mb-3">رازهای سلامت پوست و مو</h1>
       <p class="text-base-content/60 text-sm">راهنماها و مقالات آموزشی تخصصی برای داشتن پوستی شاداب‌تر و رایحه‌ای ماندگارتر</p>
     </div>
 
@@ -44,7 +44,7 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="pending" class="grid md:grid-cols-3 gap-8">
+    <div v-if="pending" class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
       <div v-for="i in 3" :key="i" class="space-y-4">
         <div class="skeleton aspect-video w-full rounded-2xl" />
         <div class="skeleton h-4 w-2/3 rounded" />
@@ -53,8 +53,12 @@
     </div>
 
     <!-- Articles Grid -->
+    <div v-else-if="!regularPosts.length" class="text-center py-16 text-base-content/50">
+      <p>هنوز مقاله‌ای منتشر نشده است.</p>
+    </div>
+
     <div v-else>
-      <div class="grid md:grid-cols-3 gap-8">
+      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
         <NuxtLink
           v-for="post in regularPosts"
           :key="post.id"
@@ -100,20 +104,22 @@ import type { BlogPost } from '~/types'
 
 const { apiFetch, formatDate } = useApi()
 
-const { data: posts, pending } = await useAsyncData('blog-posts', () =>
-  apiFetch<BlogPost[]>('/blog/posts/'),
+const { data: posts, pending } = await usePublicData(
+  'blog-posts',
+  () => apiFetch<BlogPost[]>('/blog/posts/'),
+  { default: () => [] },
 )
 
 // Extract the first post as the featured post
 const featuredPost = computed(() => {
-  if (!posts.value || posts.value.length === 0) return null
-  return posts.value[0]
+  if (!posts.value?.length) return null
+  return posts.value.find(p => p.is_featured) || posts.value[0]
 })
 
-// The rest of the posts
 const regularPosts = computed(() => {
-  if (!posts.value || posts.value.length <= 1) return []
-  return posts.value.slice(1)
+  if (!posts.value?.length) return []
+  const featured = featuredPost.value
+  return posts.value.filter(p => p.id !== featured?.id)
 })
 
 function getReadTime(content: string) {

@@ -59,6 +59,7 @@ class Brand(models.Model):
 class Product(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField('نام محصول', max_length=300)
+    name_en = models.CharField('نام انگلیسی', max_length=300, blank=True)
     slug = models.SlugField('اسلاگ', max_length=300, unique=True, allow_unicode=True, db_index=True)
     description = models.TextField('توضیحات')
     short_description = models.CharField('توضیح کوتاه', max_length=500, blank=True)
@@ -73,6 +74,7 @@ class Product(models.Model):
     sales_count = models.PositiveIntegerField('تعداد فروش', default=0)
     meta_title = models.CharField('عنوان سئو', max_length=200, blank=True)
     meta_description = models.TextField('توضیحات سئو', blank=True)
+    license_holder = models.CharField('صادرکننده مجوز', max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -135,12 +137,20 @@ class ProductAttribute(models.Model):
     ATTR_SKIN_TYPE = 'skin_type'
     ATTR_VOLUME = 'volume'
     ATTR_TYPE = 'product_type'
+    ATTR_NOTE_TOP = 'note_top'
+    ATTR_NOTE_MIDDLE = 'note_middle'
+    ATTR_NOTE_BASE = 'note_base'
+    ATTR_LICENSE = 'license'
 
     ATTR_CHOICES = [
         (ATTR_SCENT, 'رایحه'),
         (ATTR_SKIN_TYPE, 'نوع پوست'),
         (ATTR_VOLUME, 'حجم'),
         (ATTR_TYPE, 'نوع محصول'),
+        (ATTR_NOTE_TOP, 'نت اولیه'),
+        (ATTR_NOTE_MIDDLE, 'نت میانی'),
+        (ATTR_NOTE_BASE, 'نت پایانی'),
+        (ATTR_LICENSE, 'مجوز/اصالت'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -165,6 +175,7 @@ class Review(models.Model):
         'امتیاز', validators=[MinValueValidator(1), MaxValueValidator(5)],
     )
     comment = models.TextField('نظر')
+    image = models.ImageField('تصویر', upload_to='reviews/', blank=True, null=True)
     is_approved = models.BooleanField('تأیید شده', default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -197,8 +208,6 @@ class InstagramPost(models.Model):
 
 class StoreSettings(models.Model):
     zarinpal_merchant_id = models.CharField('کد مرچنت زرین‌پال', max_length=100, blank=True)
-    kavenegar_api_key = models.CharField('کلید API کاوه‌نگار', max_length=200, blank=True)
-    kavenegar_template = models.CharField('قالب پیامک', max_length=100, default='verify', blank=True)
 
     class Meta:
         verbose_name = 'تنظیمات پایه'

@@ -2,12 +2,13 @@ import hashlib
 
 from django.core.cache import cache
 from django_filters import rest_framework as filters
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, parsers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Category, InstagramPost, Product, Review
+from .models import Brand, Category, InstagramPost, Product, ProductAttribute, Review
 from .serializers import (
+    BrandSerializer,
     CategorySerializer,
     InstagramPostSerializer,
     ProductDetailSerializer,
@@ -19,18 +20,32 @@ from .serializers import (
 class ProductFilter(filters.FilterSet):
     brand = filters.CharFilter(field_name='brand__slug')
     category = filters.CharFilter(field_name='category__slug')
+    mood = filters.CharFilter(field_name='category__mood', lookup_expr='icontains')
     min_price = filters.NumberFilter(field_name='price', lookup_expr='gte')
     max_price = filters.NumberFilter(field_name='price', lookup_expr='lte')
-    scent = filters.CharFilter(field_name='attributes__value', method='filter_attribute')
-    skin_type = filters.CharFilter(field_name='attributes__value', method='filter_attribute')
+    scent = filters.CharFilter(method='filter_scent')
+    skin_type = filters.CharFilter(method='filter_skin_type')
+    note_top = filters.CharFilter(method='filter_note')
+    note_middle = filters.CharFilter(method='filter_note')
+    note_base = filters.CharFilter(method='filter_note')
     in_stock = filters.BooleanFilter(method='filter_in_stock')
 
     class Meta:
         model = Product
-        fields = ['brand', 'category', 'min_price', 'max_price', 'is_featured']
+        fields = ['brand', 'category', 'mood', 'min_price', 'max_price', 'is_featured']
 
-    def filter_attribute(self, queryset, name, value):
-        key_map = {'scent': 'scent', 'skin_type': 'skin_type'}
+    def filter_scent(self, queryset, name, value):
+        return queryset.filter(
+            attributes__key__in=['scent', ProductAttribute.ATTR_NOTE_TOP,
+                                 ProductAttribute.ATTR_NOTE_MIDDLE, ProductAttribute.ATTR_NOTE_BASE],
+            attributes__value__icontains=value,
+        ).distinct()
+
+    def filter_skin_type(self, queryset, name, value):
+        return queryset.filter(attributes__key='skin_type', attributes__value__icontains=value).distinct()
+
+    def filter_note(self, queryset, name, value):
+        key_map = {'note_top': 'note_top', 'note_middle': 'note_middle', 'note_base': 'note_base'}
         key = key_map.get(name, name)
         return queryset.filter(attributes__key=key, attributes__value__icontains=value).distinct()
 
@@ -43,6 +58,7 @@ class ProductFilter(filters.FilterSet):
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductListSerializer
     filterset_class = ProductFilter
+    permission_classes = [permissions.AllowAny]
     search_fields = ['name', 'description', 'short_description']
     ordering_fields = ['price', 'created_at', 'sales_count', 'name']
     ordering = ['-created_at']
@@ -54,6 +70,7 @@ class ProductListView(generics.ListAPIView):
 class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductDetailSerializer
     lookup_field = 'slug'
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         return Product.objects.filter(is_active=True).select_related('brand', 'category').prefetch_related(
@@ -75,6 +92,8 @@ class ProductDetailView(generics.RetrieveAPIView):
 
 
 class ProductSearchView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         q = request.query_params.get('q', '').strip()
         if len(q) < 2:
@@ -96,6 +115,8 @@ class ProductSearchView(APIView):
 
 
 class FeaturedProductsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         cached = cache.get('products_featured')
         if cached:
@@ -113,14 +134,26 @@ class FeaturedProductsView(APIView):
 
 class CategoryListView(generics.ListAPIView):
     serializer_class = CategorySerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
     def get_queryset(self):
         return Category.objects.filter(is_active=True, parent__isnull=True).prefetch_related('children')
 
 
+class BrandListView(generics.ListAPIView):
+    serializer_class = BrandSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Brand.objects.filter(is_active=True).order_by('name')
+
+
 class ProductReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
     def get_product(self):
         return Product.objects.get(slug=self.kwargs['slug'], is_active=True)
@@ -139,6 +172,7 @@ class ProductReviewCreateView(generics.CreateAPIView):
 
 class InstagramPostListView(generics.ListAPIView):
     serializer_class = InstagramPostSerializer
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         return InstagramPost.objects.filter(is_active=True)

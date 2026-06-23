@@ -1,20 +1,12 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
+
 WORKDIR /app
+
 COPY package*.json ./
 RUN npm install
 
-FROM base AS development
-COPY . .
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-FROM base AS build
-COPY . .
-RUN npm run build
-
-FROM node:20-alpine AS production
-WORKDIR /app
-COPY --from=build /app/.output ./.output
 EXPOSE 3000
-ENV NODE_ENV=production
-CMD ["node", ".output/server/index.mjs"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

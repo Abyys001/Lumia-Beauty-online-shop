@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    BrandListView,
     CategoryListView,
     FeaturedProductsView,
     InstagramPostListView,
@@ -18,6 +19,7 @@ urlpatterns = [
     path('products/<slug:slug>/', ProductDetailView.as_view(), name='product-detail'),
     path('products/<slug:slug>/reviews/', ProductReviewCreateView.as_view(), name='product-review'),
     path('categories/', CategoryListView.as_view(), name='category-list'),
+    path('brands/', BrandListView.as_view(), name='brand-list'),
     path('instagram/', InstagramPostListView.as_view(), name='instagram-list'),
     path('sitemap-urls/', SitemapAPIView.as_view(), name='sitemap-urls'),
 ]

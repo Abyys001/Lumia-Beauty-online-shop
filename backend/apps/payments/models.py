@@ -7,12 +7,14 @@ class Payment(models.Model):
     STATUS_PENDING = 'pending'
     STATUS_SUCCESS = 'success'
     STATUS_FAILED = 'failed'
+    STATUS_NEEDS_REVIEW = 'needs_review'
     STATUS_REFUNDED = 'refunded'
 
     STATUS_CHOICES = [
         (STATUS_PENDING, 'در انتظار'),
         (STATUS_SUCCESS, 'موفق'),
         (STATUS_FAILED, 'ناموفق'),
+        (STATUS_NEEDS_REVIEW, 'نیازمند بررسی'),
         (STATUS_REFUNDED, 'مرجوع'),
     ]
 

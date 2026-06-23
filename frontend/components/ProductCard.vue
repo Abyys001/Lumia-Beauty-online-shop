@@ -3,7 +3,7 @@
     <figure class="relative aspect-square bg-base-200 overflow-hidden">
       <img
         v-if="product.primary_image"
-        :src="product.primary_image"
+        :src="imageSrc"
         :alt="product.name"
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         loading="lazy"
@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import type { Product } from '~/types'
+import { useCartStore } from '~/stores/cart'
 
 const props = defineProps<{
   product: Product
@@ -56,6 +57,9 @@ const props = defineProps<{
 
 const cart = useCartStore()
 const { formatPrice } = useApi()
+const { normalizeMediaUrl } = useMediaUrl()
+
+const imageSrc = computed(() => normalizeMediaUrl(props.product.primary_image) || props.product.primary_image || '')
 
 async function quickAdd() {
   await cart.addItem(props.product.id)
