@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="min-w-0 max-w-full">
     <div class="flex justify-end mb-5">
       <button class="btn btn-primary btn-sm gap-2" @click="openModal()">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -9,10 +9,27 @@
       </button>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-base-200 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-base-200 overflow-hidden min-w-0">
       <div v-if="loading" class="p-8 text-center text-lumia-dark/40">در حال بارگذاری...</div>
-      <div v-else class="overflow-x-auto">
-        <table class="table w-full">
+
+      <template v-else>
+        <div class="lg:hidden divide-y divide-base-200">
+          <div v-for="brand in brands" :key="brand.id" class="px-4 py-3 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg overflow-hidden bg-base-200 flex items-center justify-center shrink-0">
+              <img v-if="brand.logo" :src="brand.logo" class="w-full h-full object-contain p-1" />
+              <span v-else class="text-lumia-dark/20 text-xs">B</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm truncate">{{ brand.name }}</div>
+              <div class="text-xs text-lumia-dark/40 truncate" dir="ltr">{{ brand.slug }}</div>
+            </div>
+            <input type="checkbox" class="toggle toggle-success toggle-sm shrink-0" :checked="brand.is_active" @change="toggleActive(brand, $event)" />
+            <button class="btn btn-ghost btn-xs text-lumia-gold shrink-0" @click="openModal(brand)">ویرایش</button>
+          </div>
+        </div>
+
+        <div class="hidden lg:block admin-table-wrap">
+          <table class="table w-full">
           <thead class="bg-base-200/50">
             <tr class="text-lumia-dark/60 text-xs">
               <th class="font-medium text-right">لوگو</th>
@@ -42,7 +59,8 @@
             </tr>
           </tbody>
         </table>
-      </div>
+        </div>
+      </template>
     </div>
 
     <!-- Modal -->

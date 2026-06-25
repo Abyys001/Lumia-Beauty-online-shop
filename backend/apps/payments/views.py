@@ -1,8 +1,12 @@
+import logging
+from urllib.parse import quote
+
+from django.conf import settings
+from django.shortcuts import redirect
 from rest_framework import permissions, status
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
-from django.shortcuts import redirect
-from django.conf import settings
 
 from apps.orders.models import Order
 
@@ -10,9 +14,17 @@ from .models import Payment
 from .serializers import PaymentRequestSerializer
 from .services import create_payment_request, verify_payment_callback
 
+logger = logging.getLogger(__name__)
+
+
+class PaymentScopedThrottle(ScopedRateThrottle):
+  scope = 'payment'
+
 
 class ZarinpalRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [PaymentScopedThrottle]
+    throttle_scope = 'payment'
 
     def post(self, request):
         serializer = PaymentRequestSerializer(data=request.data)
@@ -27,15 +39,23 @@ class ZarinpalRequestView(APIView):
         if order.status != Order.STATUS_PENDING:
             return Response({'detail': 'این سفارش قبلاً پرداخت شده است'}, status=status.HTTP_400_BAD_REQUEST)
 
-        redirect_url, error = create_payment_request(order)
+        redirect_url, error, authority = create_payment_request(order)
         if error:
-            return Response({'detail': error}, status=status.HTTP_502_BAD_GATEWAY)
+            return Response(
+                {'detail': error, 'code': 'gateway_error'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
-        return Response({'redirect_url': redirect_url})
+        return Response({
+            'redirect_url': redirect_url,
+            'authority': authority,
+        })
 
 
 class ZarinpalVerifyView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [PaymentScopedThrottle]
+    throttle_scope = 'payment'
 
     def get(self, request):
         authority = request.query_params.get('Authority', '')
@@ -45,5 +65,11 @@ class ZarinpalVerifyView(APIView):
 
         site_url = getattr(settings, 'FRONTEND_URL', 'http://localhost')
         if result == 'success':
-            return redirect(f'{site_url}/checkout/success?order={order.order_number}&ref={message}')
-        return redirect(f'{site_url}/checkout/failed?order={order.order_number if order else ""}&message={message}')
+            return redirect(
+                f'{site_url}/checkout/success?order={order.order_number}&ref={message}'
+            )
+        order_q = order.order_number if order else ''
+        encoded_msg = quote(message or 'پرداخت ناموفق بود', safe='')
+        return redirect(
+            f'{site_url}/checkout/failed?order={order_q}&message={encoded_msg}'
+        )

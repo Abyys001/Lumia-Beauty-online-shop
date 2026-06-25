@@ -34,7 +34,7 @@
 
       <!-- Desktop table -->
       <div class="hidden lg:block bg-white rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto w-full min-w-0">
           <table class="table w-full">
             <thead class="bg-base-200/50">
               <tr class="text-lumia-dark/60 text-xs">
@@ -78,7 +78,7 @@
       <div class="modal-box max-w-lg w-full mx-4" v-if="selectedUser">
         <h3 class="font-bold text-lumia-dark mb-4">{{ selectedUser.phone }}</h3>
         <div class="space-y-3 text-sm">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><span class="text-lumia-dark/50">نام:</span> {{ selectedUser.first_name || '—' }}</div>
             <div><span class="text-lumia-dark/50">نام خانوادگی:</span> {{ selectedUser.last_name || '—' }}</div>
             <div><span class="text-lumia-dark/50">ایمیل:</span> {{ selectedUser.email || '—' }}</div>

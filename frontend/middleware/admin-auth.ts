@@ -1,13 +1,15 @@
-export default defineNuxtRouteMiddleware(() => {
-  // Auth tokens live in localStorage — only available on the client.
+export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return
 
   const auth = useAuthStore()
-  if (!auth.isAuthenticated) {
-    auth.loadFromStorage()
+  if (!auth.hydrated) {
+    await auth.hydrateSession()
   }
 
   if (!auth.isAuthenticated || !auth.user?.is_staff) {
-    return navigateTo('/')
+    return navigateTo({
+      path: '/auth',
+      query: { redirect: to.fullPath },
+    })
   }
 })

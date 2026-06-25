@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from .models import HomeHero, TrustBadge
+from apps.catalog.media_utils import relative_media_url
+
+from .models import HomeHero, InstagramPage, TrustBadge
 
 
 class HomeHeroSerializer(serializers.ModelSerializer):
@@ -17,8 +19,7 @@ class HomeHeroSerializer(serializers.ModelSerializer):
         ]
 
     def _rel(self, obj, field):
-        f = getattr(obj, field, None)
-        return f.url if f else None
+        return relative_media_url(getattr(obj, field, None))
 
     def get_video_webm_url(self, obj):
         return self._rel(obj, 'video_webm')
@@ -34,3 +35,14 @@ class TrustBadgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrustBadge
         fields = ['icon', 'title', 'description', 'sort_order']
+
+
+class InstagramPageSerializer(serializers.ModelSerializer):
+    profile_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InstagramPage
+        fields = ['id', 'username', 'label', 'sort_order', 'profile_url']
+
+    def get_profile_url(self, obj):
+        return obj.profile_url

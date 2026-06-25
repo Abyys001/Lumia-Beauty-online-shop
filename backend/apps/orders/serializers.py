@@ -12,6 +12,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    payment_status = serializers.SerializerMethodField()
+    payment_status_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -20,8 +22,17 @@ class OrderSerializer(serializers.ModelSerializer):
             'discount_amount', 'shipping_cost', 'total', 'coupon_code',
             'free_shipping', 'shipping_name', 'shipping_phone',
             'shipping_province', 'shipping_city', 'shipping_address',
-            'shipping_postal_code', 'note', 'items', 'created_at',
+            'shipping_postal_code', 'tracking_number', 'note', 'items',
+            'payment_status', 'payment_status_display', 'created_at', 'updated_at',
         ]
+
+    def get_payment_status(self, obj):
+        payment = getattr(obj, 'payment', None)
+        return payment.status if payment else None
+
+    def get_payment_status_display(self, obj):
+        payment = getattr(obj, 'payment', None)
+        return payment.get_status_display() if payment else ''
 
 
 class CreateOrderSerializer(serializers.Serializer):

@@ -6,13 +6,11 @@ from rest_framework.views import APIView
 from apps.accounts.models import Address
 from apps.cart.services import get_or_create_cart
 from apps.catalog.models import Product
+from apps.catalog.shipping import calculate_shipping_cost, qualifies_for_free_shipping
 from apps.coupons.services import apply_coupon, validate_coupon
 
 from .models import Order, OrderItem
 from .serializers import CreateOrderSerializer, OrderSerializer
-
-SHIPPING_COST = 50000
-FREE_SHIPPING_THRESHOLD = 500000
 
 
 class CreateOrderView(APIView):
@@ -58,7 +56,8 @@ class CreateOrderView(APIView):
                 return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
             discount_amount, free_shipping = apply_coupon(coupon, subtotal)
 
-        shipping_cost = 0 if free_shipping or subtotal >= FREE_SHIPPING_THRESHOLD else SHIPPING_COST
+        shipping_cost = calculate_shipping_cost(subtotal, free_shipping=free_shipping)
+        order_free_shipping = qualifies_for_free_shipping(subtotal, free_shipping=free_shipping)
         total = max(subtotal - discount_amount + shipping_cost, 0)
 
         order = Order.objects.create(
@@ -68,7 +67,7 @@ class CreateOrderView(APIView):
             shipping_cost=shipping_cost,
             total=total,
             coupon_code=coupon_code,
-            free_shipping=free_shipping or subtotal >= FREE_SHIPPING_THRESHOLD,
+            free_shipping=order_free_shipping,
             **shipping,
             note=data.get('note', ''),
         )
@@ -122,7 +121,7 @@ class OrderDetailView(generics.RetrieveAPIView):
     lookup_field = 'order_number'
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user).prefetch_related('items')
+        return Order.objects.filter(user=self.request.user).select_related('payment').prefetch_related('items')
 
 
 class UserOrderListView(generics.ListAPIView):
@@ -131,4 +130,4 @@ class UserOrderListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user).prefetch_related('items')
+        return Order.objects.filter(user=self.request.user).select_related('payment').prefetch_related('items')

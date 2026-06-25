@@ -1,3 +1,5 @@
+@import '@fontsource-variable/vazirmatn/wght.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,11 +7,13 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
 
   body {
     @apply font-sans bg-base-100 text-base-content antialiased;
     font-display: swap;
+    overflow-x: clip;
   }
 }
 
@@ -37,5 +41,15 @@
   .content-auto {
     content-visibility: auto;
     contain-intrinsic-size: auto 400px;
+  }
+
+  .admin-layout,
+  .admin-page {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .admin-table-wrap {
+    @apply overflow-x-auto w-full min-w-0 max-w-full;
   }
 }

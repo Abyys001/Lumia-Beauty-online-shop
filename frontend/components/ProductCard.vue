@@ -1,12 +1,11 @@
 <template>
-  <NuxtLink :to="`/shop/${product.slug}`" class="card-lumia group block overflow-hidden">
+  <NuxtLink :to="`/shop/${product.slug}`" class="card-lumia group block overflow-hidden relative">
     <figure class="relative aspect-square bg-base-200 overflow-hidden">
-      <img
+      <AppImage
         v-if="product.primary_image"
-        :src="imageSrc"
+        :src="product.primary_image"
         :alt="product.name"
-        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-        loading="lazy"
+        img-class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
       <div v-else class="w-full h-full flex items-center justify-center text-base-content/30">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -19,6 +18,18 @@
       >
         {{ product.discount_percent }}٪
       </span>
+      <ClientOnly>
+        <button
+          v-if="showWishlist"
+          type="button"
+          class="absolute top-3 left-3 btn btn-circle btn-sm bg-white/90 border-0 shadow-md z-10"
+          :class="isWishlisted ? 'text-error' : 'text-base-content/40'"
+          :aria-label="isWishlisted ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'"
+          @click.prevent="toggleWishlist"
+        >
+          {{ isWishlisted ? '♥' : '♡' }}
+        </button>
+      </ClientOnly>
       <button
         v-if="showQuickAdd && product.is_in_stock"
         class="absolute bottom-3 left-3 btn btn-primary btn-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0"
@@ -49,19 +60,35 @@
 <script setup lang="ts">
 import type { Product } from '~/types'
 import { useCartStore } from '~/stores/cart'
+import { useWishlistStore } from '~/stores/wishlist'
 
 const props = defineProps<{
   product: Product
   showQuickAdd?: boolean
+  showWishlist?: boolean
 }>()
 
 const cart = useCartStore()
+const wishlist = useWishlistStore()
 const { formatPrice } = useApi()
-const { normalizeMediaUrl } = useMediaUrl()
 
-const imageSrc = computed(() => normalizeMediaUrl(props.product.primary_image) || props.product.primary_image || '')
+const isWishlisted = computed(() => wishlist.has(props.product.id))
+
+onMounted(() => {
+  if (props.showWishlist && !wishlist.loaded) {
+    wishlist.loadIds()
+  }
+})
 
 async function quickAdd() {
-  await cart.addItem(props.product.id)
+  try {
+    await cart.addItem(props.product.id)
+  } catch {
+    // addItem redirects to login on auth failure; other errors are rare on quick add
+  }
+}
+
+async function toggleWishlist() {
+  await wishlist.toggle(props.product.id)
 }
 </script>

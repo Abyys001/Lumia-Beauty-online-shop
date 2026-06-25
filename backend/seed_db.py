@@ -10,7 +10,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from django.contrib.auth import get_user_model
-from apps.catalog.models import Category, Brand, Product, ProductImage, ProductAttribute, Review, InstagramPost
+from apps.accounts.models import AuthSettings, normalize_phone
+from apps.catalog.models import Category, Brand, Product, ProductImage, ProductAttribute, Review
+from apps.cms.models import InstagramPage
 from apps.blog.models import Post, PostCategory, Tag
 
 User = get_user_model()
@@ -45,6 +47,19 @@ def seed():
     print("Starting database seeding...")
     
     # 1. Create Superuser and Users
+    admin_bypass_phone = normalize_phone(os.environ.get('ADMIN_BYPASS_PHONE', '09916122680'))
+    if admin_bypass_phone:
+        bypass_user, created = User.objects.get_or_create(phone=admin_bypass_phone)
+        if not bypass_user.is_staff or not bypass_user.is_superuser:
+            bypass_user.is_staff = True
+            bypass_user.is_superuser = True
+            bypass_user.save(update_fields=['is_staff', 'is_superuser'])
+        AuthSettings.objects.update_or_create(
+            pk=1,
+            defaults={'admin_bypass_phone': admin_bypass_phone},
+        )
+        print(f"Admin bypass user ready ({admin_bypass_phone})")
+
     superuser_phone = "09121111111"
     if not User.objects.filter(phone=superuser_phone).exists():
         admin_user = User.objects.create_superuser(phone=superuser_phone, password="password123")
@@ -85,10 +100,10 @@ def seed():
     Brand.objects.all().delete()
     PostCategory.objects.all().delete()
     Post.objects.all().delete()
-    InstagramPost.objects.all().delete()
+    InstagramPage.objects.all().delete()
     Tag.objects.all().delete()
 
-    print("Cleared existing categories, brands, products, blog posts, tags, and instagram posts.")
+    print("Cleared existing categories, brands, products, blog posts, tags, and instagram pages.")
 
     # Perfumes Parent
     perfume_cat = Category.objects.create(name="خوشبوکننده‌ها", slug="fragrances", description="دنیای عطرهای اورجینال و لوکس")
@@ -415,25 +430,21 @@ def seed():
 
     print("Products and ProductImages and Reviews created.")
 
-    # 5. Create Instagram Posts
-    ig_posts = [
-        {"url": "https://www.instagram.com/p/C_beauty1", "caption": "روتین مراقبت شبانه با محصولات لانیژ و سراوی"},
-        {"url": "https://www.instagram.com/p/C_beauty2", "caption": "رایحه‌ای که امضای توست؛ معرفی ادکلن بلو شنل اورجینال"},
-        {"url": "https://www.instagram.com/p/C_beauty3", "caption": "پک ویژه کادو عید وانیل و رز سیاه Lumia Essence"},
-        {"url": "https://www.instagram.com/p/C_beauty4", "caption": "رضایت مشتریان عزیز از مشاوره رایگان انتخاب عطر ما"}
+    # 5. Create Instagram Pages
+    ig_pages = [
+        {"username": "lumia.beauty", "label": "فروشگاه اصلی لومیا — عطر، آرایشی و مراقبت پوست"},
+        {"username": "lumia.perfume", "label": "فروش ادکلن و عطر اورجینال این پیج"},
+        {"username": "lumia.skincare", "label": "فروش محصولات مراقبت پوست و مو این پیج"},
     ]
-    
-    for i, post in enumerate(ig_posts):
-        img_filename = f"instagram_{i+1}.png"
-        img_content = get_real_or_mock_image(img_filename, f"اینستاگرام {i+1}", size=(600, 600))
-        InstagramPost.objects.create(
-            image=img_content,
-            post_url=post["url"],
-            caption=post["caption"],
+
+    for i, page in enumerate(ig_pages):
+        InstagramPage.objects.create(
+            username=page["username"],
+            label=page["label"],
             sort_order=i,
-            is_active=True
+            is_active=True,
         )
-    print("Instagram mock posts created.")
+    print("Instagram pages created.")
 
     # 6. Create Blog Categories and Posts
     blog_cat_skin = PostCategory.objects.create(name="مراقبت پوست", slug="skin-care-blog")

@@ -91,9 +91,17 @@ class Address(models.Model):
 class SmsProviderSettings(models.Model):
     PROVIDER_MOCK = 'mock'
     PROVIDER_SMSIR = 'smsir'
+    PROVIDER_IRANPAYAMAK = 'iranpayamak'
     PROVIDER_CHOICES = [
         (PROVIDER_MOCK, 'Mock (توسعه)'),
         (PROVIDER_SMSIR, 'SMS.ir'),
+        (PROVIDER_IRANPAYAMAK, 'IranPayamak'),
+    ]
+    NUMBER_FORMAT_ENGLISH = 'english'
+    NUMBER_FORMAT_PERSIAN = 'persian'
+    NUMBER_FORMAT_CHOICES = [
+        (NUMBER_FORMAT_ENGLISH, 'English'),
+        (NUMBER_FORMAT_PERSIAN, 'Persian'),
     ]
     TEST_OK = 'ok'
     TEST_FAILED = 'failed'
@@ -105,13 +113,25 @@ class SmsProviderSettings(models.Model):
     ]
 
     provider_mode = models.CharField('ارائه‌دهنده', max_length=20, choices=PROVIDER_CHOICES, default=PROVIDER_MOCK)
-    api_key_encrypted = models.TextField('کلید API رمزنگاری‌شده', blank=True)
+    api_key_encrypted = models.TextField('کلید Production رمزنگاری‌شده', blank=True)
+    sandbox_api_key_encrypted = models.TextField('کلید Sandbox رمزنگاری‌شده', blank=True)
     base_url = models.CharField('Base URL', max_length=200, default='https://api.sms.ir/v1')
-    is_sandbox = models.BooleanField('حالت Sandbox', default=True)
+    is_sandbox = models.BooleanField('حالت Sandbox', default=False)
     is_active = models.BooleanField('فعال', default=True)
     last_test_at = models.DateTimeField('آخرین تست', null=True, blank=True)
     last_test_status = models.CharField('وضعیت تست', max_length=20, choices=TEST_CHOICES, default=TEST_UNKNOWN)
     last_test_message = models.TextField('پیام تست', blank=True)
+    line_number = models.CharField('شماره خط IranPayamak', max_length=30, blank=True)
+    number_format = models.CharField(
+        'فرمت اعداد پیامک',
+        max_length=10,
+        choices=NUMBER_FORMAT_CHOICES,
+        default=NUMBER_FORMAT_ENGLISH,
+    )
+    panel_username = models.CharField('نام کاربری پنل', max_length=100, blank=True)
+    panel_password_encrypted = models.TextField('رمز پنل رمزنگاری‌شده', blank=True)
+    bearer_token_encrypted = models.TextField('توکن Bearer رمزنگاری‌شده', blank=True)
+    bearer_token_expires_at = models.DateTimeField('انقضای Bearer', null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -131,7 +151,8 @@ class SmsProviderSettings(models.Model):
 class OtpTemplate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField('نام قالب', max_length=100)
-    sms_ir_template_id = models.PositiveIntegerField('شناسه قالب SMS.ir')
+    sms_ir_template_id = models.PositiveIntegerField('شناسه قالب SMS.ir', null=True, blank=True)
+    pattern_code = models.CharField('کد Pattern IranPayamak', max_length=50, blank=True)
     parameter_name = models.CharField('نام پارامتر', max_length=50, default='Code')
     body_preview = models.TextField('پیش‌نمایش متن', blank=True, default='کد تایید شما: {Code}')
     is_active = models.BooleanField('فعال', default=True)
@@ -297,3 +318,26 @@ class AuthAuditLog(models.Model):
         verbose_name = 'لاگ احراز هویت'
         verbose_name_plural = 'لاگ‌های احراز هویت'
         ordering = ['-created_at']
+
+
+class WishlistItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist_items', verbose_name='کاربر')
+    product = models.ForeignKey(
+        'catalog.Product',
+        on_delete=models.CASCADE,
+        related_name='wishlisted_by',
+        verbose_name='محصول',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'علاقه‌مندی'
+        verbose_name_plural = 'علاقه‌مندی‌ها'
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'product'], name='unique_wishlist_per_user_product'),
+        ]
+
+    def __str__(self):
+        return f'{self.user.phone} → {self.product.name}'

@@ -1,20 +1,7 @@
 <template>
   <section class="relative min-h-[75vh] md:min-h-[85vh] flex items-center overflow-hidden py-12 md:py-20 bg-lumia-cream/30">
     <div class="absolute inset-0 z-0 overflow-hidden">
-      <video
-        v-if="videoUrl"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="metadata"
-        :poster="posterUrl"
-        class="w-full h-full object-cover object-center"
-      >
-        <source :src="videoUrl" type="video/webm" />
-      </video>
       <img
-        v-else
         :src="posterUrl"
         :alt="hero?.headline || 'Lumia Beauty'"
         class="w-full h-full object-cover object-center"
@@ -22,6 +9,18 @@
         loading="eager"
         decoding="async"
       />
+      <video
+        v-if="showVideo"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        :poster="posterUrl"
+        class="absolute inset-0 w-full h-full object-cover object-center"
+      >
+        <source :src="videoUrl!" type="video/webm" />
+      </video>
       <div class="absolute inset-0 bg-gradient-to-r from-lumia-dark/80 via-lumia-dark/50 to-transparent rtl:bg-gradient-to-l" />
     </div>
 
@@ -75,18 +74,31 @@
 <script setup lang="ts">
 import type { HomeHero } from '~/types'
 
+const DEFAULT_POSTER = '/images/hero_banner.png'
+
 const props = defineProps<{
   hero: HomeHero | null
 }>()
 
 const auth = useAuthStore()
 const { normalizeMediaUrl } = useMediaUrl()
+const isMounted = ref(false)
+
+onMounted(() => {
+  isMounted.value = true
+})
+
+function resolveMediaUrl(value: string | null | undefined): string | null {
+  return normalizeMediaUrl(value)
+}
 
 const posterUrl = computed(() =>
-  normalizeMediaUrl(props.hero?.video_poster_url)
-    || normalizeMediaUrl(props.hero?.fallback_image_url)
-    || '/images/hero_banner.png',
+  resolveMediaUrl(props.hero?.video_poster_url)
+    || resolveMediaUrl(props.hero?.fallback_image_url)
+    || DEFAULT_POSTER,
 )
 
-const videoUrl = computed(() => normalizeMediaUrl(props.hero?.video_webm_url))
+const videoUrl = computed(() => resolveMediaUrl(props.hero?.video_webm_url))
+
+const showVideo = computed(() => isMounted.value && Boolean(videoUrl.value))
 </script>

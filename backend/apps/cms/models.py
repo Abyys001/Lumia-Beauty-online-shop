@@ -54,3 +54,27 @@ class TrustBadge(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class InstagramPage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    username = models.CharField('آیدی اینستاگرام', max_length=100, help_text='بدون @ — مثال: lumia.beauty')
+    label = models.CharField('برچسب', max_length=200, help_text='مثال: فروش ادکلن این پیج')
+    sort_order = models.PositiveIntegerField('ترتیب', default=0)
+    is_active = models.BooleanField('فعال', default=True)
+
+    class Meta:
+        verbose_name = 'پیج اینستاگرام'
+        verbose_name_plural = 'پیج‌های اینستاگرام'
+        ordering = ['sort_order', 'username']
+
+    def __str__(self):
+        return f'@{self.clean_username} — {self.label}'
+
+    @property
+    def clean_username(self):
+        return (self.username or '').strip().lstrip('@')
+
+    @property
+    def profile_url(self):
+        return f'https://instagram.com/{self.clean_username}'

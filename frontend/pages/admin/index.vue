@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="min-w-0 max-w-full">
     <!-- Stats grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <AdminStatsCard label="سفارشات پرداخت‌شده جدید" :value="stats?.new_orders_count ?? '—'" colorClass="bg-green-100">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -50,17 +50,50 @@
         </template>
       </AdminStatsCard>
 
-      <AdminStatsCard
-        label="محصولات کم‌موجود"
-        :value="stats?.low_stock_count ?? '—'"
-        :colorClass="(stats?.low_stock_count ?? 0) > 0 ? 'bg-red-100' : 'bg-gray-100'"
-      >
-        <template #icon>
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" :class="(stats?.low_stock_count ?? 0) > 0 ? 'text-red-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </template>
-      </AdminStatsCard>
+      <NuxtLink to="/admin/inventory" class="block">
+        <AdminStatsCard
+          label="محصولات کم‌موجود"
+          :value="stats?.low_stock_count ?? '—'"
+          :colorClass="(stats?.low_stock_count ?? 0) > 0 ? 'bg-red-100' : 'bg-gray-100'"
+        >
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" :class="(stats?.low_stock_count ?? 0) > 0 ? 'text-red-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </template>
+        </AdminStatsCard>
+      </NuxtLink>
+    </div>
+
+    <!-- Revenue chart -->
+    <div v-if="stats?.daily_revenue?.length" class="bg-white rounded-2xl shadow-sm border border-base-200 p-6 mb-6 min-w-0 overflow-hidden">
+      <h2 class="font-bold text-lumia-dark mb-4">درآمد ۳۰ روز اخیر</h2>
+      <div class="overflow-hidden min-w-0">
+      <div class="flex items-end gap-1 h-40 overflow-x-auto min-w-0 w-full pb-2">
+        <div
+          v-for="day in stats.daily_revenue"
+          :key="day.date"
+          class="flex flex-col items-center gap-1 w-2 shrink-0"
+          :title="`${day.date}: ${formatPrice(day.revenue)}`"
+        >
+          <div
+            class="w-full bg-lumia-gold/80 rounded-t-sm min-h-[2px] transition-all"
+            :style="{ height: `${barHeight(day.revenue)}%` }"
+          />
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- Top products -->
+    <div v-if="stats?.top_products?.length" class="bg-white rounded-2xl shadow-sm border border-base-200 p-6 mb-6">
+      <h2 class="font-bold text-lumia-dark mb-4">پرفروش‌ترین محصولات</h2>
+      <div class="space-y-2">
+        <div v-for="p in stats.top_products" :key="p.id" class="flex justify-between text-sm border-b border-base-100 pb-2">
+          <NuxtLink :to="`/admin/products/${p.id}`" class="text-lumia-dark hover:text-lumia-gold">{{ p.name }}</NuxtLink>
+          <span class="font-bold">{{ p.sales_count }} فروش</span>
+        </div>
+      </div>
     </div>
 
     <!-- Recent orders -->
@@ -72,7 +105,22 @@
 
       <div v-if="loading" class="p-8 text-center text-lumia-dark/40">در حال بارگذاری...</div>
 
-      <div v-else-if="stats?.recent_orders?.length" class="overflow-x-auto">
+      <template v-else-if="stats?.recent_orders?.length">
+        <div class="lg:hidden divide-y divide-base-200">
+          <div v-for="order in stats.recent_orders" :key="order.id" class="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div class="text-sm font-mono font-medium">{{ order.order_number }}</div>
+              <div class="text-xs text-lumia-dark/50">{{ order.user_phone }}</div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <AdminBadge :status="order.status" />
+              <span class="text-sm font-bold">{{ formatPrice(order.total) }}</span>
+              <NuxtLink :to="`/admin/orders/${order.id}`" class="btn btn-ghost btn-xs text-lumia-gold">جزئیات</NuxtLink>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden lg:block admin-table-wrap">
         <table class="table w-full">
           <thead class="bg-base-200/50">
             <tr class="text-lumia-dark/60 text-xs">
@@ -97,7 +145,8 @@
             </tr>
           </tbody>
         </table>
-      </div>
+        </div>
+      </template>
 
       <div v-else class="p-8 text-center text-lumia-dark/40">سفارشی ثبت نشده است</div>
     </div>
@@ -105,16 +154,27 @@
 </template>
 
 <script setup lang="ts">
+import type { AdminDashboardStats } from '~/types'
+
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 
 const { apiFetch, formatPrice, formatDate } = useApi()
 
-const stats = ref<any>(null)
+const stats = ref<AdminDashboardStats | null>(null)
 const loading = ref(true)
+
+const maxRevenue = computed(() => {
+  if (!stats.value?.daily_revenue?.length) return 1
+  return Math.max(...stats.value.daily_revenue.map(d => d.revenue), 1)
+})
+
+function barHeight(revenue: number) {
+  return Math.max(4, Math.round((revenue / maxRevenue.value) * 100))
+}
 
 onMounted(async () => {
   try {
-    stats.value = await apiFetch('/admin/dashboard/')
+    stats.value = await apiFetch<AdminDashboardStats>('/admin/dashboard/')
   } finally {
     loading.value = false
   }

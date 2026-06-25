@@ -37,10 +37,6 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32.png' },
         { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/favicon-192.png' },
         { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
-        {
-          rel: 'stylesheet',
-          href: 'https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css',
-        },
       ],
     },
   },
@@ -168,6 +164,8 @@ export default defineNuxtConfig({
         interval: 300,
       },
       hmr: {
+        protocol: 'ws',
+        host: 'localhost',
         ...(process.env.NUXT_VITE_CLIENT_PORT && {
           clientPort: parseInt(process.env.NUXT_VITE_CLIENT_PORT),
         }),

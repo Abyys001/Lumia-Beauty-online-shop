@@ -40,7 +40,7 @@
         <div class="flex-1 w-full space-y-6">
           <!-- Active Filters Bar & Total Count -->
           <div class="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-lumia-cream/80 shadow-xs">
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 min-w-0">
               <span class="text-xs font-semibold text-lumia-dark ml-2">فیلترهای فعال:</span>
               <span v-if="activeFiltersCount === 0" class="text-xs text-base-content/50">هیچ فیلتری اعمال نشده است</span>
               
@@ -55,9 +55,21 @@
                 <span class="text-lumia-gold font-bold">✕</span>
               </span>
             </div>
-            
-            <div class="text-xs font-semibold text-base-content/70">
-              {{ data?.count || 0 }} محصول پیدا شد
+
+            <div class="flex flex-wrap items-center gap-3 shrink-0">
+              <select
+                v-model="ordering"
+                class="select select-bordered select-sm rounded-full text-xs"
+                @change="onOrderingChange"
+              >
+                <option value="-created_at">جدیدترین</option>
+                <option value="price">ارزان‌ترین</option>
+                <option value="-price">گران‌ترین</option>
+                <option value="-sales_count">پرفروش‌ترین</option>
+              </select>
+              <div class="text-xs font-semibold text-base-content/70">
+                {{ data?.count || 0 }} محصول
+              </div>
             </div>
           </div>
 
@@ -80,6 +92,7 @@
                 :key="product.id" 
                 :product="product"
                 show-quick-add
+                show-wishlist
               />
             </div>
 
@@ -148,6 +161,7 @@ const { apiFetch } = useApi()
 
 const mobileFiltersOpen = ref(false)
 const currentPage = ref(1)
+const ordering = ref((route.query.ordering as string) || '-created_at')
 
 // Filters State
 const filters = ref<Record<string, string>>({
@@ -174,6 +188,7 @@ watch(() => route.query, (newQuery) => {
     in_stock: (newQuery.in_stock as string) || '',
   }
   currentPage.value = Number(newQuery.page) || 1
+  ordering.value = (newQuery.ordering as string) || '-created_at'
 })
 
 // Query Params for API Fetch
@@ -183,6 +198,9 @@ const queryParams = computed(() => {
   }
   for (const [key, val] of Object.entries(filters.value)) {
     if (val) params[key] = val
+  }
+  if (ordering.value && ordering.value !== '-created_at') {
+    params.ordering = ordering.value
   }
   return params
 })
@@ -232,9 +250,15 @@ function changePage(page: number) {
   updateRouterQuery()
 }
 
+function onOrderingChange() {
+  currentPage.value = 1
+  updateRouterQuery()
+}
+
 function updateRouterQuery() {
   const query: Record<string, any> = {}
   if (currentPage.value > 1) query.page = currentPage.value
+  if (ordering.value && ordering.value !== '-created_at') query.ordering = ordering.value
   
   for (const [key, val] of Object.entries(filters.value)) {
     if (val) query[key] = val

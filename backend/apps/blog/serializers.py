@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.catalog.serializers import RelativeURLField
+
 from .models import Post, PostCategory, Tag
 
 
@@ -17,6 +19,7 @@ class PostCategorySerializer(serializers.ModelSerializer):
 
 class PostListSerializer(serializers.ModelSerializer):
     category = PostCategorySerializer(read_only=True)
+    cover_image = RelativeURLField(required=False, allow_null=True)
 
     class Meta:
         model = Post

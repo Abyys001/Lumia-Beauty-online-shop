@@ -21,7 +21,7 @@
           </NuxtLink>
         </div>
 
-        <div v-if="fragranceItems.length" class="p-4 sm:p-6">
+        <div v-if="fragranceItems.length" class="p-4 sm:p-6 overflow-hidden min-w-0">
           <div class="category-scroll fragrance-grid">
             <NuxtLink
               v-for="cat in fragranceItems"
@@ -61,7 +61,7 @@
           </NuxtLink>
         </div>
 
-        <div v-if="hygieneItems.length" class="p-4 sm:p-6">
+        <div v-if="hygieneItems.length" class="p-4 sm:p-6 overflow-hidden min-w-0">
           <div class="category-scroll hygiene-grid">
             <NuxtLink
               v-for="cat in hygieneItems"
@@ -149,6 +149,7 @@ function moodEmoji(cat: Category) {
   display: flex;
   gap: 0.75rem;
   overflow-x: auto;
+  min-width: 0;
   padding-bottom: 0.25rem;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;

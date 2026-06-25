@@ -44,7 +44,6 @@ export interface Review {
   user_name: string
   rating: number
   comment: string
-  image?: string | null
   created_at: string
 }
 
@@ -103,8 +102,21 @@ export interface Order {
   discount_amount: number
   shipping_cost: number
   total: number
+  coupon_code?: string
+  free_shipping?: boolean
+  shipping_name?: string
+  shipping_phone?: string
+  shipping_province?: string
+  shipping_city?: string
+  shipping_address?: string
+  shipping_postal_code?: string
+  tracking_number?: string | null
+  note?: string
+  payment_status?: string | null
+  payment_status_display?: string
   items: OrderItem[]
   created_at: string
+  updated_at?: string
 }
 
 export interface OrderItem {
@@ -113,6 +125,7 @@ export interface OrderItem {
   product_price: number
   quantity: number
   subtotal: number
+  product?: string | null
 }
 
 export interface BlogPost {
@@ -129,11 +142,13 @@ export interface BlogPost {
   category?: { name: string; slug: string }
 }
 
-export interface InstagramPost {
+export interface InstagramPage {
   id: string
-  image: string
-  post_url: string
-  caption: string
+  username: string
+  label: string
+  sort_order: number
+  profile_url: string
+  is_active?: boolean
 }
 
 export interface PaginatedResponse<T> {
@@ -178,14 +193,55 @@ export interface Brand {
 
 export interface StoreSettings {
   zarinpal_merchant_id: string
+  shipping_cost: number
+  free_shipping_threshold: number
+}
+
+export interface ZarinpalSettings {
+  merchant_id: string
+  is_sandbox: boolean
+  is_mock: boolean
+  callback_url: string
+  callback_url_resolved: string
+  currency: 'IRR' | 'IRT'
+  client_id: string
+  client_secret_masked?: string
+  terminal_id: string
+  auto_reconcile: boolean
+  max_retry_attempts: number
+  enable_api_logging: boolean
+  token_valid: boolean
+  token_expires_at: string | null
+  updated_at?: string
+}
+
+export interface PaymentDetail {
+  authority: string
+  ref_id: string
+  card_pan: string
+  fee: number | null
+  paid_at: string | null
+  error_code: number | null
+  is_recent: boolean
+}
+
+export interface ShippingSettings {
+  shipping_cost: number
+  free_shipping_threshold: number
 }
 
 export interface SmsProviderSettings {
-  provider_mode: 'mock' | 'smsir'
+  provider_mode: 'mock' | 'smsir' | 'iranpayamak'
   api_key?: string
+  sandbox_api_key?: string
+  panel_password?: string
   base_url: string
   is_sandbox: boolean
   is_active: boolean
+  line_number?: string
+  number_format?: 'english' | 'persian'
+  panel_username?: string
+  has_bearer_token?: boolean
   last_test_at: string | null
   last_test_status: string
   last_test_message: string
@@ -197,17 +253,26 @@ export interface SmsProviderStatus {
   is_active: boolean
   is_sandbox: boolean
   has_api_key: boolean
+  has_production_api_key?: boolean
+  has_sandbox_api_key?: boolean
+  has_bearer_token?: boolean
+  line_number?: string
+  number_format?: string
+  panel_username?: string
   last_test_at: string | null
   last_test_status: string
   last_test_message: string
   credit: number | null
-  runtime_provider: string
+  balance_count?: number | null
+  balance_details?: Array<{ count: number; rate: number; amount: number }> | null
+  runtime_provider: 'mock' | 'smsir' | 'iranpayamak'
 }
 
 export interface OtpTemplate {
   id: string
   name: string
-  sms_ir_template_id: number
+  sms_ir_template_id?: number | null
+  pattern_code?: string
   parameter_name: string
   body_preview: string
   is_active: boolean
@@ -234,6 +299,181 @@ export interface AuthSettings {
   refresh_token_lifetime_days: number
   rotate_refresh_tokens: boolean
   admin_bypass_phone: string
+}
+
+export interface SmsApiResult {
+  success: boolean
+  status?: number | null
+  message?: string
+  data?: unknown
+  error_hint?: string
+  http_status?: number
+  raw?: Record<string, unknown>
+  is_sandbox?: boolean
+  credit?: number | null
+  payload?: Record<string, unknown>
+  code_used?: string
+  delivery_state_label?: string
+}
+
+export interface SmsErrorCodesResponse {
+  status_codes: { code: number; message: string }[]
+  delivery_states: { code: number; message: string }[]
+}
+
+export interface AdminNotificationsSummary {
+  pending_orders: number
+  pending_reviews: number
+  low_stock_count: number
+}
+
+export interface AdminDashboardStats {
+  new_orders_count: number
+  today_income: number
+  weekly_income: number
+  total_orders: number
+  total_users: number
+  total_products: number
+  low_stock_count: number
+  pending_reviews_count: number
+  daily_revenue: { date: string; revenue: number; order_count: number }[]
+  top_products: { id: string; name: string; slug: string; sales_count: number; stock: number; price: number }[]
+  orders_by_status: Record<string, number>
+  recent_orders: { id: string; order_number: string; user_phone: string; status: string; total: number; created_at: string }[]
+}
+
+export interface LowStockProduct {
+  id: string
+  name: string
+  slug: string
+  sku: string
+  stock: number
+  price: number
+  category_name: string
+  brand_name: string
+  primary_image: string | null
+}
+
+export interface InventorySummary {
+  out_of_stock: number
+  low_stock: number
+  healthy: number
+  total: number
+  default_threshold: number
+}
+
+export interface InventoryProduct extends LowStockProduct {
+  stock_unit_label: string
+  pack_label: string
+  stock_pack_sizes: number[]
+  low_stock_threshold: number | null
+  effective_threshold: number
+  effective_pack_sizes: number[]
+  stock_status: 'out' | 'low' | 'ok'
+}
+
+export interface StockMovement {
+  id: string
+  product: string
+  product_name: string
+  delta: number
+  stock_before: number
+  stock_after: number
+  pack_size: number | null
+  pack_count: number | null
+  reason: string
+  note: string
+  created_by_phone: string
+  created_at: string
+}
+
+export interface StockAdjustPayload {
+  product_id: string
+  mode: 'pack' | 'delta' | 'set'
+  pack_size?: number
+  pack_count?: number
+  delta?: number
+  absolute_stock?: number
+  note?: string
+}
+
+export interface InventorySummary {
+  out_of_stock: number
+  low_stock: number
+  healthy: number
+  total: number
+  default_threshold: number
+}
+
+export interface InventoryProduct {
+  id: string
+  name: string
+  slug: string
+  sku: string
+  stock: number
+  price: number
+  category_name: string
+  brand_name: string
+  primary_image?: string | null
+  stock_unit_label: string
+  pack_label: string
+  stock_pack_sizes: number[]
+  low_stock_threshold: number | null
+  effective_threshold: number
+  effective_pack_sizes: number[]
+  stock_status: 'out' | 'low' | 'ok'
+}
+
+export interface StockMovement {
+  id: string
+  product: string
+  product_name: string
+  delta: number
+  stock_before: number
+  stock_after: number
+  pack_size: number | null
+  pack_count: number | null
+  reason: string
+  note: string
+  created_by_phone: string
+  created_at: string
+}
+
+export interface StockAdjustPayload {
+  product_id: string
+  mode: 'pack' | 'delta' | 'set'
+  pack_size?: number
+  pack_count?: number
+  delta?: number
+  absolute_stock?: number
+  note?: string
+  reason?: string
+}
+
+export interface AdminHomeHero {
+  id: string
+  headline: string
+  subheadline?: string
+  description?: string
+  cta_text?: string
+  cta_url?: string
+  cta_secondary_text?: string
+  cta_secondary_url?: string
+  badge_text?: string
+  is_active: boolean
+  video_webm_url?: string | null
+  video_poster_url?: string | null
+  fallback_image_url?: string | null
+  updated_at?: string
+}
+
+export interface AdminTrustBadge {
+  id: string
+  icon: string
+  title: string
+  description?: string
+  sort_order: number
+  is_active: boolean
 }
 
 export interface SmsLog {

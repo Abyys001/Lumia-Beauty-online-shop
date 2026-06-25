@@ -189,6 +189,7 @@ REST_FRAMEWORK = {
         'anon': os.environ.get('DRF_THROTTLE_ANON', '120/min'),
         'user': os.environ.get('DRF_THROTTLE_USER', '600/min'),
         'otp': os.environ.get('DRF_THROTTLE_OTP', '6/min'),
+        'payment': os.environ.get('DRF_THROTTLE_PAYMENT', '30/min'),
     },
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -207,13 +208,22 @@ SIMPLE_JWT = {
 
 ZARINPAL_MERCHANT_ID = os.environ.get('ZARINPAL_MERCHANT_ID', '')
 ZARINPAL_SANDBOX = os.environ.get('ZARINPAL_SANDBOX', 'True').lower() in ('true', '1', 'yes')
+ZARINPAL_MOCK = os.environ.get('ZARINPAL_MOCK', 'True').lower() in ('true', '1', 'yes')
 ZARINPAL_CALLBACK_URL = os.environ.get('ZARINPAL_CALLBACK_URL', 'http://localhost/api/payments/zarinpal/verify/')
+ZARINPAL_CLIENT_ID = os.environ.get('ZARINPAL_CLIENT_ID', '')
+ZARINPAL_CLIENT_SECRET = os.environ.get('ZARINPAL_CLIENT_SECRET', '')
+ZARINPAL_TERMINAL_ID = os.environ.get('ZARINPAL_TERMINAL_ID', '')
 
 ADMIN_BYPASS_PHONE = os.environ.get('ADMIN_BYPASS_PHONE', '')
 SMS_PROVIDER = os.environ.get('SMS_PROVIDER', 'mock')
 SMS_IR_API_KEY = os.environ.get('SMS_IR_API_KEY', '')
-SMS_IR_TEMPLATE_ID = os.environ.get('SMS_IR_TEMPLATE_ID', '100000')
+SMS_IR_SANDBOX_API_KEY = os.environ.get('SMS_IR_SANDBOX_API_KEY', '')
+SMS_IR_TEMPLATE_ID = os.environ.get('SMS_IR_TEMPLATE_ID', '394212')
 SMS_IR_BASE_URL = os.environ.get('SMS_IR_BASE_URL', 'https://api.sms.ir/v1')
+IRANPAYAMAK_API_KEY = os.environ.get('IRANPAYAMAK_API_KEY', '')
+IRANPAYAMAK_LINE_NUMBER = os.environ.get('IRANPAYAMAK_LINE_NUMBER', '')
+IRANPAYAMAK_PATTERN_CODE = os.environ.get('IRANPAYAMAK_PATTERN_CODE', '')
+IRANPAYAMAK_BASE_URL = os.environ.get('IRANPAYAMAK_BASE_URL', 'https://api.iranpayamak.com')
 
 FRONTEND_URL = os.environ.get('NUXT_PUBLIC_SITE_URL', 'http://localhost')
 
@@ -222,6 +232,7 @@ OTP_RATE_LIMIT = int(os.environ.get('OTP_RATE_LIMIT_COUNT', '5'))
 OTP_RATE_WINDOW_SECONDS = int(os.environ.get('OTP_RATE_LIMIT_WINDOW_MINUTES', '15')) * 60
 OTP_VERIFY_RATE_LIMIT = int(os.environ.get('OTP_MAX_ATTEMPTS', '5'))
 OTP_VERIFY_RATE_WINDOW_SECONDS = 900
+OTP_DISABLE_RATE_LIMIT = env_bool('OTP_DISABLE_RATE_LIMIT', DEBUG)
 OTP_DEBUG_CODE = DEBUG and env_bool('DJANGO_OTP_DEBUG_CODE', False)
 
 LOGGING = {

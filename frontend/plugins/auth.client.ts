@@ -1,4 +1,13 @@
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin(async () => {
   const auth = useAuthStore()
-  auth.loadFromStorage()
+  await auth.hydrateSession()
+
+  if (auth.isAuthenticated) {
+    const wishlist = useWishlistStore()
+    try {
+      await wishlist.loadIds()
+    } catch {
+      wishlist.reset()
+    }
+  }
 })

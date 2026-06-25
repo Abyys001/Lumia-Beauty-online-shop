@@ -39,7 +39,7 @@
 
       <!-- Desktop table -->
       <div class="hidden lg:block bg-white rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto w-full min-w-0">
           <table class="table w-full">
             <thead class="bg-base-200/50">
               <tr class="text-lumia-dark/60 text-xs">
@@ -89,7 +89,7 @@
               <option v-for="c in rootCategories" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label-text text-xs block mb-1">حالت</label>
               <select v-model="form.mood" class="select select-bordered w-full select-sm">

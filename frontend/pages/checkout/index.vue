@@ -54,6 +54,10 @@
             
             <input v-model="form.shipping_postal_code" class="input input-bordered rounded-xl text-right" placeholder="کد پستی (اختیاری)" :disabled="!!selectedAddress" />
             <textarea v-model="form.shipping_address" class="textarea textarea-bordered rounded-xl md:col-span-2 text-right" placeholder="آدرس دقیق پستی، پلاک و واحد" :disabled="!!selectedAddress" :required="!selectedAddress" />
+            <label v-if="!selectedAddress" class="flex items-center gap-2 md:col-span-2 cursor-pointer">
+              <input v-model="saveNewAddress" type="checkbox" class="checkbox checkbox-primary checkbox-sm" />
+              <span class="text-sm">ذخیره این آدرس در دفترچه آدرس‌ها</span>
+            </label>
           </div>
         </div>
 
@@ -85,7 +89,12 @@
           <div class="max-h-[200px] overflow-y-auto mb-4 space-y-3 pr-1">
             <div v-for="item in cart.items" :key="item.id" class="flex justify-between items-center gap-2 text-sm" style="flex-direction: row-reverse;">
               <div class="flex items-center gap-2" style="flex-direction: row-reverse;">
-                <img v-if="item.product?.primary_image" :src="item.product.primary_image" class="w-10 h-10 rounded-lg object-cover" />
+                <AppImage
+                  v-if="item.product?.primary_image"
+                  :src="item.product.primary_image"
+                  alt=""
+                  img-class="w-10 h-10 rounded-lg object-cover"
+                />
                 <span class="font-medium text-right line-clamp-1 w-[120px]">{{ item.product?.name }}</span>
               </div>
               <div class="text-left font-bold text-base-content/70">
@@ -108,7 +117,7 @@
             </div>
             <div class="flex justify-between" style="flex-direction: row-reverse;">
               <span class="text-base-content/60">هزینه ارسال پستی:</span>
-              <span class="font-bold">{{ freeShipping || cart.total >= 500000 ? 'رایگان' : formatPrice(50000) + ' تومان' }}</span>
+              <span class="font-bold">{{ qualifiesForFreeShipping ? 'رایگان' : formatPrice(shippingCost) + ' تومان' }}</span>
             </div>
           </div>
           
@@ -119,10 +128,12 @@
             <span class="text-primary text-xl">{{ formatPrice(finalTotal) }} تومان</span>
           </div>
           
-          <button @click="submitOrder" type="button" class="btn-lumia w-full py-4 text-center font-bold text-base shadow-lg transition-transform hover:scale-[1.01]" :disabled="submitting || cart.itemCount === 0">
-            <span v-if="submitting" class="loading loading-spinner loading-sm" />
+          <button @click="submitOrder" type="button" class="btn-lumia w-full py-4 text-center font-bold text-base shadow-lg transition-transform hover:scale-[1.01]" :disabled="submitting || redirecting || cart.itemCount === 0">
+            <span v-if="redirecting">در حال انتقال به درگاه...</span>
+            <span v-else-if="submitting" class="loading loading-spinner loading-sm" />
             <span v-else><i class="fas fa-lock ml-2"></i> پرداخت امن با زرین‌پال</span>
           </button>
+          <div v-if="submitError" class="alert alert-error text-sm mt-3">{{ submitError }}</div>
         </div>
       </div>
     </div>
@@ -130,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Address, Order } from '~/types'
+import type { Address, Order, ShippingSettings } from '~/types'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 
@@ -146,6 +157,9 @@ const couponMessage = ref('')
 const discountAmount = ref(0)
 const freeShipping = ref(false)
 const submitting = ref(false)
+const redirecting = ref(false)
+const submitError = ref('')
+const saveNewAddress = ref(false)
 
 const form = reactive({
   shipping_name: '',
@@ -158,19 +172,7 @@ const form = reactive({
 })
 
 // Provinces and Major Cities of Iran
-const provincesAndCities = {
-  'تهران': ['تهران', 'ری', 'تجریش', 'ورامین', 'اسلامشهر', 'شهریار', 'قدس', 'دماوند', 'فیروزکوه'],
-  'اصفهان': ['اصفهان', 'کاشان', 'خمینی‌شهر', 'نجف‌آباد', 'شاهین‌شهر', 'شهرضا', 'فولادشهر'],
-  'فارس': ['شیراز', 'مرودشت', 'جهرم', 'فسا', 'کازرون', 'لارستان', 'فیروزآباد'],
-  'خراسان رضوی': ['مشهد', 'نیشابور', 'سبزوار', 'تربت حیدریه', 'قوچان', 'کاشمر', 'گناباد'],
-  'آذربایجان شرقی': ['تبریز', 'مراغه', 'مرند', 'میانه', 'اهر', 'بناب', 'سراب'],
-  'مازندران': ['ساری', 'بابل', 'آمل', 'قائم‌شهر', 'تنکابن', 'چالوس', 'بابلسر', 'نوشهر'],
-  'گیلان': ['رشت', 'بندر انزلی', 'لاهیجان', 'لنگرود', 'تالش', 'رودسر', 'فومن'],
-  'البرز': ['کرج', 'فردیس', 'کمال‌شهر', 'نظرآباد', 'هشتگرد', 'طالقان'],
-  'خوزستان': ['اهواز', 'دزفول', 'آبادان', 'خرمشهر', 'اندیمشک', 'ایذه', 'ماهشهر'],
-  'یزد': ['یزد', 'میبد', 'اردکان', 'بافق', 'ابرکوه', 'تفت'],
-  'کرمان': ['کرمان', 'سیرجان', 'رفسنجان', 'جیرفت', 'بم', 'زرند', 'کهنوج']
-}
+const { provincesAndCities } = useIranProvinces()
 
 const availableCities = computed(() => {
   if (!form.shipping_province) return []
@@ -191,10 +193,26 @@ function onAuthenticated() {
   navigateTo('/checkout', { replace: true })
 }
 
-const finalTotal = computed(() => {
-  const shipping = freeShipping.value || cart.total >= 500000 ? 0 : 50000
-  return Math.max(cart.total - discountAmount.value + shipping, 0)
-})
+const { data: shippingSettings } = await usePublicData(
+  'shipping-settings',
+  () => apiFetch<ShippingSettings>('/store/shipping/'),
+  { default: () => ({ shipping_cost: 50000, free_shipping_threshold: 500000 }) },
+)
+
+const shippingCost = computed(() => shippingSettings.value?.shipping_cost ?? 50000)
+const freeShippingThreshold = computed(() => shippingSettings.value?.free_shipping_threshold ?? 500000)
+
+const qualifiesForFreeShipping = computed(() =>
+  freeShipping.value || cart.total >= freeShippingThreshold.value,
+)
+
+const appliedShippingCost = computed(() =>
+  qualifiesForFreeShipping.value ? 0 : shippingCost.value,
+)
+
+const finalTotal = computed(() =>
+  Math.max(cart.total - discountAmount.value + appliedShippingCost.value, 0),
+)
 
 async function validateCoupon() {
   if (!couponCode.value) return
@@ -223,6 +241,7 @@ async function validateCoupon() {
 
 async function submitOrder() {
   submitting.value = true
+  submitError.value = ''
   try {
     const body: Record<string, string> = {
       note: form.note,
@@ -235,16 +254,31 @@ async function submitOrder() {
     }
 
     const order = await apiFetch<Order>('/orders/', { method: 'POST', body })
-    const payment = await apiFetch<{ redirect_url: string }>('/payments/zarinpal/request/', {
+    if (saveNewAddress.value && !selectedAddress.value) {
+      await apiFetch('/user/addresses/', {
+        method: 'POST',
+        body: {
+          title: 'خانه',
+          receiver_name: form.shipping_name || auth.user?.full_name || 'مشتری',
+          receiver_phone: form.shipping_phone,
+          province: form.shipping_province,
+          city: form.shipping_city,
+          address_line: form.shipping_address,
+          postal_code: form.shipping_postal_code,
+          is_default: !addresses.value?.length,
+        },
+      }).catch(() => {})
+    }
+    redirecting.value = true
+    const payment = await apiFetch<{ redirect_url: string; authority?: string }>('/payments/zarinpal/request/', {
       method: 'POST',
       body: { order_number: order.order_number },
     })
-    
-    // Redirect to the sandbox or gateway payment url
     window.location.href = payment.redirect_url
   } catch (e: unknown) {
+    redirecting.value = false
     const err = e as { data?: { detail?: string } }
-    alert(err.data?.detail || 'خطا در ثبت سفارش')
+    submitError.value = err.data?.detail || 'خطا در ثبت سفارش یا اتصال به درگاه'
   } finally {
     submitting.value = false
   }

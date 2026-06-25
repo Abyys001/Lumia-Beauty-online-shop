@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { isUnauthorizedError } from '~/utils/jwt'
 import type { Cart } from '~/types'
 
 export const useCartStore = defineStore('cart', {
@@ -16,25 +17,55 @@ export const useCartStore = defineStore('cart', {
 
   actions: {
     async fetchCart() {
+      const auth = useAuthStore()
+      if (!auth.isAuthenticated) {
+        this.cart = null
+        return
+      }
       const { apiFetch } = useApi()
       this.loading = true
       try {
         this.cart = await apiFetch<Cart>('/cart/')
+      } catch (error) {
+        if (isUnauthorizedError(error)) {
+          this.cart = null
+          return
+        }
+        throw error
       } finally {
         this.loading = false
       }
     },
 
-    async addItem(productId: string, quantity = 1) {
+    async addItem(productId: string, quantity = 1): Promise<boolean> {
+      if (!(await ensureAuthenticated())) {
+        return false
+      }
+
+      const auth = useAuthStore()
       const { apiFetch } = useApi()
-      this.cart = await apiFetch<Cart>('/cart/', {
-        method: 'POST',
-        body: { product_id: productId, quantity },
-      })
-      this.drawerOpen = true
+      try {
+        this.cart = await apiFetch<Cart>('/cart/', {
+          method: 'POST',
+          body: { product_id: productId, quantity },
+        })
+        this.drawerOpen = true
+        return true
+      } catch (error) {
+        if (isUnauthorizedError(error)) {
+          auth.logout()
+          await navigateTo({
+            path: '/auth',
+            query: { redirect: useRoute().fullPath },
+          })
+          return false
+        }
+        throw error
+      }
     },
 
     async updateItem(itemId: string, quantity: number) {
+      if (!(await ensureAuthenticated())) return
       const { apiFetch } = useApi()
       this.cart = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
         method: 'PATCH',
@@ -43,6 +74,7 @@ export const useCartStore = defineStore('cart', {
     },
 
     async removeItem(itemId: string) {
+      if (!(await ensureAuthenticated())) return
       const { apiFetch } = useApi()
       this.cart = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
         method: 'DELETE',
@@ -50,6 +82,7 @@ export const useCartStore = defineStore('cart', {
     },
 
     async clearCart() {
+      if (!(await ensureAuthenticated())) return
       const { apiFetch } = useApi()
       await apiFetch('/cart/', { method: 'DELETE' })
       this.cart = null

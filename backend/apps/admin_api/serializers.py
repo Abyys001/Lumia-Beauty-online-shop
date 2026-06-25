@@ -5,10 +5,12 @@ from apps.accounts.models import (
     SmsLog, SmsProviderSettings, User,
 )
 from apps.blog.models import Post, PostCategory, Tag
+from apps.catalog.media_utils import relative_media_url
 from apps.catalog.models import (
     Brand, Category, InstagramPost, Product,
-    ProductAttribute, ProductImage, Review, StoreSettings,
+    ProductAttribute, ProductImage, Review, StockMovement, StoreSettings,
 )
+from apps.catalog.serializers import RelativeURLField
 from apps.coupons.models import Coupon, CouponUsage
 from apps.orders.models import Order, OrderItem
 from apps.payments.models import Payment
@@ -74,6 +76,8 @@ class AdminBrandSerializer(serializers.ModelSerializer):
 
 
 class AdminProductImageSerializer(serializers.ModelSerializer):
+    image = RelativeURLField()
+
     class Meta:
         model = ProductImage
         fields = ['id', 'image', 'alt_text', 'is_primary', 'sort_order']
@@ -103,6 +107,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'description', 'short_description',
             'category', 'category_name', 'brand', 'brand_name',
             'price', 'compare_at_price', 'stock', 'sku',
+            'stock_unit_label', 'pack_label', 'stock_pack_sizes', 'low_stock_threshold',
             'is_active', 'is_featured', 'sales_count',
             'meta_title', 'meta_description',
             'created_at', 'updated_at',
@@ -112,7 +117,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
 
     def get_primary_image(self, obj):
         img = obj.images.filter(is_primary=True).first() or obj.images.first()
-        return img.image.url if img else None
+        return relative_media_url(img.image) if img else None
 
     def get_discount_percent(self, obj):
         return obj.discount_percent
@@ -129,8 +134,19 @@ class AdminProductWriteSerializer(serializers.ModelSerializer):
             'name', 'slug', 'description', 'short_description',
             'category', 'brand', 'original_price', 'discounted_price',
             'stock', 'sku', 'is_active', 'is_featured',
+            'stock_unit_label', 'pack_label', 'stock_pack_sizes', 'low_stock_threshold',
             'meta_title', 'meta_description', 'attributes',
         ]
+
+    def validate_stock_pack_sizes(self, value):
+        if value is None:
+            return []
+        cleaned = sorted({int(v) for v in value if int(v) > 0})
+        if not cleaned:
+            return StoreSettings.get_settings().default_stock_pack_sizes or [1, 6, 12, 24]
+        if 1 not in cleaned:
+            cleaned.insert(0, 1)
+        return cleaned
 
     def validate(self, data):
         dp = data.get('discounted_price')
@@ -149,6 +165,8 @@ class AdminProductWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         attributes_data = validated_data.pop('attributes', [])
         validated_data = self._set_prices(validated_data)
+        if not validated_data.get('stock_pack_sizes'):
+            validated_data['stock_pack_sizes'] = StoreSettings.get_settings().default_stock_pack_sizes
         product = super().create(validated_data)
         for attr in attributes_data:
             ProductAttribute.objects.create(product=product, **attr)
@@ -163,6 +181,64 @@ class AdminProductWriteSerializer(serializers.ModelSerializer):
             for attr in attributes_data:
                 ProductAttribute.objects.create(product=product, **attr)
         return product
+
+
+class AdminInventoryProductSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    brand_name = serializers.CharField(source='brand.name', read_only=True, default='')
+    effective_threshold = serializers.SerializerMethodField()
+    effective_pack_sizes = serializers.SerializerMethodField()
+    stock_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'slug', 'sku', 'stock', 'price',
+            'category_name', 'brand_name',
+            'stock_unit_label', 'pack_label', 'stock_pack_sizes', 'low_stock_threshold',
+            'effective_threshold', 'effective_pack_sizes', 'stock_status',
+        ]
+
+    def get_effective_threshold(self, obj):
+        return obj.get_effective_low_stock_threshold()
+
+    def get_effective_pack_sizes(self, obj):
+        return obj.get_effective_pack_sizes()
+
+    def get_stock_status(self, obj):
+        if obj.stock == 0:
+            return 'out'
+        if obj.stock < obj.get_effective_low_stock_threshold():
+            return 'low'
+        return 'ok'
+
+
+class StockMovementSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    created_by_phone = serializers.CharField(source='created_by.phone', read_only=True, default='')
+
+    class Meta:
+        model = StockMovement
+        fields = [
+            'id', 'product', 'product_name', 'delta', 'stock_before', 'stock_after',
+            'pack_size', 'pack_count', 'reason', 'note',
+            'created_by_phone', 'created_at',
+        ]
+
+
+class AdminInventoryAdjustSerializer(serializers.Serializer):
+    product_id = serializers.UUIDField()
+    mode = serializers.ChoiceField(choices=['pack', 'delta', 'set'])
+    pack_size = serializers.IntegerField(required=False, min_value=1)
+    pack_count = serializers.IntegerField(required=False)
+    delta = serializers.IntegerField(required=False)
+    absolute_stock = serializers.IntegerField(required=False, min_value=0)
+    note = serializers.CharField(required=False, allow_blank=True, max_length=300)
+    reason = serializers.ChoiceField(
+        choices=StockMovement.REASON_CHOICES,
+        required=False,
+        default=StockMovement.REASON_MANUAL,
+    )
 
 
 class AdminReviewSerializer(serializers.ModelSerializer):
@@ -186,7 +262,19 @@ class AdminInstagramPostSerializer(serializers.ModelSerializer):
 class AdminStoreSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoreSettings
-        fields = ['zarinpal_merchant_id']
+        fields = [
+            'zarinpal_merchant_id', 'shipping_cost', 'free_shipping_threshold',
+            'default_low_stock_threshold', 'default_stock_pack_sizes',
+        ]
+
+    def update(self, instance, validated_data):
+        result = super().update(instance, validated_data)
+        if 'zarinpal_merchant_id' in validated_data:
+            from apps.payments.models import ZarinpalSettings
+            zp = ZarinpalSettings.get_settings()
+            zp.merchant_id = validated_data['zarinpal_merchant_id']
+            zp.save(update_fields=['merchant_id', 'updated_at'])
+        return result
 
 
 # ── Orders ────────────────────────────────────────────────────────────────────
@@ -202,6 +290,8 @@ class AdminOrderSerializer(serializers.ModelSerializer):
     items = AdminOrderItemSerializer(many=True, read_only=True)
     user_phone = serializers.CharField(source='user.phone', read_only=True)
     payment_status = serializers.SerializerMethodField()
+    payment_id = serializers.SerializerMethodField()
+    payment_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -212,7 +302,7 @@ class AdminOrderSerializer(serializers.ModelSerializer):
             'shipping_name', 'shipping_phone', 'shipping_province',
             'shipping_city', 'shipping_address', 'shipping_postal_code',
             'tracking_number', 'note', 'created_at', 'updated_at',
-            'items', 'payment_status',
+            'items', 'payment_status', 'payment_id', 'payment_detail',
         ]
         read_only_fields = [
             'id', 'order_number', 'user', 'user_phone',
@@ -221,11 +311,33 @@ class AdminOrderSerializer(serializers.ModelSerializer):
             'shipping_name', 'shipping_phone', 'shipping_province',
             'shipping_city', 'shipping_address', 'shipping_postal_code',
             'created_at', 'updated_at', 'items', 'payment_status',
+            'payment_id', 'payment_detail',
         ]
 
     def get_payment_status(self, obj):
         try:
             return obj.payment.status
+        except Exception:
+            return None
+
+    def get_payment_id(self, obj):
+        try:
+            return str(obj.payment.id)
+        except Exception:
+            return None
+
+    def get_payment_detail(self, obj):
+        try:
+            p = obj.payment
+            return {
+                'authority': p.authority,
+                'ref_id': p.ref_id,
+                'card_pan': p.card_pan,
+                'fee': p.fee,
+                'paid_at': p.paid_at,
+                'error_code': p.error_code,
+                'is_recent': p.is_recent,
+            }
         except Exception:
             return None
 
@@ -317,24 +429,49 @@ class AdminPostSerializer(serializers.ModelSerializer):
 
 # ── SMS / OTP Settings ────────────────────────────────────────────────────────
 
+from apps.accounts.sms.iranpayamak_utils import to_ascii_digits
+
+
 class AdminSmsProviderSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SmsProviderSettings
         fields = [
             'provider_mode', 'base_url', 'is_sandbox', 'is_active',
+            'line_number', 'number_format', 'panel_username',
             'last_test_at', 'last_test_status', 'last_test_message', 'updated_at',
         ]
         read_only_fields = ['last_test_at', 'last_test_status', 'last_test_message', 'updated_at']
+
+    def validate_line_number(self, value):
+        return to_ascii_digits((value or '').strip())
 
 
 class AdminOtpTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OtpTemplate
         fields = [
-            'id', 'name', 'sms_ir_template_id', 'parameter_name', 'body_preview',
+            'id', 'name', 'sms_ir_template_id', 'pattern_code', 'parameter_name', 'body_preview',
             'is_active', 'is_default', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        provider = SmsProviderSettings.get_settings()
+        mode = attrs.get('provider_mode', provider.provider_mode)
+        sms_id = attrs.get('sms_ir_template_id', getattr(self.instance, 'sms_ir_template_id', None))
+        pattern = attrs.get('pattern_code', getattr(self.instance, 'pattern_code', None))
+        if mode == SmsProviderSettings.PROVIDER_IRANPAYAMAK:
+            pattern_value = (pattern or '').strip()
+            if not pattern_value:
+                raise serializers.ValidationError({'pattern_code': 'کد Pattern برای IranPayamak الزامی است'})
+            if pattern_value in {str(i) for i in (123456, 394212, 100000)}:
+                raise serializers.ValidationError({
+                    'pattern_code': 'این مقدار شناسه قالب SMS.ir است، نه کد Pattern ایران‌پیامک. کد Pattern را از پنل ایران‌پیامک وارد کنید.',
+                })
+        elif mode == SmsProviderSettings.PROVIDER_SMSIR:
+            if sms_id is None:
+                raise serializers.ValidationError({'sms_ir_template_id': 'شناسه قالب SMS.ir الزامی است'})
+        return attrs
 
 
 class AdminOtpSettingsSerializer(serializers.ModelSerializer):

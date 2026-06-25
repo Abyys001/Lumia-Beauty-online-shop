@@ -68,6 +68,20 @@ class Product(models.Model):
     price = models.PositiveBigIntegerField('قیمت (تومان)', db_index=True)
     compare_at_price = models.PositiveBigIntegerField('قیمت قبل از تخفیف', null=True, blank=True)
     stock = models.PositiveIntegerField('موجودی', default=0)
+    stock_unit_label = models.CharField('واحد شمارش', max_length=20, default='عدد')
+    pack_label = models.CharField('برچسب بسته', max_length=20, default='شل')
+    stock_pack_sizes = models.JSONField(
+        'اندازه بسته‌ها',
+        default=list,
+        blank=True,
+        help_text='لیست اعداد — مثلاً [1, 6, 12] یعنی هر شل ۱۲ عدد',
+    )
+    low_stock_threshold = models.PositiveSmallIntegerField(
+        'آستانه موجودی کم',
+        null=True,
+        blank=True,
+        help_text='خالی = استفاده از پیش‌فرض فروشگاه',
+    )
     sku = models.CharField('کد محصول', max_length=100, unique=True, blank=True)
     is_active = models.BooleanField('فعال', default=True, db_index=True)
     is_featured = models.BooleanField('ویژه/پرفروش', default=False)
@@ -100,6 +114,63 @@ class Product(models.Model):
         if self.compare_at_price and self.compare_at_price > self.price:
             return int((1 - self.price / self.compare_at_price) * 100)
         return 0
+
+    def get_effective_pack_sizes(self):
+        sizes = self.stock_pack_sizes or []
+        if not sizes:
+            settings = StoreSettings.get_settings()
+            sizes = settings.default_stock_pack_sizes or [1, 6, 12, 24]
+        normalized = sorted({int(s) for s in sizes if int(s) > 0})
+        if 1 not in normalized:
+            normalized.insert(0, 1)
+        return normalized
+
+    def get_effective_low_stock_threshold(self):
+        if self.low_stock_threshold is not None:
+            return self.low_stock_threshold
+        return StoreSettings.get_settings().default_low_stock_threshold
+
+
+class StockMovement(models.Model):
+    REASON_MANUAL = 'manual'
+    REASON_PURCHASE = 'purchase'
+    REASON_COUNT = 'inventory_count'
+    REASON_CORRECTION = 'correction'
+
+    REASON_CHOICES = [
+        (REASON_MANUAL, 'تعدیل دستی'),
+        (REASON_PURCHASE, 'ورودی خرید'),
+        (REASON_COUNT, 'انبارگردانی'),
+        (REASON_CORRECTION, 'اصلاح'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='stock_movements', verbose_name='محصول',
+    )
+    delta = models.IntegerField('تغییر')
+    stock_before = models.PositiveIntegerField('موجودی قبل')
+    stock_after = models.PositiveIntegerField('موجودی بعد')
+    pack_size = models.PositiveIntegerField('اندازه بسته', null=True, blank=True)
+    pack_count = models.IntegerField('تعداد بسته', null=True, blank=True)
+    reason = models.CharField('دلیل', max_length=30, choices=REASON_CHOICES, default=REASON_MANUAL)
+    note = models.CharField('یادداشت', max_length=300, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='stock_movements',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'حرکت انبار'
+        verbose_name_plural = 'حرکات انبار'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.product.name}: {self.delta:+d}'
 
 
 class ProductImage(models.Model):
@@ -175,7 +246,6 @@ class Review(models.Model):
         'امتیاز', validators=[MinValueValidator(1), MaxValueValidator(5)],
     )
     comment = models.TextField('نظر')
-    image = models.ImageField('تصویر', upload_to='reviews/', blank=True, null=True)
     is_approved = models.BooleanField('تأیید شده', default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -208,6 +278,20 @@ class InstagramPost(models.Model):
 
 class StoreSettings(models.Model):
     zarinpal_merchant_id = models.CharField('کد مرچنت زرین‌پال', max_length=100, blank=True)
+    shipping_cost = models.PositiveIntegerField('هزینه ارسال بسته (تومان)', default=50000)
+    free_shipping_threshold = models.PositiveIntegerField(
+        'حداقل خرید برای ارسال رایگان (تومان)',
+        default=500000,
+    )
+    default_low_stock_threshold = models.PositiveSmallIntegerField(
+        'آستانه پیش‌فرض موجودی کم',
+        default=5,
+    )
+    default_stock_pack_sizes = models.JSONField(
+        'اندازه پیش‌فرض بسته‌ها',
+        default=list,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = 'تنظیمات پایه'
@@ -223,5 +307,8 @@ class StoreSettings(models.Model):
     @classmethod
     def get_settings(cls):
         obj, created = cls.objects.get_or_create(pk=1)
+        if created or not obj.default_stock_pack_sizes:
+            obj.default_stock_pack_sizes = [1, 6, 12, 24]
+            obj.save(update_fields=['default_stock_pack_sizes'])
         return obj
 

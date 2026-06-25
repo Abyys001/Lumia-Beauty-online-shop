@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from .serializers import OTPRequestSerializer, OTPVerifySerializer, UserSerializer
 from .services.otp_service import OtpService
+from .throttling import OtpScopedThrottle
 
 logger = logging.getLogger('accounts.otp')
 
@@ -20,6 +21,7 @@ def _client_ip(request) -> str | None:
 
 class OTPRequestView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OtpScopedThrottle]
     throttle_scope = 'otp'
 
     def post(self, request):
@@ -44,12 +46,18 @@ class OTPRequestView(APIView):
         response_data = {'detail': result.detail}
         if result.debug_code:
             response_data['debug_code'] = result.debug_code
+        if result.simulated:
+            response_data['simulated'] = True
+
+        from .services.sms_config import SmsConfigService
+        response_data['expires_in'] = SmsConfigService.get_otp_settings().expiry_seconds
 
         return Response(response_data)
 
 
 class OTPVerifyView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OtpScopedThrottle]
     throttle_scope = 'otp'
 
     def post(self, request):

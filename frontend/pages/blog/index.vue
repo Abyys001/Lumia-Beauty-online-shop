@@ -14,11 +14,11 @@
         class="group grid md:grid-cols-2 gap-6 bg-base-100 rounded-3xl overflow-hidden border border-base-200 shadow-sm transition-all duration-300 hover:shadow-md"
       >
         <div v-if="featuredPost.cover_image" class="aspect-[16/10] md:aspect-auto overflow-hidden relative">
-          <img
+          <AppImage
             v-if="featuredPost.cover_image"
             :src="featuredPost.cover_image"
             :alt="featuredPost.title"
-            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            img-class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
         </div>
@@ -66,11 +66,10 @@
           class="group bg-base-100 rounded-3xl overflow-hidden border border-base-200 shadow-xs transition-all duration-300 hover:shadow-md flex flex-col"
         >
           <figure v-if="post.cover_image" class="aspect-[16/10] overflow-hidden">
-            <img
+            <AppImage
               :src="post.cover_image"
               :alt="post.title"
-              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-              loading="lazy"
+              img-class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             />
           </figure>
           

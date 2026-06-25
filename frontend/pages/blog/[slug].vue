@@ -30,16 +30,17 @@
 
     <!-- Cover Image -->
     <figure v-if="post.cover_image" class="rounded-3xl overflow-hidden mb-10 shadow-sm aspect-[21/9]">
-      <img
+      <AppImage
         v-if="post.cover_image"
         :src="post.cover_image"
         :alt="post.title"
-        class="w-full h-[300px] md:h-[500px] object-cover rounded-3xl shadow-sm"
+        img-class="w-full h-[300px] md:h-[500px] object-cover rounded-3xl shadow-sm"
+        priority
       />
     </figure>
 
     <!-- Article Content -->
-    <div class="prose max-w-none text-base-content/85 leading-relaxed text-right dir-rtl whitespace-pre-line text-base sm:text-lg font-serif mb-16 px-2">
+    <div class="prose max-w-none break-words text-base-content/85 leading-relaxed text-right dir-rtl whitespace-pre-line text-base sm:text-lg font-serif mb-16 px-2">
       {{ post.content }}
     </div>
 
@@ -67,12 +68,11 @@
           class="group bg-base-100 rounded-2xl overflow-hidden border border-base-200 shadow-xs transition-all duration-300 hover:shadow-md text-right flex flex-col"
         >
           <div class="aspect-square overflow-hidden bg-base-200 relative">
-            <img
+            <AppImage
               v-if="product.primary_image"
               :src="product.primary_image"
               :alt="product.name"
-              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
+              img-class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <span v-if="product.discount_percent" class="absolute top-2 right-2 badge badge-error font-bold">
               {{ product.discount_percent }}٪ تخفیف

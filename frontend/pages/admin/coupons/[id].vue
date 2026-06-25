@@ -1,12 +1,6 @@
 <template>
   <div>
     <div class="flex items-center gap-3 mb-6">
-      <NuxtLink to="/admin/coupons" class="btn btn-ghost btn-sm gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        بازگشت
-      </NuxtLink>
       <h2 class="font-bold text-lumia-dark">{{ isNew ? 'کد تخفیف جدید' : 'ویرایش کد تخفیف' }}</h2>
     </div>
 
@@ -16,7 +10,7 @@
       <div class="lg:col-span-2 space-y-4">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-base-200">
           <form @submit.prevent="save" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="label-text text-xs block mb-1">کد تخفیف *</label>
                 <input v-model="form.code" type="text" class="input input-bordered w-full" dir="ltr" required />
@@ -69,6 +63,7 @@
         <!-- Usage history -->
         <div v-if="!isNew && coupon?.usage?.length" class="bg-white rounded-2xl p-6 shadow-sm border border-base-200">
           <h3 class="font-bold text-lumia-dark mb-4 pb-3 border-b border-base-200">تاریخچه استفاده</h3>
+          <div class="overflow-x-auto w-full min-w-0">
           <table class="table w-full text-sm">
             <thead>
               <tr class="text-lumia-dark/60 text-xs">
@@ -85,6 +80,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

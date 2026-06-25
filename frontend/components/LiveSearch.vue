@@ -51,7 +51,12 @@
               class="flex items-center gap-3 p-3 hover:bg-base-200 transition-colors"
               @click="closeMobileSearch"
             >
-              <img v-if="product.primary_image" :src="product.primary_image" :alt="product.name" class="w-10 h-10 rounded-lg object-cover" />
+              <AppImage
+                v-if="product.primary_image"
+                :src="product.primary_image"
+                :alt="product.name"
+                img-class="w-10 h-10 rounded-lg object-cover"
+              />
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium truncate">{{ product.name }}</p>
                 <p class="text-xs text-primary">{{ formatPrice(product.price) }}</p>
@@ -77,7 +82,12 @@
             class="flex items-center gap-3 p-3 hover:bg-base-200 transition-colors"
             @click="showResults = false"
           >
-            <img v-if="product.primary_image" :src="product.primary_image" :alt="product.name" class="w-10 h-10 rounded-lg object-cover" />
+            <AppImage
+              v-if="product.primary_image"
+              :src="product.primary_image"
+              :alt="product.name"
+              img-class="w-10 h-10 rounded-lg object-cover"
+            />
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium truncate">{{ product.name }}</p>
               <p class="text-xs text-primary">{{ formatPrice(product.price) }}</p>

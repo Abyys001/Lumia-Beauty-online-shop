@@ -39,7 +39,7 @@
 
       <!-- Desktop table -->
       <div class="hidden lg:block bg-white rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto w-full min-w-0">
           <table class="table w-full">
             <thead class="bg-base-200/50">
               <tr class="text-lumia-dark/60 text-xs">

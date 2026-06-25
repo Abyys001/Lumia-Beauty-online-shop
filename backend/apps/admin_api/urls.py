@@ -8,9 +8,18 @@ from .views.blog import (
 )
 from .views.brands import AdminBrandDetailView, AdminBrandListCreateView
 from .views.categories import AdminCategoryDetailView, AdminCategoryListCreateView
+from .views.cms import AdminHomeHeroView, AdminTrustBadgeDetailView, AdminTrustBadgeListCreateView
 from .views.coupons import AdminCouponDetailView, AdminCouponListCreateView
 from .views.dashboard import DashboardStatsView
 from .views.instagram import AdminInstagramDetailView, AdminInstagramListCreateView
+from .views.inventory import (
+    InventoryAdjustView,
+    InventoryListView,
+    InventoryMovementsView,
+    InventorySummaryView,
+    LowStockInventoryView,
+)
+from .views.notifications import AdminNotificationsSummaryView
 from .views.orders import AdminOrderDetailView, AdminOrderListView
 from .views.products import (
     AdminProductDetailView,
@@ -19,6 +28,17 @@ from .views.products import (
 )
 from .views.reviews import AdminReviewDetailView, AdminReviewListView
 from .views.settings import AdminStoreSettingsView
+from .views.zarinpal import (
+    AdminPaymentDetailView,
+    AdminPaymentInquiryView,
+    AdminPaymentListView,
+    AdminPaymentRefundView,
+    AdminPaymentReverseView,
+    AdminZarinpalReconciliationsView,
+    AdminZarinpalSessionsView,
+    AdminZarinpalSettingsView,
+    AdminZarinpalTestView,
+)
 from .views.sms import (
     AdminAuthAuditLogListView,
     AdminAuthSettingsView,
@@ -29,14 +49,37 @@ from .views.sms import (
     AdminOtpTemplatePreviewView,
     AdminOtpTemplateSetDefaultView,
     AdminSmsLogListView,
+    AdminSmsProviderLoginView,
     AdminSmsProviderStatusView,
     AdminSmsProviderTestView,
+    AdminSmsProviderVerify2faView,
     AdminSmsProviderView,
+)
+from .views.sms_tools import (
+    AdminSmsCreditView,
+    AdminSmsErrorCodesView,
+    AdminSmsLinesView,
+    AdminSmsLiveReportView,
+    AdminSmsMessageReportView,
+    AdminSmsPackDetailView,
+    AdminSmsReceiveLatestView,
+    AdminSmsSendPacksView,
+    AdminSmsTestVerifyView,
 )
 from .views.users import AdminUserDetailView, AdminUserListView
 
 urlpatterns = [
     path('dashboard/', DashboardStatsView.as_view()),
+    path('notifications/summary/', AdminNotificationsSummaryView.as_view()),
+    path('inventory/summary/', InventorySummaryView.as_view()),
+    path('inventory/', InventoryListView.as_view()),
+    path('inventory/adjust/', InventoryAdjustView.as_view()),
+    path('inventory/movements/', InventoryMovementsView.as_view()),
+    path('inventory/low-stock/', LowStockInventoryView.as_view()),
+
+    path('cms/hero/', AdminHomeHeroView.as_view()),
+    path('cms/trust-badges/', AdminTrustBadgeListCreateView.as_view()),
+    path('cms/trust-badges/<uuid:id>/', AdminTrustBadgeDetailView.as_view()),
 
     path('products/', AdminProductListCreateView.as_view()),
     path('products/<uuid:id>/', AdminProductDetailView.as_view()),
@@ -71,9 +114,22 @@ urlpatterns = [
 
     path('settings/', AdminStoreSettingsView.as_view()),
 
+    path('payments/', AdminPaymentListView.as_view()),
+    path('payments/<uuid:payment_id>/', AdminPaymentDetailView.as_view()),
+    path('payments/<uuid:payment_id>/inquiry/', AdminPaymentInquiryView.as_view()),
+    path('payments/<uuid:payment_id>/reverse/', AdminPaymentReverseView.as_view()),
+    path('payments/<uuid:payment_id>/refund/', AdminPaymentRefundView.as_view()),
+
+    path('zarinpal/settings/', AdminZarinpalSettingsView.as_view()),
+    path('zarinpal/settings/test/', AdminZarinpalTestView.as_view()),
+    path('zarinpal/sessions/', AdminZarinpalSessionsView.as_view()),
+    path('zarinpal/reconciliations/', AdminZarinpalReconciliationsView.as_view()),
+
     path('sms/provider/', AdminSmsProviderView.as_view()),
     path('sms/provider/test/', AdminSmsProviderTestView.as_view()),
     path('sms/provider/status/', AdminSmsProviderStatusView.as_view()),
+    path('sms/provider/login/', AdminSmsProviderLoginView.as_view()),
+    path('sms/provider/verify-2fa/', AdminSmsProviderVerify2faView.as_view()),
     path('sms/templates/', AdminOtpTemplateListCreateView.as_view()),
     path('sms/templates/preview/', AdminOtpTemplatePreviewView.as_view()),
     path('sms/templates/<uuid:id>/', AdminOtpTemplateDetailView.as_view()),
@@ -82,5 +138,14 @@ urlpatterns = [
     path('otp/settings/', AdminOtpSettingsView.as_view()),
     path('auth/settings/', AdminAuthSettingsView.as_view()),
     path('sms/logs/', AdminSmsLogListView.as_view()),
+    path('sms/credit/', AdminSmsCreditView.as_view()),
+    path('sms/lines/', AdminSmsLinesView.as_view()),
+    path('sms/test-verify/', AdminSmsTestVerifyView.as_view()),
+    path('sms/reports/message/<int:message_id>/', AdminSmsMessageReportView.as_view()),
+    path('sms/reports/packs/', AdminSmsSendPacksView.as_view()),
+    path('sms/reports/packs/<str:pack_id>/', AdminSmsPackDetailView.as_view()),
+    path('sms/reports/live/', AdminSmsLiveReportView.as_view()),
+    path('sms/receive/latest/', AdminSmsReceiveLatestView.as_view()),
+    path('sms/error-codes/', AdminSmsErrorCodesView.as_view()),
     path('auth/audit-logs/', AdminAuthAuditLogListView.as_view()),
 ]

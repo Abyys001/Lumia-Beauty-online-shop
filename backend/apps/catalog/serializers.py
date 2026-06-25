@@ -1,16 +1,14 @@
-from django.core.cache import cache
 from rest_framework import serializers
 
-from .models import Brand, Category, InstagramPost, Product, ProductAttribute, ProductImage, Review
+from .media_utils import relative_media_url
+from .models import Brand, Category, InstagramPost, Product, ProductAttribute, ProductImage, Review, StoreSettings
 
 
 class RelativeURLField(serializers.ImageField):
     """Always return the relative /media/... URL so SSR-generated image paths
     resolve correctly in the browser (Nginx already serves /media/)."""
     def to_representation(self, value):
-        if not value:
-            return None
-        return value.url
+        return relative_media_url(value)
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -31,11 +29,10 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
-    image = RelativeURLField(required=False, allow_null=True)
 
     class Meta:
         model = Review
-        fields = ['id', 'user_name', 'rating', 'comment', 'image', 'created_at']
+        fields = ['id', 'user_name', 'rating', 'comment', 'created_at']
 
     def get_user_name(self, obj):
         return obj.user.full_name or 'کاربر'
@@ -83,7 +80,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_primary_image(self, obj):
         img = obj.images.filter(is_primary=True).first() or obj.images.first()
-        return img.image.url if img else None
+        return relative_media_url(img.image) if img else None
 
 
 class ProductDetailSerializer(ProductListSerializer):
@@ -116,7 +113,7 @@ class ProductDetailSerializer(ProductListSerializer):
 class ReviewCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = ['rating', 'comment', 'image']
+        fields = ['rating', 'comment']
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
@@ -130,3 +127,9 @@ class InstagramPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = InstagramPost
         fields = ['id', 'image', 'post_url', 'caption']
+
+
+class ShippingSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreSettings
+        fields = ['shipping_cost', 'free_shipping_threshold']

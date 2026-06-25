@@ -148,7 +148,7 @@ class InstagramPostAdmin(admin.ModelAdmin):
 
 @admin.register(StoreSettings)
 class StoreSettingsAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'zarinpal_merchant_id']
+    list_display = ['__str__', 'shipping_cost', 'free_shipping_threshold', 'zarinpal_merchant_id']
 
     def has_add_permission(self, request):
         # Allow only 1 instance

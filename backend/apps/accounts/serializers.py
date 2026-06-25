@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.accounts.sms.smsir_utils import to_ascii_digits
+
 from .models import Address, User, normalize_phone
 
 
@@ -22,6 +24,12 @@ class OTPVerifySerializer(serializers.Serializer):
         if not phone.startswith('09') or len(phone) != 11:
             raise serializers.ValidationError('شماره موبایل معتبر نیست')
         return phone
+
+    def validate_code(self, value):
+        code = to_ascii_digits(str(value).strip())
+        if not code.isdigit() or len(code) != 6:
+            raise serializers.ValidationError('کد تأیید باید ۶ رقم باشد')
+        return code
 
 
 class UserSerializer(serializers.ModelSerializer):

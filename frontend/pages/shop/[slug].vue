@@ -9,17 +9,18 @@
           @mousemove="handleMouseMove"
           @mouseleave="handleMouseLeave"
         >
-          <img
+          <AppImage
             v-if="selectedImage"
             :src="selectedImage"
             :alt="product.name"
-            class="w-full h-full object-cover transition-transform duration-200 ease-out"
-            :style="zoomStyle"
+            img-class="w-full h-full object-cover transition-transform duration-200 ease-out"
+            :img-style="zoomStyle"
+            priority
           />
         </div>
         
         <!-- Thumbnail Gallery -->
-        <div v-if="product.images?.length > 1" class="flex gap-3 overflow-x-auto py-2">
+        <div v-if="product.images?.length > 1" class="flex gap-3 overflow-x-auto min-w-0 py-2">
           <button
             v-for="img in product.images"
             :key="img.id"
@@ -27,7 +28,7 @@
             :class="selectedImage === img.image ? 'border-primary scale-[1.03] shadow-md' : 'border-transparent opacity-70 hover:opacity-100'"
             @click="selectedImage = img.image"
           >
-            <img :src="img.image" :alt="img.alt_text" class="w-full h-full object-cover" />
+            <AppImage :src="img.image" :alt="img.alt_text" img-class="w-full h-full object-cover" />
           </button>
         </div>
       </div>
@@ -57,7 +58,7 @@
 
         <!-- Price & Discounts -->
         <div class="space-y-2">
-          <div class="flex items-center gap-3 justify-start" style="flex-direction: row-reverse;">
+          <div class="flex flex-wrap items-center gap-3 justify-start" style="flex-direction: row-reverse;">
             <span v-if="product.discount_percent" class="badge badge-error font-bold py-3 px-3 mr-2">
               {{ product.discount_percent }}٪ تخفیف ویژه
             </span>
@@ -105,7 +106,18 @@
             <span v-else-if="product.is_in_stock"><i class="fas fa-shopping-cart ml-2"></i> افزودن به سبد خرید</span>
             <span v-else>ناموجود</span>
           </button>
+          <ClientOnly>
+            <button
+              type="button"
+              class="btn btn-outline rounded-xl px-4"
+              :class="isWishlisted ? 'text-error border-error' : ''"
+              @click="toggleWishlist"
+            >
+              {{ isWishlisted ? '♥ علاقه‌مندی' : '♡ علاقه‌مندی' }}
+            </button>
+          </ClientOnly>
         </div>
+        <p v-if="addError" class="text-error text-sm mt-2 text-right">{{ addError }}</p>
       </div>
     </div>
 
@@ -114,6 +126,7 @@
       <div>
         <h2 class="text-xl font-bold mb-4 text-right">مشخصات فنی و ویژگی‌ها</h2>
         <div class="border border-base-200 rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto w-full min-w-0">
           <table class="w-full text-right border-collapse">
             <tbody>
               <tr v-if="product.license_holder" class="border-b border-base-200">
@@ -142,6 +155,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </div>
       
@@ -215,16 +229,6 @@
                   required
                 />
               </div>
-
-              <div>
-                <label class="block text-sm font-medium text-base-content/70 mb-2">عکس محصول (اختیاری):</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  class="file-input file-input-bordered file-input-sm w-full"
-                  @change="onReviewImage"
-                />
-              </div>
               
               <div v-if="submitError" class="alert alert-error text-sm py-2">
                 {{ submitError }}
@@ -273,12 +277,13 @@
               </div>
             </div>
             <p class="text-sm text-base-content/80 leading-relaxed">{{ review.comment }}</p>
-            <img v-if="review.image" :src="review.image" alt="عکس نظر" class="mt-3 rounded-xl max-h-40 object-cover" />
           </div>
         </div>
         <p v-else class="text-center text-muted py-8 bg-base-100 rounded-2xl border border-base-200">اولین نفری باشید که برای این محصول نظر ثبت می‌کند!</p>
       </div>
     </div>
+
+    <RelatedProducts v-if="product" :slug="product.slug" />
   </div>
   <div v-else class="container-lumia py-20 text-center space-y-4">
     <span class="text-5xl">📦</span>
@@ -292,14 +297,28 @@
 import type { Product } from '~/types'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
+import { useWishlistStore } from '~/stores/wishlist'
 
 const route = useRoute()
 const auth = useAuthStore()
-const { apiFetch, formatPrice } = useApi()
+const wishlist = useWishlistStore()
+const { apiFetch, formatPrice, extractApiError } = useApi()
 const cart = useCartStore()
+
+const isWishlisted = computed(() => product.value ? wishlist.has(product.value.id) : false)
+
+onMounted(() => {
+  if (!wishlist.loaded) wishlist.loadIds()
+})
+
+async function toggleWishlist() {
+  if (!product.value) return
+  await wishlist.toggle(product.value.id)
+}
 
 const quantity = ref(1)
 const adding = ref(false)
+const addError = ref('')
 const selectedImage = ref<string | null>(null)
 
 // Zoom state
@@ -310,7 +329,6 @@ const zoomY = ref(0)
 // Review form state
 const newRating = ref(5)
 const newComment = ref('')
-const reviewImage = ref<File | null>(null)
 const submitting = ref(false)
 const submitError = ref<string | null>(null)
 const submitSuccess = ref(false)
@@ -439,8 +457,12 @@ function formatDate(dateStr: string) {
 async function addToCart() {
   if (!product.value) return
   adding.value = true
+  addError.value = ''
   try {
-    await cart.addItem(product.value.id, quantity.value)
+    const added = await cart.addItem(product.value.id, quantity.value)
+    if (!added) return
+  } catch (error) {
+    addError.value = extractApiError(error, 'خطا در افزودن به سبد خرید')
   } finally {
     adding.value = false
   }
@@ -453,19 +475,16 @@ async function submitReview() {
   submitSuccess.value = false
 
   try {
-    const formData = new FormData()
-    formData.append('rating', String(newRating.value))
-    formData.append('comment', newComment.value.trim())
-    if (reviewImage.value) formData.append('image', reviewImage.value)
-
     await apiFetch(`/products/${product.value?.slug}/reviews/`, {
       method: 'POST',
-      body: formData,
+      body: {
+        rating: newRating.value,
+        comment: newComment.value.trim(),
+      },
     })
     submitSuccess.value = true
     newComment.value = ''
     newRating.value = 5
-    reviewImage.value = null
 
     const updatedProduct = await apiFetch<Product>(`/products/${product.value?.slug}/`)
     if (updatedProduct) product.value = updatedProduct
@@ -475,10 +494,5 @@ async function submitReview() {
   } finally {
     submitting.value = false
   }
-}
-
-function onReviewImage(e: Event) {
-  const input = e.target as HTMLInputElement
-  reviewImage.value = input.files?.[0] || null
 }
 </script>

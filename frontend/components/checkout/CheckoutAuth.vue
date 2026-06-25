@@ -27,7 +27,7 @@
         dir="ltr"
         required
       />
-      <p v-if="debugCode" class="text-xs text-warning mb-2">کد تست: {{ debugCode }}</p>
+      <p v-if="simulated && debugCode" class="text-xs text-warning mb-2">کد تست: {{ debugCode }}</p>
       <button type="submit" class="btn btn-primary w-full rounded-full mb-2" :disabled="loading">
         تأیید و ادامه خرید
       </button>
@@ -50,6 +50,7 @@ const code = ref('')
 const loading = ref(false)
 const error = ref('')
 const debugCode = ref('')
+const simulated = ref(false)
 
 const emit = defineEmits<{ authenticated: [] }>()
 
@@ -57,10 +58,11 @@ async function requestOtp() {
   loading.value = true
   error.value = ''
   try {
-    const result = await apiFetch<{ detail: string; debug_code?: string }>('/auth/otp/request/', {
+    const result = await apiFetch<{ detail: string; debug_code?: string; simulated?: boolean }>('/auth/otp/request/', {
       method: 'POST',
       body: { phone: phone.value },
     })
+    simulated.value = Boolean(result.simulated)
     debugCode.value = result.debug_code || ''
     step.value = 'code'
   } catch (e: unknown) {

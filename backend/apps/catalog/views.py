@@ -1,12 +1,13 @@
 import hashlib
 
 from django.core.cache import cache
+from django.db.models import Q
 from django_filters import rest_framework as filters
-from rest_framework import generics, permissions, status, parsers
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Brand, Category, InstagramPost, Product, ProductAttribute, Review
+from .models import Brand, Category, InstagramPost, Product, ProductAttribute, Review, StoreSettings
 from .serializers import (
     BrandSerializer,
     CategorySerializer,
@@ -14,6 +15,7 @@ from .serializers import (
     ProductDetailSerializer,
     ProductListSerializer,
     ReviewCreateSerializer,
+    ShippingSettingsSerializer,
 )
 
 
@@ -91,6 +93,40 @@ class ProductDetailView(generics.RetrieveAPIView):
         return Response(data)
 
 
+class RelatedProductsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, slug):
+        try:
+            product = Product.objects.select_related('category', 'brand').get(slug=slug, is_active=True)
+        except Product.DoesNotExist:
+            return Response({'detail': 'محصول یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        related = (
+            Product.objects.filter(is_active=True, stock__gt=0)
+            .exclude(id=product.id)
+            .filter(
+                Q(category=product.category) | Q(brand=product.brand),
+            )
+            .select_related('brand', 'category')
+            .prefetch_related('images')
+            .distinct()[:8]
+        )
+        if related.count() < 4:
+            extra = (
+                Product.objects.filter(is_active=True, stock__gt=0)
+                .exclude(id=product.id)
+                .exclude(id__in=related.values_list('id', flat=True))
+                .select_related('brand', 'category')
+                .prefetch_related('images')
+                .order_by('-sales_count')[:8 - related.count()]
+            )
+            related = list(related) + list(extra)
+
+        serializer = ProductListSerializer(related, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
 class ProductSearchView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -153,7 +189,6 @@ class BrandListView(generics.ListAPIView):
 class ProductReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
     def get_product(self):
         return Product.objects.get(slug=self.kwargs['slug'], is_active=True)
@@ -176,3 +211,11 @@ class InstagramPostListView(generics.ListAPIView):
 
     def get_queryset(self):
         return InstagramPost.objects.filter(is_active=True)
+
+
+class ShippingSettingsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        settings, _ = StoreSettings.objects.get_or_create(pk=1)
+        return Response(ShippingSettingsSerializer(settings).data)

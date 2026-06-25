@@ -4,7 +4,7 @@
     <HomeTrustBadges :badges="cms?.trust_badges || []" />
     <HomeMoodCategories :categories="categories || []" />
     <HomeProductCarousel :products="featuredProducts" :pending="pending" />
-    <InstagramGallery />
+    <InstagramPages />
   </div>
 </template>
 
@@ -67,15 +67,17 @@ const cms = computed(() => homeData.value?.cms || emptyHome.cms)
 const categories = computed(() => homeData.value?.categories || [])
 const featuredProducts = computed(() => homeData.value?.featured || [])
 
+const { normalizeMediaUrl } = useMediaUrl()
+
 const posterUrl = computed(() =>
-  cms.value?.hero?.video_poster_url
-    || cms.value?.hero?.fallback_image_url
+  normalizeMediaUrl(cms.value?.hero?.video_poster_url)
+    || normalizeMediaUrl(cms.value?.hero?.fallback_image_url)
     || '/images/hero_banner.png',
 )
 
 useHead({
   link: [
-    { rel: 'preload', as: 'image', href: posterUrl.value, fetchpriority: 'high' },
+    { rel: 'preload', as: 'image', href: posterUrl.value, fetchPriority: 'high' },
   ],
 })
 </script>

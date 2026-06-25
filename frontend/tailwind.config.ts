@@ -13,7 +13,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Vazirmatn', 'Tahoma', 'sans-serif'],
+        sans: ['"Vazirmatn Variable"', 'Vazirmatn', 'Tahoma', 'sans-serif'],
       },
       colors: {
         lumia: {

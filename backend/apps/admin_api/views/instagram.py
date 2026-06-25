@@ -1,19 +1,19 @@
 from rest_framework import generics
 
-from apps.catalog.models import InstagramPost
+from apps.cms.models import InstagramPage
 
 from ..permissions import IsStaff
-from ..serializers import AdminInstagramPostSerializer
+from ..serializers_cms import AdminInstagramPageSerializer
 
 
 class AdminInstagramListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsStaff]
-    queryset = InstagramPost.objects.all().order_by('sort_order', '-id')
-    serializer_class = AdminInstagramPostSerializer
+    queryset = InstagramPage.objects.all().order_by('sort_order', 'username')
+    serializer_class = AdminInstagramPageSerializer
 
 
 class AdminInstagramDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsStaff]
-    queryset = InstagramPost.objects.all()
-    serializer_class = AdminInstagramPostSerializer
+    queryset = InstagramPage.objects.all()
+    serializer_class = AdminInstagramPageSerializer
     lookup_field = 'id'

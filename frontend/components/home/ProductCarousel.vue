@@ -21,8 +21,8 @@
         <NuxtLink to="/shop" class="btn btn-primary rounded-full">مشاهده فروشگاه</NuxtLink>
       </div>
 
-      <div v-else class="relative group">
-        <div class="flex gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x scroll-smooth -mx-4 px-4 md:mx-0 md:px-0">
+      <div v-else class="relative group overflow-hidden min-w-0">
+        <div class="flex gap-6 overflow-x-auto min-w-0 pb-6 scrollbar-hide snap-x scroll-smooth -mx-4 px-4 md:mx-0 md:px-0">
           <div
             v-for="product in products"
             :key="product.id"
