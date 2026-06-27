@@ -17,11 +17,6 @@ export const useCartStore = defineStore('cart', {
 
   actions: {
     async fetchCart() {
-      const auth = useAuthStore()
-      if (!auth.isAuthenticated) {
-        this.cart = null
-        return
-      }
       const { apiFetch } = useApi()
       this.loading = true
       try {
@@ -38,11 +33,6 @@ export const useCartStore = defineStore('cart', {
     },
 
     async addItem(productId: string, quantity = 1): Promise<boolean> {
-      if (!(await ensureAuthenticated())) {
-        return false
-      }
-
-      const auth = useAuthStore()
       const { apiFetch } = useApi()
       try {
         this.cart = await apiFetch<Cart>('/cart/', {
@@ -53,11 +43,8 @@ export const useCartStore = defineStore('cart', {
         return true
       } catch (error) {
         if (isUnauthorizedError(error)) {
-          auth.logout()
-          await navigateTo({
-            path: '/auth',
-            query: { redirect: useRoute().fullPath },
-          })
+          useAuthStore().logout()
+          this.cart = null
           return false
         }
         throw error
@@ -65,7 +52,6 @@ export const useCartStore = defineStore('cart', {
     },
 
     async updateItem(itemId: string, quantity: number) {
-      if (!(await ensureAuthenticated())) return
       const { apiFetch } = useApi()
       this.cart = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
         method: 'PATCH',
@@ -74,7 +60,6 @@ export const useCartStore = defineStore('cart', {
     },
 
     async removeItem(itemId: string) {
-      if (!(await ensureAuthenticated())) return
       const { apiFetch } = useApi()
       this.cart = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
         method: 'DELETE',
@@ -82,7 +67,6 @@ export const useCartStore = defineStore('cart', {
     },
 
     async clearCart() {
-      if (!(await ensureAuthenticated())) return
       const { apiFetch } = useApi()
       await apiFetch('/cart/', { method: 'DELETE' })
       this.cart = null

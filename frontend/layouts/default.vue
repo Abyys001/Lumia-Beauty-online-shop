@@ -26,11 +26,10 @@ onMounted(async () => {
   if (!auth.hydrated) {
     await auth.hydrateSession()
   }
-  if (!auth.isAuthenticated) return
   try {
     await cart.fetchCart()
   } catch {
-    // Ignore stale-session cart errors; user can log in again.
+    // Ignore transient cart errors on page load.
   }
 })
 </script>

@@ -12,7 +12,7 @@
       <p v-if="refId" class="text-sm text-base-content/50">کد پیگیری: {{ refId }}</p>
       <p v-if="verifyError" class="text-sm text-warning mt-2">{{ verifyError }}</p>
       <div class="flex gap-3 justify-center mt-8">
-        <NuxtLink to="/account" class="btn-lumia">مشاهده سفارشات</NuxtLink>
+        <NuxtLink to="/account?tab=orders" class="btn-lumia">مشاهده سفارشات</NuxtLink>
         <NuxtLink to="/shop" class="btn btn-outline rounded-full">ادامه خرید</NuxtLink>
       </div>
     </template>

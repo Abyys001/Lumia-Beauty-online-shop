@@ -26,7 +26,7 @@ class Category(models.Model):
         help_text='مثلاً: خنک، شیرین، مراقبت پوست',
     )
     is_active = models.BooleanField('فعال', default=True)
-    sort_order = models.PositiveIntegerField('ترتیب', default=0)
+    sort_order = models.PositiveIntegerField('ترتیب', default=0, editable=False)
     meta_title = models.CharField('عنوان سئو', max_length=200, blank=True)
     meta_description = models.TextField('توضیحات سئو', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,7 +34,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'دسته‌بندی'
         verbose_name_plural = 'دسته‌بندی‌ها'
-        ordering = ['sort_order', 'name']
+        ordering = ['created_at']
 
     def __str__(self):
         return self.name
@@ -179,12 +179,13 @@ class ProductImage(models.Model):
     image = models.ImageField('تصویر', upload_to=product_image_path)
     alt_text = models.CharField('متن جایگزین', max_length=200, blank=True)
     is_primary = models.BooleanField('تصویر اصلی', default=False)
-    sort_order = models.PositiveIntegerField('ترتیب', default=0)
+    sort_order = models.PositiveIntegerField('ترتیب', default=0, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'تصویر محصول'
         verbose_name_plural = 'تصاویر محصول'
-        ordering = ['sort_order']
+        ordering = ['created_at']
 
     def __str__(self):
         return f'{self.product.name} - تصویر {self.sort_order}'
@@ -194,11 +195,17 @@ class ProductImage(models.Model):
         if self.image:
             try:
                 img = Image.open(self.image.path)
+                ext = self.image.name.rsplit('.', 1)[-1].lower()
+                if ext == 'webp' and img.width <= 1200:
+                    return
                 if img.width > 1200:
                     ratio = 1200 / img.width
                     new_size = (1200, int(img.height * ratio))
                     img = img.resize(new_size, Image.Resampling.LANCZOS)
-                    img.save(self.image.path, quality=85, optimize=True)
+                save_kwargs = {'optimize': True}
+                if ext in ('jpg', 'jpeg', 'webp'):
+                    save_kwargs['quality'] = 85
+                img.save(self.image.path, **save_kwargs)
             except Exception:
                 pass
 
@@ -264,13 +271,14 @@ class InstagramPost(models.Model):
     image = models.ImageField('تصویر', upload_to='instagram/')
     post_url = models.URLField('لینک پست اینستاگرام')
     caption = models.CharField('توضیح کوتاه', max_length=300, blank=True)
-    sort_order = models.PositiveIntegerField('ترتیب', default=0)
+    sort_order = models.PositiveIntegerField('ترتیب', default=0, editable=False)
     is_active = models.BooleanField('فعال', default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'پست اینستاگرام'
         verbose_name_plural = 'پست‌های اینستاگرام'
-        ordering = ['sort_order']
+        ordering = ['created_at']
 
     def __str__(self):
         return self.caption or self.post_url[:50]

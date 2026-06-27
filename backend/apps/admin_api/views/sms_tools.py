@@ -63,10 +63,8 @@ def _api_response(result, *, extra: dict | None = None) -> Response:
 
 
 def _provider_mode() -> str:
-
-    settings = SmsConfigService.get_provider_settings()
-
-    return settings.provider_mode or SmsConfigService.resolve_provider_mode()
+    profile = SmsConfigService.get_active_profile()
+    return profile.provider_type or SmsConfigService.resolve_provider_mode()
 
 
 
@@ -136,7 +134,7 @@ class AdminSmsCreditView(APIView):
 
     def get(self, request):
 
-        settings = SmsConfigService.get_provider_settings()
+        profile = SmsConfigService.get_active_profile()
 
         mode = _provider_mode()
 
@@ -186,7 +184,7 @@ class AdminSmsCreditView(APIView):
 
         return _api_response(result, extra={
 
-            'is_sandbox': settings.is_sandbox,
+            'is_sandbox': profile.is_sandbox,
 
             'credit': float(result.data) if result.success and result.data is not None else None,
 
@@ -206,7 +204,7 @@ class AdminSmsLinesView(APIView):
 
     def get(self, request):
 
-        settings = SmsConfigService.get_provider_settings()
+        profile = SmsConfigService.get_active_profile()
 
         mode = _provider_mode()
 
@@ -246,7 +244,7 @@ class AdminSmsLinesView(APIView):
 
 
 
-        if settings.is_sandbox:
+        if profile.is_sandbox:
 
             return Response({
 
@@ -278,7 +276,7 @@ class AdminSmsTestVerifyView(APIView):
 
     def post(self, request):
 
-        settings = SmsConfigService.get_provider_settings()
+        profile = SmsConfigService.get_active_profile()
 
         mode = _provider_mode()
 
@@ -310,7 +308,7 @@ class AdminSmsTestVerifyView(APIView):
 
             pattern_code = (template.pattern_code or '').strip()
 
-            line_number = (settings.line_number or '').strip()
+            line_number = (profile.line_number or '').strip()
 
             if not pattern_code:
 
@@ -332,7 +330,7 @@ class AdminSmsTestVerifyView(APIView):
 
                 {param_name: code},
 
-                settings.number_format,
+                profile.number_format,
 
             )
 
@@ -360,7 +358,7 @@ class AdminSmsTestVerifyView(APIView):
 
 
 
-        if settings.is_sandbox and template.sms_ir_template_id != 123456:
+        if profile.is_sandbox and template.sms_ir_template_id != 123456:
 
             return Response({
 
@@ -406,7 +404,7 @@ class AdminSmsTestVerifyView(APIView):
 
             'payload': payload,
 
-            'is_sandbox': settings.is_sandbox,
+            'is_sandbox': profile.is_sandbox,
 
             'template_id': template.sms_ir_template_id,
 
@@ -428,13 +426,13 @@ class AdminSmsMessageReportView(APIView):
 
     def get(self, request, message_id):
 
-        settings = SmsConfigService.get_provider_settings()
+        profile = SmsConfigService.get_active_profile()
 
         if _provider_mode() != SmsProviderSettings.PROVIDER_SMSIR:
 
             return _smsir_only_response()
 
-        if settings.is_sandbox:
+        if profile.is_sandbox:
 
             return Response({
 
@@ -480,9 +478,9 @@ class AdminSmsSendPacksView(APIView):
 
             return _smsir_only_response()
 
-        settings = SmsConfigService.get_provider_settings()
+        profile = SmsConfigService.get_active_profile()
 
-        if settings.is_sandbox:
+        if profile.is_sandbox:
 
             return Response({
 
@@ -520,9 +518,9 @@ class AdminSmsPackDetailView(APIView):
 
             return _smsir_only_response()
 
-        settings = SmsConfigService.get_provider_settings()
+        profile = SmsConfigService.get_active_profile()
 
-        if settings.is_sandbox:
+        if profile.is_sandbox:
 
             return Response({
 
@@ -556,9 +554,9 @@ class AdminSmsLiveReportView(APIView):
 
             return _smsir_only_response()
 
-        settings = SmsConfigService.get_provider_settings()
+        profile = SmsConfigService.get_active_profile()
 
-        if settings.is_sandbox:
+        if profile.is_sandbox:
 
             return Response({
 
@@ -596,9 +594,9 @@ class AdminSmsReceiveLatestView(APIView):
 
             return _smsir_only_response()
 
-        settings = SmsConfigService.get_provider_settings()
+        profile = SmsConfigService.get_active_profile()
 
-        if settings.is_sandbox:
+        if profile.is_sandbox:
 
             return Response({
 

@@ -44,13 +44,14 @@ class TrustBadge(models.Model):
     icon = models.CharField('آیکون', max_length=20, choices=ICON_CHOICES, default='shield')
     title = models.CharField('عنوان', max_length=100)
     description = models.CharField('توضیح', max_length=200, blank=True)
-    sort_order = models.PositiveIntegerField('ترتیب', default=0)
+    sort_order = models.PositiveIntegerField('ترتیب', default=0, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField('فعال', default=True)
 
     class Meta:
         verbose_name = 'نشان اعتماد'
         verbose_name_plural = 'نشان‌های اعتماد'
-        ordering = ['sort_order']
+        ordering = ['created_at']
 
     def __str__(self):
         return self.title
@@ -60,13 +61,14 @@ class InstagramPage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField('آیدی اینستاگرام', max_length=100, help_text='بدون @ — مثال: lumia.beauty')
     label = models.CharField('برچسب', max_length=200, help_text='مثال: فروش ادکلن این پیج')
-    sort_order = models.PositiveIntegerField('ترتیب', default=0)
+    sort_order = models.PositiveIntegerField('ترتیب', default=0, editable=False)
     is_active = models.BooleanField('فعال', default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'پیج اینستاگرام'
         verbose_name_plural = 'پیج‌های اینستاگرام'
-        ordering = ['sort_order', 'username']
+        ordering = ['created_at']
 
     def __str__(self):
         return f'@{self.clean_username} — {self.label}'

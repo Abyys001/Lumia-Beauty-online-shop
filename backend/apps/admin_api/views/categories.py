@@ -8,7 +8,7 @@ from ..serializers import AdminCategorySerializer
 
 class AdminCategoryListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsStaff]
-    queryset = Category.objects.prefetch_related('children').order_by('sort_order', 'name')
+    queryset = Category.objects.prefetch_related('children').order_by('created_at')
     serializer_class = AdminCategorySerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'slug']

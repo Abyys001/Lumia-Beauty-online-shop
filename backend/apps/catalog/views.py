@@ -7,6 +7,16 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .cache_utils import (
+    CACHE_TTL_BRANDS,
+    CACHE_TTL_CATEGORIES,
+    CACHE_TTL_PRODUCT_DETAIL,
+    CACHE_TTL_PRODUCT_RELATED,
+    CACHE_TTL_PRODUCTS_FEATURED,
+    CACHE_TTL_PRODUCTS_LIST,
+    CACHE_TTL_SEARCH,
+    products_list_cache_key,
+)
 from .models import Brand, Category, InstagramPost, Product, ProductAttribute, Review, StoreSettings
 from .serializers import (
     BrandSerializer,
@@ -68,6 +78,16 @@ class ProductListView(generics.ListAPIView):
     def get_queryset(self):
         return Product.objects.filter(is_active=True).select_related('brand', 'category').prefetch_related('images')
 
+    def list(self, request, *args, **kwargs):
+        cache_key = products_list_cache_key(request)
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=CACHE_TTL_PRODUCTS_LIST)
+        return response
+
 
 class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductDetailSerializer
@@ -89,7 +109,7 @@ class ProductDetailView(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         data = serializer.data
-        cache.set(cache_key, data, timeout=600)
+        cache.set(cache_key, data, timeout=CACHE_TTL_PRODUCT_DETAIL)
         return Response(data)
 
 
@@ -97,6 +117,11 @@ class RelatedProductsView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, slug):
+        cache_key = f'product_related:{slug}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         try:
             product = Product.objects.select_related('category', 'brand').get(slug=slug, is_active=True)
         except Product.DoesNotExist:
@@ -124,7 +149,9 @@ class RelatedProductsView(APIView):
             related = list(related) + list(extra)
 
         serializer = ProductListSerializer(related, many=True, context={'request': request})
-        return Response(serializer.data)
+        data = serializer.data
+        cache.set(cache_key, data, timeout=CACHE_TTL_PRODUCT_RELATED)
+        return Response(data)
 
 
 class ProductSearchView(APIView):
@@ -146,7 +173,7 @@ class ProductSearchView(APIView):
 
         serializer = ProductListSerializer(products, many=True, context={'request': request})
         data = serializer.data
-        cache.set(cache_key, data, timeout=60)
+        cache.set(cache_key, data, timeout=CACHE_TTL_SEARCH)
         return Response(data)
 
 
@@ -164,7 +191,7 @@ class FeaturedProductsView(APIView):
 
         serializer = ProductListSerializer(products, many=True, context={'request': request})
         data = serializer.data
-        cache.set('products_featured', data, timeout=300)
+        cache.set('products_featured', data, timeout=CACHE_TTL_PRODUCTS_FEATURED)
         return Response(data)
 
 
@@ -174,7 +201,16 @@ class CategoryListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return Category.objects.filter(is_active=True, parent__isnull=True).prefetch_related('children')
+        return Category.objects.filter(is_active=True, parent__isnull=True).prefetch_related('children').order_by('created_at')
+
+    def list(self, request, *args, **kwargs):
+        cached = cache.get('categories_list')
+        if cached is not None:
+            return Response(cached)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set('categories_list', response.data, timeout=CACHE_TTL_CATEGORIES)
+        return response
 
 
 class BrandListView(generics.ListAPIView):
@@ -184,6 +220,15 @@ class BrandListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Brand.objects.filter(is_active=True).order_by('name')
+
+    def list(self, request, *args, **kwargs):
+        cached = cache.get('brands_list')
+        if cached is not None:
+            return Response(cached)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set('brands_list', response.data, timeout=CACHE_TTL_BRANDS)
+        return response
 
 
 class ProductReviewCreateView(generics.CreateAPIView):
@@ -210,7 +255,7 @@ class InstagramPostListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return InstagramPost.objects.filter(is_active=True)
+        return InstagramPost.objects.filter(is_active=True).order_by('created_at')
 
 
 class ShippingSettingsView(APIView):

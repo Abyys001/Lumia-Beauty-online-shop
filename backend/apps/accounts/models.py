@@ -2,7 +2,7 @@ import re
 import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db import models, transaction
 
 
 def normalize_phone(phone: str) -> str:
@@ -148,11 +148,113 @@ class SmsProviderSettings(models.Model):
         return obj
 
 
+class SmsProviderProfile(models.Model):
+    """Per-provider SMS credentials — only one profile may be active at a time."""
+
+    PROVIDER_MOCK = SmsProviderSettings.PROVIDER_MOCK
+    PROVIDER_SMSIR = SmsProviderSettings.PROVIDER_SMSIR
+    PROVIDER_IRANPAYAMAK = SmsProviderSettings.PROVIDER_IRANPAYAMAK
+    PROVIDER_CHOICES = SmsProviderSettings.PROVIDER_CHOICES
+    NUMBER_FORMAT_ENGLISH = SmsProviderSettings.NUMBER_FORMAT_ENGLISH
+    NUMBER_FORMAT_PERSIAN = SmsProviderSettings.NUMBER_FORMAT_PERSIAN
+    NUMBER_FORMAT_CHOICES = SmsProviderSettings.NUMBER_FORMAT_CHOICES
+    TEST_OK = SmsProviderSettings.TEST_OK
+    TEST_FAILED = SmsProviderSettings.TEST_FAILED
+    TEST_UNKNOWN = SmsProviderSettings.TEST_UNKNOWN
+    TEST_CHOICES = SmsProviderSettings.TEST_CHOICES
+
+    provider_type = models.CharField('ارائه‌دهنده', max_length=20, choices=PROVIDER_CHOICES, unique=True)
+    api_key_encrypted = models.TextField('کلید Production رمزنگاری‌شده', blank=True)
+    sandbox_api_key_encrypted = models.TextField('کلید Sandbox رمزنگاری‌شده', blank=True)
+    base_url = models.CharField('Base URL', max_length=200, blank=True, default='')
+    is_sandbox = models.BooleanField('حالت Sandbox', default=False)
+    is_active = models.BooleanField('فعال', default=False)
+    last_test_at = models.DateTimeField('آخرین تست', null=True, blank=True)
+    last_test_status = models.CharField(
+        'وضعیت تست', max_length=20, choices=TEST_CHOICES, default=TEST_UNKNOWN,
+    )
+    last_test_message = models.TextField('پیام تست', blank=True)
+    line_number = models.CharField('شماره خط IranPayamak', max_length=30, blank=True)
+    number_format = models.CharField(
+        'فرمت اعداد پیامک',
+        max_length=10,
+        choices=NUMBER_FORMAT_CHOICES,
+        default=NUMBER_FORMAT_ENGLISH,
+    )
+    panel_username = models.CharField('نام کاربری پنل', max_length=100, blank=True)
+    panel_password_encrypted = models.TextField('رمز پنل رمزنگاری‌شده', blank=True)
+    bearer_token_encrypted = models.TextField('توکن Bearer رمزنگاری‌شده', blank=True)
+    bearer_token_expires_at = models.DateTimeField('انقضای Bearer', null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'پروفایل SMS'
+        verbose_name_plural = 'پروفایل‌های SMS'
+        ordering = ['provider_type']
+
+    def __str__(self):
+        return self.get_provider_type_display()
+
+    @classmethod
+    def default_base_url(cls, provider_type: str) -> str:
+        if provider_type == cls.PROVIDER_IRANPAYAMAK:
+            return 'https://api.iranpayamak.com'
+        if provider_type == cls.PROVIDER_SMSIR:
+            return 'https://api.sms.ir/v1'
+        return ''
+
+    @classmethod
+    def ensure_profiles(cls):
+        for provider_type in (cls.PROVIDER_MOCK, cls.PROVIDER_SMSIR, cls.PROVIDER_IRANPAYAMAK):
+            cls.objects.get_or_create(
+                provider_type=provider_type,
+                defaults={'base_url': cls.default_base_url(provider_type)},
+            )
+
+    @classmethod
+    def get_active(cls):
+        cls.ensure_profiles()
+        active = cls.objects.filter(is_active=True).first()
+        if active:
+            return active
+        mock = cls.objects.get(provider_type=cls.PROVIDER_MOCK)
+        if not cls.objects.filter(is_active=True).exists():
+            mock.is_active = True
+            mock.save(update_fields=['is_active', 'updated_at'])
+        return mock
+
+    @classmethod
+    def get_profile(cls, provider_type: str):
+        cls.ensure_profiles()
+        return cls.objects.get(provider_type=provider_type)
+
+    @classmethod
+    def activate(cls, provider_type: str):
+        cls.ensure_profiles()
+        with transaction.atomic():
+            cls.objects.update(is_active=False)
+            profile = cls.objects.select_for_update().get(provider_type=provider_type)
+            profile.is_active = True
+            profile.save(update_fields=['is_active', 'updated_at'])
+            singleton = SmsProviderSettings.get_settings()
+            singleton.provider_mode = provider_type
+            singleton.is_active = True
+            singleton.save(update_fields=['provider_mode', 'is_active', 'updated_at'])
+        return profile
+
+
 class OtpTemplate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField('نام قالب', max_length=100)
     sms_ir_template_id = models.PositiveIntegerField('شناسه قالب SMS.ir', null=True, blank=True)
     pattern_code = models.CharField('کد Pattern IranPayamak', max_length=50, blank=True)
+    provider_type = models.CharField(
+        'ارائه‌دهنده',
+        max_length=20,
+        choices=SmsProviderSettings.PROVIDER_CHOICES,
+        blank=True,
+        default='',
+    )
     parameter_name = models.CharField('نام پارامتر', max_length=50, default='Code')
     body_preview = models.TextField('پیش‌نمایش متن', blank=True, default='کد تایید شما: {Code}')
     is_active = models.BooleanField('فعال', default=True)

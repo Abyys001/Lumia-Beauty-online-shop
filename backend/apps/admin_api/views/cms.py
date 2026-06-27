@@ -35,7 +35,7 @@ class AdminTrustBadgeListCreateView(generics.ListCreateAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return TrustBadge.objects.all().order_by('sort_order', 'title')
+        return TrustBadge.objects.all().order_by('created_at')
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()

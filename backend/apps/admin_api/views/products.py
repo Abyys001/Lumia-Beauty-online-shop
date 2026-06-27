@@ -16,10 +16,9 @@ from ..serializers import (
 
 class AdminProductListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsStaff]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['category', 'brand', 'is_active', 'is_featured']
     search_fields = ['name', 'sku', 'slug']
-    ordering_fields = ['name', 'price', 'stock', 'created_at', 'sales_count']
     ordering = ['-created_at']
 
     def get_queryset(self):

@@ -120,6 +120,8 @@ export function useApi() {
 
       headers,
 
+      credentials: import.meta.client ? 'include' : options.credentials,
+
       onResponse(ctx) {
 
         if (ctx.response._data !== undefined && ctx.response._data !== null) {

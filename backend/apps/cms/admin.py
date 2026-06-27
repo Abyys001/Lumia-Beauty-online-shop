@@ -22,13 +22,13 @@ class HomeHeroAdmin(admin.ModelAdmin):
 
 @admin.register(TrustBadge)
 class TrustBadgeAdmin(admin.ModelAdmin):
-    list_display = ['title', 'icon', 'sort_order', 'is_active']
-    list_editable = ['sort_order', 'is_active']
-    ordering = ['sort_order']
+    list_display = ['title', 'icon', 'is_active']
+    list_editable = ['is_active']
+    ordering = ['created_at']
 
 
 @admin.register(InstagramPage)
 class InstagramPageAdmin(admin.ModelAdmin):
-    list_display = ['username', 'label', 'sort_order', 'is_active']
-    list_editable = ['sort_order', 'is_active']
-    ordering = ['sort_order']
+    list_display = ['username', 'label', 'is_active']
+    list_editable = ['is_active']
+    ordering = ['created_at']

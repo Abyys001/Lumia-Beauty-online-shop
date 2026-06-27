@@ -57,6 +57,21 @@ export interface Category {
   children: Category[]
 }
 
+export interface AdminCategory {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  image?: string | null
+  parent: string | null
+  mood?: string
+  is_active: boolean
+  meta_title?: string
+  meta_description?: string
+  created_at?: string
+  children?: { id: string; name: string; slug: string }[]
+}
+
 export interface CartItem {
   id: string
   product: Product
@@ -146,9 +161,9 @@ export interface InstagramPage {
   id: string
   username: string
   label: string
-  sort_order: number
   profile_url: string
   is_active?: boolean
+  created_at?: string
 }
 
 export interface PaginatedResponse<T> {
@@ -176,7 +191,6 @@ export interface TrustBadge {
   icon: string
   title: string
   description?: string
-  sort_order?: number
 }
 
 export interface HomeCMS {
@@ -230,6 +244,25 @@ export interface ShippingSettings {
   free_shipping_threshold: number
 }
 
+export interface SmsProviderProfile {
+  provider_type: 'mock' | 'smsir' | 'iranpayamak'
+  api_key?: string
+  sandbox_api_key?: string
+  panel_password?: string
+  base_url: string
+  is_sandbox: boolean
+  is_active: boolean
+  has_api_key?: boolean
+  line_number?: string
+  number_format?: 'english' | 'persian'
+  panel_username?: string
+  has_bearer_token?: boolean
+  last_test_at: string | null
+  last_test_status: string
+  last_test_message: string
+  updated_at?: string
+}
+
 export interface SmsProviderSettings {
   provider_mode: 'mock' | 'smsir' | 'iranpayamak'
   api_key?: string
@@ -273,6 +306,7 @@ export interface OtpTemplate {
   name: string
   sms_ir_template_id?: number | null
   pattern_code?: string
+  provider_type?: string
   parameter_name: string
   body_preview: string
   is_active: boolean
@@ -472,8 +506,8 @@ export interface AdminTrustBadge {
   icon: string
   title: string
   description?: string
-  sort_order: number
   is_active: boolean
+  created_at?: string
 }
 
 export interface SmsLog {

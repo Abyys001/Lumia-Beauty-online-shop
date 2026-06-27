@@ -12,7 +12,7 @@ from .services import get_or_create_cart
 
 
 class CartView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
         cart = get_or_create_cart(request)
@@ -55,7 +55,7 @@ class CartView(APIView):
 
 
 class CartItemView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @transaction.atomic
     def patch(self, request, item_id):

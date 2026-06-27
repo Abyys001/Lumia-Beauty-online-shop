@@ -7,12 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Full stack (Docker)
 ```bash
 cp .env.example .env
-docker compose up -d --build   # --build only needed first time or after dependency changes
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 # Daily development (code hot-reloads via volume mounts — no rebuild):
-docker compose up -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 # Optional: auto-rebuild images when requirements.txt / package.json change:
-docker compose watch
+docker compose -f docker-compose.yml -f docker-compose.dev.yml watch
 
 # First-time seed
 docker compose exec backend python manage.py createsuperuser
@@ -28,9 +28,9 @@ docker compose logs -f backend
 docker compose logs -f frontend
 ```
 
-**Production:** set `APP_ENV=production` and `DJANGO_DEBUG=False` in `.env`, then `docker compose up -d --build`.
+**Production (Liara, 4 containers, no Nginx):** build frontend locally first (`cd frontend && npm ci && npm run build`), set `APP_ENV=production` and `DJANGO_DEBUG=False` in `.env`, then `docker compose up -d --build`. Liara routes `/api`, `/static`, `/media`, `/django-admin` → backend:8000 and `/` → frontend:3000.
 
-Site: http://localhost | Django admin: http://localhost/django-admin/ | Vue admin: http://localhost/admin
+Site (dev): http://localhost:3000 | Django admin: http://localhost:8000/django-admin/ | Vue admin: http://localhost:3000/admin
 
 ### Frontend only (no Docker)
 ```bash
@@ -53,9 +53,11 @@ No test suite or linter is configured yet.
 
 ## Architecture
 
-**Stack:** Nuxt 3 (SSR) → Nginx → Django 5 / DRF | PostgreSQL 16 | Redis 7
+**Stack:** Nuxt 3 (SSR) → Liara edge proxy (production) or direct ports (dev) → Django 5 / DRF | PostgreSQL 16 | Redis 7
 
-All services communicate on the `lumia_net` Docker bridge. Nginx proxies `/api` and `/django-admin` to `backend:8000`; everything else goes to the Nuxt dev/SSR server on `frontend:3000`. Static files at `/static/` also proxy to backend.
+Four Docker containers in production: `db`, `redis`, `backend`, `frontend`. No Nginx container — Liara proxies `/api`, `/django-admin`, `/static`, `/media` to `backend:8000` and everything else to `frontend:3000`. Static files served by WhiteNoise; media by Django in production.
+
+Local dev uses `docker-compose.dev.yml` overlay: frontend on `:3000` (Nuxt dev + `devProxy` for `/api`), backend on `:8000`.
 
 ### Backend (`backend/`)
 
@@ -86,7 +88,7 @@ Django project at `config/`. Eight Django apps under `apps/`:
 
 Nuxt 3 SSR app. Persian/RTL throughout (`lang="fa"`, `dir="rtl"`). Vazirmatn font from CDN. DaisyUI component library with custom `lumia` theme (gold/dark/cream palette).
 
-**Dual API URL pattern** (`composables/useApi.ts`): SSR requests use `NUXT_API_INTERNAL_URL` (`http://backend:8000/api`); browser requests use `NUXT_PUBLIC_API_BASE` (`http://localhost/api`). Always use `apiFetch` from `useApi()` — never call `$fetch` directly.
+**Dual API URL pattern** (`composables/useApi.ts`): SSR requests use `NUXT_API_INTERNAL_URL` (`http://backend:8000/api`); browser requests use `NUXT_PUBLIC_API_BASE` (dev: `http://localhost:3000/api` via devProxy; prod: `https://yourdomain.com/api`). Always use `apiFetch` from `useApi()` — never call `$fetch` directly.
 
 **JWT expiry check:** `useApi.ts` decodes the JWT `exp` claim before attaching the `Authorization` header. Expired tokens trigger `auth.logout()` silently instead of sending the bad token (which would cause 401 even on `AllowAny` endpoints).
 
@@ -116,11 +118,11 @@ Nuxt 3 SSR app. Persian/RTL throughout (`lang="fa"`, `dir="rtl"`). Vazirmatn fon
 | `ADMIN_BYPASS_PHONE` | Phone number that skips OTP verification |
 | `DJANGO_OTP_DEBUG_CODE` | `True` = fixed OTP code logged to console (dev only) |
 | `NUXT_API_INTERNAL_URL` | Backend URL for Nuxt SSR (Docker: `http://backend:8000/api`) |
-| `NUXT_PUBLIC_API_BASE` | Backend URL for browser JS (Docker: `http://localhost/api`) |
-| `NUXT_VITE_CLIENT_PORT` | Set to `80` in Docker so Vite HMR WebSocket routes through nginx |
+| `NUXT_PUBLIC_API_BASE` | Backend URL for browser JS (dev Docker: `http://localhost:3000/api`) |
+| `GUNICORN_WORKERS` | Gunicorn worker count (default `2` in production compose) |
 
-### Hot reload (Docker)
+### Hot reload (Docker dev overlay)
 
-Frontend: `CHOKIDAR_USEPOLLING=true` + `vite.server.watch.usePolling` in `nuxt.config.ts` handles file watching inside Docker on macOS. Vite HMR WebSocket connects through nginx on port 80 via `NUXT_VITE_CLIENT_PORT=80`.
+Frontend: `CHOKIDAR_USEPOLLING=true` + `vite.server.watch.usePolling` in `nuxt.config.ts` handles file watching inside Docker. Access frontend at http://localhost:3000.
 
-Backend: Django `runserver` auto-reloads on file changes via the `./backend:/app` volume mount.
+Backend: Django `runserver` auto-reloads on file changes via the `./backend:/app` volume mount in `docker-compose.dev.yml`.

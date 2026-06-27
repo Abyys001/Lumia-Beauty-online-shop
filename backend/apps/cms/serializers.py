@@ -34,7 +34,7 @@ class HomeHeroSerializer(serializers.ModelSerializer):
 class TrustBadgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrustBadge
-        fields = ['icon', 'title', 'description', 'sort_order']
+        fields = ['icon', 'title', 'description']
 
 
 class InstagramPageSerializer(serializers.ModelSerializer):
@@ -42,7 +42,7 @@ class InstagramPageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InstagramPage
-        fields = ['id', 'username', 'label', 'sort_order', 'profile_url']
+        fields = ['id', 'username', 'label', 'profile_url']
 
     def get_profile_url(self, obj):
         return obj.profile_url

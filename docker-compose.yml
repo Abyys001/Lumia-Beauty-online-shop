@@ -1,15 +1,25 @@
-# Unified Compose — development & production via APP_ENV in .env
-# Development (default): code is volume-mounted; Django runserver + Nuxt dev hot-reload.
-# Production: set APP_ENV=production and DJANGO_DEBUG=False in .env
+# Production-oriented Compose for Liara (4 containers: db, redis, backend, frontend).
+# Liara edge proxy routes /api, /static, /media, /django-admin → backend:8000 and / → frontend:3000.
 #
-# First time only:  docker compose up -d --build
-# Daily dev:        docker compose up -d          (no --build needed)
-# Auto watch:        docker compose watch          (rebuilds image only when deps change)
+# Production:
+#   cd frontend && npm ci && npm run build
+#   docker compose up -d --build
+#
+# Local development (hot-reload, no Nginx):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    mem_limit: 400m
+    command: >
+      postgres
+      -c shared_buffers=96MB
+      -c effective_cache_size=192MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c max_connections=50
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-lumia_beauty}
       POSTGRES_USER: ${POSTGRES_USER:-lumia}
@@ -27,7 +37,12 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    mem_limit: 150m
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
@@ -44,11 +59,9 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     volumes:
-      - ./backend:/app
       - media_data:/app/media
-      - static_data:/app/staticfiles
     environment:
-      APP_ENV: ${APP_ENV:-development}
+      APP_ENV: ${APP_ENV:-production}
       USE_SQLITE: "False"
       POSTGRES_DB: ${POSTGRES_DB:-lumia_beauty}
       POSTGRES_USER: ${POSTGRES_USER:-lumia}
@@ -57,14 +70,14 @@ services:
       POSTGRES_PORT: 5432
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-secret-key-change-in-production}
-      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost,http://127.0.0.1}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost,http://127.0.0.1}
       DJANGO_SECURE_SSL_REDIRECT: ${DJANGO_SECURE_SSL_REDIRECT:-False}
       DJANGO_SECURE_HSTS_SECONDS: ${DJANGO_SECURE_HSTS_SECONDS:-0}
       DJANGO_OTP_DEBUG_CODE: ${DJANGO_OTP_DEBUG_CODE:-False}
-      OTP_DISABLE_RATE_LIMIT: ${OTP_DISABLE_RATE_LIMIT:-True}
+      OTP_DISABLE_RATE_LIMIT: ${OTP_DISABLE_RATE_LIMIT:-False}
       ZARINPAL_MERCHANT_ID: ${ZARINPAL_MERCHANT_ID:-}
       ZARINPAL_SANDBOX: ${ZARINPAL_SANDBOX:-True}
       ZARINPAL_MOCK: ${ZARINPAL_MOCK:-True}
@@ -82,8 +95,8 @@ services:
       IRANPAYAMAK_LINE_NUMBER: ${IRANPAYAMAK_LINE_NUMBER:-}
       IRANPAYAMAK_PATTERN_CODE: ${IRANPAYAMAK_PATTERN_CODE:-}
       IRANPAYAMAK_BASE_URL: ${IRANPAYAMAK_BASE_URL:-https://api.iranpayamak.com}
-      ADMIN_BYPASS_PHONE: ${ADMIN_BYPASS_PHONE:-09916122680}
-      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
+      ADMIN_BYPASS_PHONE: ${ADMIN_BYPASS_PHONE:-}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
       PYTHONDONTWRITEBYTECODE: "1"
     depends_on:
       db:
@@ -92,53 +105,23 @@ services:
         condition: service_healthy
     networks:
       - lumia_net
-    develop:
-      watch:
-        - path: ./backend/requirements.txt
-          action: rebuild
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     restart: unless-stopped
-    volumes:
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
     environment:
-      APP_ENV: ${APP_ENV:-development}
+      APP_ENV: production
+      NODE_ENV: production
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-http://localhost/api}
       NUXT_API_INTERNAL_URL: http://backend:8000/api
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost}
       NUXT_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost}
       NUXT_HOST: ${NUXT_HOST:-0.0.0.0}
       NUXT_PORT: ${NUXT_PORT:-3000}
-      CHOKIDAR_USEPOLLING: "true"
-      CHOKIDAR_INTERVAL: "300"
-      NUXT_VITE_CLIENT_PORT: "80"
     depends_on:
       - backend
-    networks:
-      - lumia_net
-    develop:
-      watch:
-        - path: ./frontend/package.json
-          action: rebuild
-        - path: ./frontend/package-lock.json
-          action: rebuild
-
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "${NGINX_HTTP_PORT:-80}:80"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - media_data:/var/www/media:ro
-      - static_data:/var/www/static:ro
-    depends_on:
-      - backend
-      - frontend
     networks:
       - lumia_net
 
@@ -146,8 +129,6 @@ volumes:
   postgres_data:
   redis_data:
   media_data:
-  static_data:
-  frontend_node_modules:
 
 networks:
   lumia_net:

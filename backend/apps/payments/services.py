@@ -6,6 +6,7 @@ from django.db.models.functions import Greatest
 from django.utils import timezone
 
 from apps.catalog.models import Product
+from apps.catalog.signals import invalidate_product_cache
 from apps.coupons.services import record_coupon_usage, validate_coupon
 from apps.orders.models import Order
 
@@ -126,6 +127,9 @@ def _fulfill_order(payment, order, result_data):
             sales_count=F('sales_count') + item.quantity,
         )
 
+    for item in items:
+        invalidate_product_cache(product_id=item.product_id, slug=item.product.slug)
+
     cart = order.user.carts.first()
     if cart:
         cart.items.all().delete()
@@ -241,6 +245,7 @@ def _restore_stock(order):
             stock=F('stock') + item.quantity,
             sales_count=Greatest(F('sales_count') - item.quantity, 0),
         )
+        invalidate_product_cache(product_id=item.product_id, slug=item.product.slug)
 
 
 @transaction.atomic

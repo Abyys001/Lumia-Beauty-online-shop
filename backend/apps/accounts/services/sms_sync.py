@@ -1,8 +1,8 @@
-"""Sync SMS.ir provider settings, OTP template, and optional API key from environment."""
+"""Sync SMS provider profiles, OTP templates, and optional API keys from environment."""
 
 import os
 
-from apps.accounts.models import OtpTemplate, SmsProviderSettings
+from apps.accounts.models import OtpTemplate, SmsProviderProfile, SmsProviderSettings
 from apps.accounts.utils.encryption import encrypt_value
 
 DEFAULT_TEMPLATE_ID = 394212
@@ -26,7 +26,6 @@ IRANPAYAMAK_DEFAULT_BODY_PREVIEW = (
     'کد ورود شما: {CODE}\n'
     'این کد تا ۲ دقیقه اعتبار دارد.'
 )
-
 
 SMS_IR_KNOWN_TEMPLATE_IDS = {123456, 394212, 100000}
 
@@ -53,14 +52,21 @@ def sync_iranpayamak_default_template(*, pattern_code: str | None = None) -> Otp
             'body_preview': IRANPAYAMAK_DEFAULT_BODY_PREVIEW,
             'is_active': True,
             'sms_ir_template_id': None,
+            'provider_type': SmsProviderProfile.PROVIDER_IRANPAYAMAK,
         },
     )
     if code:
         template.pattern_code = code
     template.is_default = True
     template.is_active = True
-    template.save(update_fields=['pattern_code', 'is_default', 'is_active', 'parameter_name', 'body_preview', 'updated_at'])
-    OtpTemplate.objects.exclude(pk=template.pk).update(is_default=False)
+    template.provider_type = SmsProviderProfile.PROVIDER_IRANPAYAMAK
+    template.save(update_fields=[
+        'pattern_code', 'is_default', 'is_active', 'provider_type',
+        'parameter_name', 'body_preview', 'updated_at',
+    ])
+    OtpTemplate.objects.exclude(pk=template.pk).filter(
+        provider_type=SmsProviderProfile.PROVIDER_IRANPAYAMAK,
+    ).update(is_default=False)
     return template
 
 
@@ -73,6 +79,7 @@ def sync_default_template_for_mode(is_sandbox: bool) -> OtpTemplate:
             'parameter_name': SANDBOX_PARAMETER_NAME,
             'body_preview': SANDBOX_BODY_PREVIEW,
             'is_active': True,
+            'provider_type': SmsProviderProfile.PROVIDER_SMSIR,
         }
         deactivate_id = DEFAULT_TEMPLATE_ID
     else:
@@ -82,6 +89,7 @@ def sync_default_template_for_mode(is_sandbox: bool) -> OtpTemplate:
             'parameter_name': DEFAULT_PARAMETER_NAME,
             'body_preview': DEFAULT_BODY_PREVIEW,
             'is_active': True,
+            'provider_type': SmsProviderProfile.PROVIDER_SMSIR,
         }
         deactivate_id = SANDBOX_TEMPLATE_ID
 
@@ -89,7 +97,9 @@ def sync_default_template_for_mode(is_sandbox: bool) -> OtpTemplate:
         sms_ir_template_id=template_id,
         defaults=defaults,
     )
-    OtpTemplate.objects.exclude(pk=template.pk).update(is_default=False)
+    OtpTemplate.objects.filter(provider_type=SmsProviderProfile.PROVIDER_SMSIR).exclude(
+        pk=template.pk,
+    ).update(is_default=False)
     if not template.is_default:
         template.is_default = True
         template.save(update_fields=['is_default', 'updated_at'])
@@ -102,56 +112,59 @@ def sync_default_template_for_mode(is_sandbox: bool) -> OtpTemplate:
 
 
 def sync_sms_settings() -> None:
-    """Seed missing values from env only — never overwrite admin panel settings."""
-    provider = SmsProviderSettings.get_settings()
-    updated: list[str] = []
+    """Seed missing profile values from env — never overwrite admin panel settings."""
+    SmsProviderProfile.ensure_profiles()
+    smsir = SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_SMSIR)
+    iranpayamak = SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_IRANPAYAMAK)
 
+    updated_smsir: list[str] = []
     env_key = (os.environ.get('SMS_IR_API_KEY') or '').strip()
-    if env_key and not provider.api_key_encrypted:
-        provider.api_key_encrypted = encrypt_value(env_key)
-        updated.append('api_key_encrypted')
+    if env_key and not smsir.api_key_encrypted:
+        smsir.api_key_encrypted = encrypt_value(env_key)
+        updated_smsir.append('api_key_encrypted')
 
     env_sandbox_key = (os.environ.get('SMS_IR_SANDBOX_API_KEY') or '').strip()
-    if env_sandbox_key and not provider.sandbox_api_key_encrypted:
-        provider.sandbox_api_key_encrypted = encrypt_value(env_sandbox_key)
-        updated.append('sandbox_api_key_encrypted')
+    if env_sandbox_key and not smsir.sandbox_api_key_encrypted:
+        smsir.sandbox_api_key_encrypted = encrypt_value(env_sandbox_key)
+        updated_smsir.append('sandbox_api_key_encrypted')
 
-    if not provider.base_url:
-        provider.base_url = os.environ.get('SMS_IR_BASE_URL', 'https://api.sms.ir/v1')
-        updated.append('base_url')
+    if not smsir.base_url:
+        smsir.base_url = os.environ.get('SMS_IR_BASE_URL', 'https://api.sms.ir/v1')
+        updated_smsir.append('base_url')
 
-    env_mode = os.environ.get('SMS_PROVIDER', '')
-    if env_mode == 'smsir' and provider.provider_mode == SmsProviderSettings.PROVIDER_MOCK:
-        provider.provider_mode = SmsProviderSettings.PROVIDER_SMSIR
-        updated.append('provider_mode')
+    if updated_smsir:
+        smsir.save(update_fields=list(dict.fromkeys(updated_smsir + ['updated_at'])))
 
-    if env_mode == 'iranpayamak' and provider.provider_mode == SmsProviderSettings.PROVIDER_MOCK:
-        provider.provider_mode = SmsProviderSettings.PROVIDER_IRANPAYAMAK
-        updated.append('provider_mode')
-        if not provider.base_url or 'sms.ir' in provider.base_url:
-            provider.base_url = os.environ.get('IRANPAYAMAK_BASE_URL', 'https://api.iranpayamak.com')
-            updated.append('base_url')
-
+    updated_ip: list[str] = []
     env_ip_key = (os.environ.get('IRANPAYAMAK_API_KEY') or '').strip()
-    if env_ip_key and not provider.api_key_encrypted:
-        provider.api_key_encrypted = encrypt_value(env_ip_key)
-        updated.append('api_key_encrypted')
+    if env_ip_key and not iranpayamak.api_key_encrypted:
+        iranpayamak.api_key_encrypted = encrypt_value(env_ip_key)
+        updated_ip.append('api_key_encrypted')
 
     env_line = (os.environ.get('IRANPAYAMAK_LINE_NUMBER') or '').strip()
-    if env_line and not provider.line_number:
-        provider.line_number = env_line
-        updated.append('line_number')
+    if env_line and not iranpayamak.line_number:
+        iranpayamak.line_number = env_line
+        updated_ip.append('line_number')
 
-    if env_key or provider.provider_mode == SmsProviderSettings.PROVIDER_SMSIR:
-        if not provider.is_active:
-            provider.is_active = True
-            updated.append('is_active')
+    if not iranpayamak.base_url:
+        iranpayamak.base_url = os.environ.get('IRANPAYAMAK_BASE_URL', 'https://api.iranpayamak.com')
+        updated_ip.append('base_url')
 
-    if updated:
-        provider.save(update_fields=list(dict.fromkeys(updated + ['updated_at'])))
+    if updated_ip:
+        iranpayamak.save(update_fields=list(dict.fromkeys(updated_ip + ['updated_at'])))
 
-    provider.refresh_from_db()
-    if provider.provider_mode == SmsProviderSettings.PROVIDER_IRANPAYAMAK:
+    env_mode = os.environ.get('SMS_PROVIDER', '')
+    if env_mode == 'smsir' and not SmsProviderProfile.objects.filter(is_active=True).exclude(
+        provider_type=SmsProviderProfile.PROVIDER_MOCK,
+    ).exists():
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_SMSIR)
+    elif env_mode == 'iranpayamak' and not SmsProviderProfile.objects.filter(is_active=True).exclude(
+        provider_type=SmsProviderProfile.PROVIDER_MOCK,
+    ).exists():
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_IRANPAYAMAK)
+
+    active = SmsProviderProfile.get_active()
+    if active.provider_type == SmsProviderProfile.PROVIDER_IRANPAYAMAK:
         sync_iranpayamak_default_template()
     elif not OtpTemplate.objects.exists():
         template_id = int(os.environ.get('SMS_IR_TEMPLATE_ID', DEFAULT_TEMPLATE_ID))
@@ -160,8 +173,15 @@ def sync_sms_settings() -> None:
             sms_ir_template_id=template_id,
             parameter_name=DEFAULT_PARAMETER_NAME,
             body_preview=DEFAULT_BODY_PREVIEW,
+            provider_type=SmsProviderProfile.PROVIDER_SMSIR,
             is_active=True,
             is_default=True,
         )
     elif not OtpTemplate.objects.filter(is_default=True).exists():
-        sync_default_template_for_mode(provider.is_sandbox)
+        sync_default_template_for_mode(smsir.is_sandbox)
+
+    # Keep singleton provider_mode in sync for legacy readers
+    singleton = SmsProviderSettings.get_settings()
+    if singleton.provider_mode != active.provider_type:
+        singleton.provider_mode = active.provider_type
+        singleton.save(update_fields=['provider_mode', 'updated_at'])

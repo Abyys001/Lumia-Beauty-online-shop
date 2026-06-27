@@ -77,7 +77,7 @@ class ProductAttributeInline(admin.TabularInline):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'parent', 'mood', 'is_active', 'sort_order']
+    list_display = ['name', 'slug', 'parent', 'mood', 'is_active']
     list_filter = ['is_active', 'mood']
     search_fields = ['name', 'slug']
     prepopulated_fields = {'slug': ('name',)}
@@ -136,8 +136,8 @@ class ReviewAdmin(admin.ModelAdmin):
 
 @admin.register(InstagramPost)
 class InstagramPostAdmin(admin.ModelAdmin):
-    list_display = ['caption_preview', 'sort_order', 'is_active', 'post_url']
-    list_editable = ['sort_order', 'is_active']
+    list_display = ['caption_preview', 'is_active', 'post_url']
+    list_editable = ['is_active']
     verbose_name = 'پست اینستاگرام'
     verbose_name_plural = 'ویترین اینستاگرام (جدول دو ستونه آپلود عکس و لینک مستقیم)'
 

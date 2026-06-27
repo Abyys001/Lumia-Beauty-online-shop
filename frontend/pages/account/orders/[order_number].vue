@@ -1,21 +1,33 @@
 <template>
-  <div class="container-lumia py-8 max-w-3xl">
+  <div class="container-lumia py-6 sm:py-8 max-w-3xl">
     <div v-if="pending" class="flex justify-center py-16">
       <span class="loading loading-spinner loading-lg" />
     </div>
 
-    <div v-else-if="order" class="space-y-6">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 class="section-title">سفارش {{ order.order_number }}</h1>
-          <p class="text-sm text-base-content/60">{{ formatDate(order.created_at) }}</p>
+    <div v-else-if="order" class="space-y-5 sm:space-y-6">
+      <!-- Breadcrumb -->
+      <nav class="flex flex-wrap items-center gap-1.5 text-sm text-base-content/60" aria-label="مسیر">
+        <NuxtLink to="/account" class="hover:text-primary transition-colors">حساب کاربری</NuxtLink>
+        <span aria-hidden="true">›</span>
+        <NuxtLink to="/account?tab=orders" class="hover:text-primary transition-colors">سفارشات</NuxtLink>
+        <span aria-hidden="true">›</span>
+        <span class="text-lumia-dark font-medium">{{ order.order_number }}</span>
+      </nav>
+
+      <!-- Hero card -->
+      <div class="bg-white rounded-3xl border border-base-200 shadow-sm p-5 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-lumia-dark">سفارش {{ order.order_number }}</h1>
+            <p class="text-sm text-base-content/60 mt-1">{{ formatDate(order.created_at) }}</p>
+          </div>
+          <span class="badge badge-lg shrink-0" :class="statusBadge(order.status)">{{ order.status_display }}</span>
         </div>
-        <span class="badge badge-lg" :class="statusBadge(order.status)">{{ order.status_display }}</span>
       </div>
 
       <!-- Status timeline -->
-      <div class="card-lumia p-6">
-        <h2 class="font-bold mb-4">وضعیت سفارش</h2>
+      <div class="bg-white rounded-3xl border border-base-200 shadow-sm p-5 sm:p-6">
+        <h2 class="font-bold text-lumia-dark mb-4">وضعیت سفارش</h2>
         <ul class="steps steps-vertical lg:steps-horizontal w-full">
           <li
             v-for="step in timelineSteps"
@@ -30,16 +42,16 @@
       </div>
 
       <!-- Tracking -->
-      <div v-if="order.tracking_number" class="card-lumia p-6 bg-info/5 border-info/20">
-        <h2 class="font-bold mb-2">کد رهگیری پست</h2>
-        <p class="font-mono text-lg tracking-wider mb-3" dir="ltr">{{ order.tracking_number }}</p>
-        <div class="flex flex-wrap gap-2">
-          <button class="btn btn-outline btn-sm rounded-full" @click="copyTracking">کپی کد</button>
+      <div v-if="order.tracking_number" class="bg-info/5 rounded-3xl border border-info/20 p-5 sm:p-6">
+        <h2 class="font-bold text-lumia-dark mb-2">کد رهگیری پست</h2>
+        <p class="font-mono text-lg tracking-wider mb-4" dir="ltr">{{ order.tracking_number }}</p>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <button class="btn btn-outline rounded-full w-full sm:w-auto" @click="copyTracking">کپی کد</button>
           <a
             :href="`https://tracking.post.ir/?id=${order.tracking_number}`"
             target="_blank"
             rel="noopener"
-            class="btn btn-primary btn-sm rounded-full"
+            class="btn btn-primary rounded-full w-full sm:w-auto"
           >
             پیگیری در سایت پست
           </a>
@@ -47,8 +59,8 @@
       </div>
 
       <!-- Items -->
-      <div class="card-lumia p-6">
-        <h2 class="font-bold mb-4">اقلام سفارش</h2>
+      <div class="bg-white rounded-3xl border border-base-200 shadow-sm p-5 sm:p-6">
+        <h2 class="font-bold text-lumia-dark mb-4">اقلام سفارش</h2>
         <div class="space-y-3">
           <div v-for="item in order.items" :key="item.id" class="flex justify-between text-sm border-b border-base-200 pb-2">
             <span>{{ item.product_name }} × {{ item.quantity }}</span>
@@ -61,30 +73,32 @@
           <div class="flex justify-between"><span class="text-base-content/60">ارسال</span><span>{{ order.shipping_cost ? formatPrice(order.shipping_cost) : 'رایگان' }}</span></div>
           <div class="flex justify-between font-bold text-lg pt-2"><span>مبلغ نهایی</span><span class="text-primary">{{ formatPrice(order.total) }}</span></div>
         </div>
-        <button
-          v-if="order.status === 'pending'"
-          class="btn btn-primary rounded-full w-full mt-4"
-          :disabled="paying"
-          @click="payOrder"
-        >
-          <span v-if="paying" class="loading loading-spinner loading-sm" />
-          <span v-else>پرداخت سفارش</span>
-        </button>
-        <p v-if="payError" class="text-error text-sm mt-2 text-center">{{ payError }}</p>
-        <button
-          v-if="canReorder"
-          class="btn btn-outline btn-primary rounded-full w-full mt-4"
-          :disabled="reordering"
-          @click="reorder"
-        >
-          <span v-if="reordering" class="loading loading-spinner loading-sm" />
-          <span v-else>خرید مجدد</span>
-        </button>
+        <div class="flex flex-col gap-2 mt-4">
+          <button
+            v-if="order.status === 'pending'"
+            class="btn btn-primary rounded-full w-full"
+            :disabled="paying"
+            @click="payOrder"
+          >
+            <span v-if="paying" class="loading loading-spinner loading-sm" />
+            <span v-else>پرداخت سفارش</span>
+          </button>
+          <p v-if="payError" class="text-error text-sm text-center">{{ payError }}</p>
+          <button
+            v-if="canReorder"
+            class="btn btn-outline btn-primary rounded-full w-full"
+            :disabled="reordering"
+            @click="reorder"
+          >
+            <span v-if="reordering" class="loading loading-spinner loading-sm" />
+            <span v-else>خرید مجدد</span>
+          </button>
+        </div>
       </div>
 
       <!-- Shipping -->
-      <div class="card-lumia p-6">
-        <h2 class="font-bold mb-3">آدرس ارسال</h2>
+      <div class="bg-white rounded-3xl border border-base-200 shadow-sm p-5 sm:p-6">
+        <h2 class="font-bold text-lumia-dark mb-3">آدرس ارسال</h2>
         <p class="text-sm">{{ order.shipping_name }} — {{ order.shipping_phone }}</p>
         <p class="text-sm text-base-content/70 mt-1">
           {{ order.shipping_province }}، {{ order.shipping_city }} — {{ order.shipping_address }}
@@ -93,9 +107,24 @@
         <p v-if="order.coupon_code" class="text-sm mt-3">کد تخفیف: <span class="font-mono">{{ order.coupon_code }}</span></p>
         <p v-if="order.note" class="text-sm mt-2 text-base-content/60">یادداشت: {{ order.note }}</p>
       </div>
+
+      <NuxtLink to="/account?tab=orders" class="btn btn-ghost rounded-full w-full sm:w-auto gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        بازگشت به لیست سفارشات
+      </NuxtLink>
     </div>
 
-    <div v-else class="text-center py-16 text-base-content/50">سفارش یافت نشد</div>
+    <div v-else class="text-center py-16">
+      <AccountEmptyState
+        icon="🔍"
+        title="سفارش یافت نشد"
+        description="این سفارش وجود ندارد یا به حساب شما تعلق ندارد."
+        action-label="بازگشت به سفارشات"
+        to="/account?tab=orders"
+      />
+    </div>
   </div>
 </template>
 

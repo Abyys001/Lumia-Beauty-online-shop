@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isAuthenticated: (state) => !!state.accessToken,
-  }),
+  },
 
   actions: {
     async refreshAccessToken(): Promise<boolean> {
@@ -41,6 +41,7 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('lumia_access', access)
         localStorage.setItem('lumia_refresh', refresh)
         localStorage.setItem('lumia_user', JSON.stringify(user))
+        useCartStore().fetchCart().catch(() => {})
       }
     },
 

@@ -4,7 +4,7 @@ from typing import Any
 
 import requests
 
-from apps.accounts.models import OtpTemplate, SmsProviderSettings
+from apps.accounts.models import OtpTemplate, SmsProviderProfile
 from apps.accounts.services.sms_config import SmsConfigService
 from apps.accounts.sms.base import SmsProvider, SmsResult
 from apps.accounts.sms.smsir_utils import (
@@ -119,20 +119,20 @@ def validate_sms_ir_api_key(api_key: str, base_url: str = SMS_IR_BASE_URL) -> tu
     return None, result.error_hint or result.message
 
 
-def get_sms_ir_client() -> SmsIrClient | None:
-    api_key = SmsConfigService.resolve_api_key()
+def get_sms_ir_client(profile: SmsProviderProfile | None = None) -> SmsIrClient | None:
+    profile = profile or SmsConfigService.get_active_profile()
+    api_key = SmsConfigService.resolve_api_key(profile=profile)
     if not api_key:
         return None
-    settings = SmsConfigService.get_provider_settings()
-    return SmsIrClient(api_key, settings.base_url or SMS_IR_BASE_URL)
+    return SmsIrClient(api_key, profile.base_url or SMS_IR_BASE_URL)
 
 
 class SmsIrProvider(SmsProvider):
-    def __init__(self, settings_obj: SmsProviderSettings | None = None):
-        self.settings_obj = settings_obj or SmsConfigService.get_provider_settings()
+    def __init__(self, settings_obj: SmsProviderProfile | None = None):
+        self.settings_obj = settings_obj or SmsConfigService.get_active_profile()
 
     def _client(self) -> SmsIrClient | None:
-        api_key = SmsConfigService.resolve_api_key()
+        api_key = SmsConfigService.resolve_api_key(profile=self.settings_obj)
         if not api_key:
             return None
         return SmsIrClient(api_key, self.settings_obj.base_url or SMS_IR_BASE_URL)
@@ -200,7 +200,7 @@ class SmsIrProvider(SmsProvider):
     def test_connection(self) -> SmsResult:
         credit, error = self.get_credit()
         if credit is None:
-            if not SmsConfigService.resolve_api_key():
+            if not SmsConfigService.resolve_api_key(profile=self.settings_obj):
                 return SmsResult(success=False, provider_response={}, error='API key not configured')
             return SmsResult(success=False, provider_response={}, error=error or 'Could not fetch credit from SMS.ir')
         return SmsResult(

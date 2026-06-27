@@ -20,21 +20,9 @@ sync_deps() {
 
 sync_deps
 
-if [ "$APP_ENV" != "production" ]; then
-  rm -rf .output
-fi
-
 if [ ! -f .nuxt/nuxt.d.ts ]; then
   echo "Preparing Nuxt..."
   npx nuxt prepare
-fi
-
-if [ "$APP_ENV" = "production" ]; then
-  if [ ! -f .output/server/index.mjs ] || [ package.json -nt .output/server/index.mjs ] 2>/dev/null; then
-    echo "Building Nuxt for production..."
-    npm run build
-  fi
-  exec node .output/server/index.mjs
 fi
 
 exec npm run dev

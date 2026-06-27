@@ -1,7 +1,10 @@
 <template>
-  <div>
-    <div class="flex justify-end mb-5">
-      <button class="btn btn-primary btn-sm gap-2" @click="openModal()">
+  <div class="min-w-0 max-w-full">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+      <div>
+        <p class="text-sm text-lumia-dark/50">{{ categories.length }} دسته‌بندی</p>
+      </div>
+      <button class="btn btn-primary btn-sm gap-2 rounded-xl shadow-sm" @click="openModal()">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
@@ -9,32 +12,52 @@
       </button>
     </div>
 
-    <div v-if="loading" class="bg-white rounded-2xl shadow-sm border border-base-200 p-8 text-center text-lumia-dark/40">در حال بارگذاری...</div>
+    <div v-if="loading" class="bg-white rounded-2xl shadow-sm border border-base-200 p-10 text-center">
+      <span class="loading loading-spinner loading-md text-lumia-gold" />
+      <p class="text-lumia-dark/40 text-sm mt-3">در حال بارگذاری...</p>
+    </div>
 
     <template v-else>
       <!-- Mobile cards -->
       <div class="lg:hidden space-y-2 mb-4">
-        <div
+        <button
           v-for="cat in categories"
           :key="cat.id"
-          class="bg-white rounded-xl p-3 border border-base-200"
+          type="button"
+          class="w-full text-right bg-white rounded-2xl p-4 border border-base-200 hover:border-lumia-gold/30 hover:shadow-sm transition-all active:scale-[0.99]"
+          @click="openModal(cat)"
         >
-          <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-base-200/80 flex items-center justify-center shrink-0 overflow-hidden text-lg">
+              <img v-if="cat.image" :src="mediaUrl(cat.image)" class="w-full h-full object-cover" alt="" />
+              <span v-else>{{ moodEmoji(cat.mood) }}</span>
+            </div>
             <div class="flex-1 min-w-0">
-              <div class="font-medium text-sm">{{ cat.name }}</div>
-              <div class="text-xs text-lumia-dark/40 mt-0.5" dir="ltr">{{ cat.slug }}</div>
-              <div class="flex items-center gap-2 mt-1 text-xs text-lumia-dark/50 flex-wrap">
-                <span v-if="parentName(cat.parent) !== '—'">والد: {{ parentName(cat.parent) }}</span>
-                <span v-if="cat.mood">· {{ cat.mood }}</span>
-                <span>· ترتیب: {{ cat.sort_order }}</span>
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-sm truncate">{{ cat.name }}</span>
+                <span
+                  class="badge badge-xs border-0 shrink-0"
+                  :class="cat.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-base-200 text-lumia-dark/50'"
+                >
+                  {{ cat.is_active ? 'فعال' : 'غیرفعال' }}
+                </span>
+              </div>
+              <div class="text-xs text-lumia-dark/40 mt-0.5 truncate" dir="ltr">{{ cat.slug }}</div>
+              <div class="flex items-center gap-2 mt-1 text-xs text-lumia-dark/50">
+                <span v-if="parentName(cat.parent) !== '—'">{{ parentName(cat.parent) }}</span>
+                <span v-if="cat.mood">{{ moodLabel(cat.mood) }}</span>
               </div>
             </div>
-            <div class="flex items-center gap-3 flex-shrink-0">
-              <input type="checkbox" class="toggle toggle-success toggle-sm" :checked="cat.is_active" @change="toggleActive(cat, $event)" />
-              <button class="btn btn-ghost btn-xs text-lumia-gold" @click="openModal(cat)">ویرایش</button>
+            <div class="shrink-0" @click.stop>
+              <input
+                type="checkbox"
+                class="toggle toggle-success toggle-sm"
+                :checked="cat.is_active"
+                @change="toggleActive(cat, $event)"
+              />
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       <!-- Desktop table -->
@@ -43,146 +66,159 @@
           <table class="table w-full">
             <thead class="bg-base-200/50">
               <tr class="text-lumia-dark/60 text-xs">
+                <th class="font-medium text-right w-14" />
                 <th class="font-medium text-right">نام</th>
                 <th class="font-medium text-right">والد</th>
                 <th class="font-medium text-right">حالت</th>
-                <th class="font-medium text-right">ترتیب</th>
-                <th class="font-medium text-right">فعال</th>
-                <th></th>
+                <th class="font-medium text-right">وضعیت</th>
+                <th class="font-medium text-right w-24">فعال</th>
+                <th class="w-10" />
               </tr>
             </thead>
             <tbody>
-              <tr v-for="cat in categories" :key="cat.id" class="hover:bg-base-200/30">
+              <tr
+                v-for="cat in categories"
+                :key="cat.id"
+                class="hover:bg-lumia-gold/5 cursor-pointer group transition-colors"
+                @click="openModal(cat)"
+              >
                 <td>
-                  <div class="font-medium text-sm">{{ cat.name }}</div>
-                  <div class="text-xs text-lumia-dark/40" dir="ltr">{{ cat.slug }}</div>
+                  <div class="w-10 h-10 rounded-xl bg-base-200/80 flex items-center justify-center overflow-hidden text-base">
+                    <img v-if="cat.image" :src="mediaUrl(cat.image)" class="w-full h-full object-cover" alt="" />
+                    <span v-else>{{ moodEmoji(cat.mood) }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="font-medium text-sm group-hover:text-lumia-gold transition-colors">{{ cat.name }}</div>
+                  <div class="text-xs text-lumia-dark/40 font-mono" dir="ltr">{{ cat.slug }}</div>
                 </td>
                 <td class="text-sm text-lumia-dark/60">{{ parentName(cat.parent) }}</td>
-                <td class="text-sm text-lumia-dark/60">{{ cat.mood }}</td>
-                <td class="text-sm text-lumia-dark/60">{{ cat.sort_order }}</td>
-                <td><input type="checkbox" class="toggle toggle-success toggle-sm" :checked="cat.is_active" @change="toggleActive(cat, $event)" /></td>
-                <td><button class="btn btn-ghost btn-xs text-lumia-gold" @click="openModal(cat)">ویرایش</button></td>
+                <td>
+                  <span v-if="cat.mood" class="inline-flex items-center gap-1 text-sm text-lumia-dark/70">
+                    <span>{{ moodEmoji(cat.mood) }}</span>
+                    {{ moodLabel(cat.mood) }}
+                  </span>
+                  <span v-else class="text-lumia-dark/30">—</span>
+                </td>
+                <td>
+                  <span
+                    class="badge badge-sm border-0"
+                    :class="cat.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-base-200 text-lumia-dark/50'"
+                  >
+                    {{ cat.is_active ? 'فعال' : 'غیرفعال' }}
+                  </span>
+                </td>
+                <td @click.stop>
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-success toggle-sm"
+                    :checked="cat.is_active"
+                    @change="toggleActive(cat, $event)"
+                  />
+                </td>
+                <td>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-lumia-dark/20 group-hover:text-lumia-gold transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+
+      <div v-if="!categories.length" class="bg-white rounded-2xl border border-dashed border-base-300 p-12 text-center">
+        <div class="text-4xl mb-3">📁</div>
+        <p class="font-medium text-lumia-dark mb-1">هنوز دسته‌بندی ندارید</p>
+        <p class="text-sm text-lumia-dark/50 mb-4">اولین دسته‌بندی فروشگاه را بسازید</p>
+        <button class="btn btn-primary btn-sm rounded-xl" @click="openModal()">ایجاد دسته‌بندی</button>
+      </div>
     </template>
 
-    <!-- Modal -->
-    <dialog ref="modalEl" class="modal">
-      <div class="modal-box max-w-lg w-full mx-4">
-        <h3 class="font-bold text-lumia-dark mb-4">{{ editing?.id ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید' }}</h3>
-        <form @submit.prevent="save" class="space-y-3">
-          <div>
-            <label class="label-text text-xs block mb-1">نام *</label>
-            <input v-model="form.name" type="text" class="input input-bordered w-full input-sm" required />
-          </div>
-          <div>
-            <label class="label-text text-xs block mb-1">اسلاگ</label>
-            <input v-model="form.slug" type="text" class="input input-bordered w-full input-sm" dir="ltr" />
-          </div>
-          <div>
-            <label class="label-text text-xs block mb-1">والد</label>
-            <select v-model="form.parent" class="select select-bordered w-full select-sm">
-              <option :value="null">بدون والد</option>
-              <option v-for="c in rootCategories" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="label-text text-xs block mb-1">حالت</label>
-              <select v-model="form.mood" class="select select-bordered w-full select-sm">
-                <option value="">—</option>
-                <option value="perfume">عطر</option>
-                <option value="skincare">مراقبت پوست</option>
-                <option value="makeup">آرایشی</option>
-              </select>
-            </div>
-            <div>
-              <label class="label-text text-xs block mb-1">ترتیب</label>
-              <input v-model.number="form.sort_order" type="number" class="input input-bordered w-full input-sm" dir="ltr" />
-            </div>
-          </div>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input v-model="form.is_active" type="checkbox" class="checkbox checkbox-sm" />
-            <span class="text-sm">فعال</span>
-          </label>
-          <div class="modal-action gap-2 mt-4">
-            <button type="button" class="btn btn-ghost btn-sm" @click="closeModal">لغو</button>
-            <button v-if="editing?.id" type="button" class="btn btn-error btn-outline btn-sm" @click="deleteCategory">حذف</button>
-            <button type="submit" class="btn btn-primary btn-sm">ذخیره</button>
-          </div>
-        </form>
-      </div>
-      <form method="dialog" class="modal-backdrop"><button @click="closeModal">بستن</button></form>
-    </dialog>
+    <AdminCategoryFormModal
+      ref="modalRef"
+      :categories="categories"
+      @saved="onSaved"
+      @deleted="onDeleted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { AdminCategory } from '~/types'
+
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 
 const { apiFetch } = useApi()
-const categories = ref<any[]>([])
+const { normalizeMediaUrl } = useMediaUrl()
+
+const categories = ref<AdminCategory[]>([])
 const loading = ref(true)
-const modalEl = ref<HTMLDialogElement | null>(null)
-const editing = ref<any>(null)
+const modalRef = ref<{ open: (cat?: AdminCategory) => void } | null>(null)
 
-const form = ref({ name: '', slug: '', parent: null as string | null, mood: '', sort_order: 0, is_active: true })
+const moodMap: Record<string, { emoji: string; label: string }> = {
+  perfume: { emoji: '🌸', label: 'عطر' },
+  skincare: { emoji: '✨', label: 'مراقبت پوست' },
+  makeup: { emoji: '💄', label: 'آرایشی' },
+  cool: { emoji: '❄️', label: 'خنک' },
+  sweet: { emoji: '🍯', label: 'شیرین' },
+  warm: { emoji: '🔥', label: 'گرم' },
+}
 
-const rootCategories = computed(() => categories.value.filter(c => !c.parent))
+function mediaUrl(url: string | null | undefined) {
+  return normalizeMediaUrl(url) ?? ''
+}
+
+function moodEmoji(mood?: string) {
+  return moodMap[mood || '']?.emoji ?? '📁'
+}
+
+function moodLabel(mood: string) {
+  return moodMap[mood]?.label ?? mood
+}
 
 function parentName(parentId: string | null) {
   if (!parentId) return '—'
-  return categories.value.find(c => c.id === parentId)?.name ?? parentId
+  return categories.value.find(c => c.id === parentId)?.name ?? '—'
 }
 
 async function load() {
   loading.value = true
-  const res = await apiFetch<any>('/admin/categories/')
-  categories.value = res.results ?? res
-  loading.value = false
-}
-
-function openModal(cat?: any) {
-  editing.value = cat ?? null
-  if (cat) {
-    form.value = { name: cat.name, slug: cat.slug, parent: cat.parent, mood: cat.mood ?? '', sort_order: cat.sort_order ?? 0, is_active: cat.is_active }
-  } else {
-    form.value = { name: '', slug: '', parent: null, mood: '', sort_order: 0, is_active: true }
+  try {
+    const res = await apiFetch<{ results?: AdminCategory[] } | AdminCategory[]>('/admin/categories/')
+    categories.value = Array.isArray(res) ? res : (res.results ?? [])
+  } finally {
+    loading.value = false
   }
-  modalEl.value?.showModal()
 }
 
-function closeModal() {
-  modalEl.value?.close()
+function openModal(cat?: AdminCategory) {
+  modalRef.value?.open(cat)
 }
 
-async function save() {
-  const body = { ...form.value, parent: form.value.parent || null }
-  if (editing.value?.id) {
-    const updated = await apiFetch<any>(`/admin/categories/${editing.value.id}/`, { method: 'PATCH', body })
-    const idx = categories.value.findIndex(c => c.id === editing.value.id)
-    if (idx !== -1) categories.value[idx] = updated
+function onSaved(category: AdminCategory) {
+  const idx = categories.value.findIndex(c => c.id === category.id)
+  if (idx !== -1) {
+    categories.value[idx] = category
   } else {
-    const created = await apiFetch<any>('/admin/categories/', { method: 'POST', body })
-    categories.value.push(created)
+    categories.value.push(category)
   }
-  closeModal()
 }
 
-async function deleteCategory() {
-  if (!confirm('حذف شود؟')) return
-  await apiFetch(`/admin/categories/${editing.value.id}/`, { method: 'DELETE' })
-  categories.value = categories.value.filter(c => c.id !== editing.value.id)
-  closeModal()
+function onDeleted(id: string) {
+  categories.value = categories.value.filter(c => c.id !== id)
 }
 
-async function toggleActive(cat: any, e: Event) {
+async function toggleActive(cat: AdminCategory, e: Event) {
   const val = (e.target as HTMLInputElement).checked
-  await apiFetch(`/admin/categories/${cat.id}/`, { method: 'PATCH', body: { is_active: val } })
+  const prev = cat.is_active
   cat.is_active = val
+  try {
+    await apiFetch(`/admin/categories/${cat.id}/`, { method: 'PATCH', body: { is_active: val } })
+  } catch {
+    cat.is_active = prev
+    ;(e.target as HTMLInputElement).checked = prev
+  }
 }
 
 onMounted(load)

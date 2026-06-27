@@ -182,7 +182,7 @@ class OtpService:
         if existing_code and pending:
             provider = _get_sms_provider()
             provider_name = _provider_name(provider)
-            provider_settings = SmsConfigService.get_provider_settings()
+            provider_settings = SmsConfigService.get_active_profile()
             simulated = _is_simulated_send(provider_name, provider_settings, True)
             return OtpRequestResult(
                 True,
@@ -208,7 +208,7 @@ class OtpService:
 
         provider = _get_sms_provider()
         provider_name = _provider_name(provider)
-        provider_settings = SmsConfigService.get_provider_settings()
+        provider_settings = SmsConfigService.get_active_profile()
         result = provider.send_otp(phone, code, template)
 
         request_payload = {

@@ -8,7 +8,7 @@ from ..serializers_cms import AdminInstagramPageSerializer
 
 class AdminInstagramListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsStaff]
-    queryset = InstagramPage.objects.all().order_by('sort_order', 'username')
+    queryset = InstagramPage.objects.all().order_by('created_at')
     serializer_class = AdminInstagramPageSerializer
 
 

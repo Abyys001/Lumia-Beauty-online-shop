@@ -92,16 +92,6 @@
               required
             />
           </div>
-          <div>
-            <label class="label-text text-xs block mb-1">ترتیب نمایش</label>
-            <input
-              v-model.number="form.sort_order"
-              type="number"
-              min="0"
-              class="input input-bordered w-full rounded-xl"
-              dir="ltr"
-            />
-          </div>
           <label class="flex items-center gap-2 cursor-pointer">
             <input v-model="form.is_active" type="checkbox" class="checkbox checkbox-sm" />
             <span class="text-sm">فعال</span>
@@ -130,7 +120,7 @@ const loading = ref(true)
 const saving = ref(false)
 const modalEl = ref<HTMLDialogElement | null>(null)
 const editing = ref<InstagramPage | null>(null)
-const form = ref({ username: '', label: '', sort_order: 0, is_active: true })
+const form = ref({ username: '', label: '', is_active: true })
 
 async function load() {
   loading.value = true
@@ -148,10 +138,9 @@ function openModal(page?: InstagramPage) {
     ? {
         username: page.username,
         label: page.label,
-        sort_order: page.sort_order ?? 0,
         is_active: page.is_active ?? true,
       }
-    : { username: '', label: '', sort_order: pages.value.length, is_active: true }
+    : { username: '', label: '', is_active: true }
   modalEl.value?.showModal()
 }
 
@@ -173,7 +162,6 @@ async function save() {
     } else {
       const created = await apiFetch<InstagramPage>('/admin/instagram/', { method: 'POST', body })
       pages.value.push(created)
-      pages.value.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     }
     closeModal()
   } finally {

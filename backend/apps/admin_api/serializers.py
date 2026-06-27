@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.accounts.models import (
     Address, AuthAuditLog, AuthSettings, OtpSettings, OtpTemplate,
-    SmsLog, SmsProviderSettings, User,
+    SmsLog, SmsProviderProfile, SmsProviderSettings, User,
 )
 from apps.blog.models import Post, PostCategory, Tag
 from apps.catalog.media_utils import relative_media_url
@@ -60,12 +60,15 @@ class AdminCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'slug', 'description', 'image', 'parent',
-                  'mood', 'is_active', 'sort_order', 'meta_title', 'meta_description',
+                  'mood', 'is_active', 'meta_title', 'meta_description',
                   'created_at', 'children']
         read_only_fields = ['id', 'created_at']
 
     def get_children(self, obj):
-        return [{'id': c.id, 'name': c.name, 'slug': c.slug} for c in obj.children.all()]
+        return [
+            {'id': c.id, 'name': c.name, 'slug': c.slug}
+            for c in obj.children.order_by('created_at')
+        ]
 
 
 class AdminBrandSerializer(serializers.ModelSerializer):
@@ -80,8 +83,8 @@ class AdminProductImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'alt_text', 'is_primary', 'sort_order']
-        read_only_fields = ['id']
+        fields = ['id', 'image', 'alt_text', 'is_primary', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
 
 class AdminProductAttributeSerializer(serializers.ModelSerializer):
@@ -255,7 +258,7 @@ class AdminReviewSerializer(serializers.ModelSerializer):
 class AdminInstagramPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = InstagramPost
-        fields = ['id', 'image', 'post_url', 'caption', 'sort_order', 'is_active']
+        fields = ['id', 'image', 'post_url', 'caption', 'is_active']
         read_only_fields = ['id']
 
 
@@ -432,6 +435,23 @@ class AdminPostSerializer(serializers.ModelSerializer):
 from apps.accounts.sms.iranpayamak_utils import to_ascii_digits
 
 
+class AdminSmsProviderProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SmsProviderProfile
+        fields = [
+            'provider_type', 'base_url', 'is_sandbox', 'is_active',
+            'line_number', 'number_format', 'panel_username',
+            'last_test_at', 'last_test_status', 'last_test_message', 'updated_at',
+        ]
+        read_only_fields = [
+            'provider_type', 'is_active',
+            'last_test_at', 'last_test_status', 'last_test_message', 'updated_at',
+        ]
+
+    def validate_line_number(self, value):
+        return to_ascii_digits((value or '').strip())
+
+
 class AdminSmsProviderSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SmsProviderSettings
@@ -450,17 +470,20 @@ class AdminOtpTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OtpTemplate
         fields = [
-            'id', 'name', 'sms_ir_template_id', 'pattern_code', 'parameter_name', 'body_preview',
+            'id', 'name', 'sms_ir_template_id', 'pattern_code', 'provider_type',
+            'parameter_name', 'body_preview',
             'is_active', 'is_default', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def validate(self, attrs):
-        provider = SmsProviderSettings.get_settings()
-        mode = attrs.get('provider_mode', provider.provider_mode)
+        from apps.accounts.services.sms_config import SmsConfigService
+
+        active = SmsConfigService.get_active_profile()
+        mode = attrs.get('provider_type') or getattr(self.instance, 'provider_type', '') or active.provider_type
         sms_id = attrs.get('sms_ir_template_id', getattr(self.instance, 'sms_ir_template_id', None))
         pattern = attrs.get('pattern_code', getattr(self.instance, 'pattern_code', None))
-        if mode == SmsProviderSettings.PROVIDER_IRANPAYAMAK:
+        if mode == SmsProviderProfile.PROVIDER_IRANPAYAMAK:
             pattern_value = (pattern or '').strip()
             if not pattern_value:
                 raise serializers.ValidationError({'pattern_code': 'کد Pattern برای IranPayamak الزامی است'})
@@ -468,7 +491,7 @@ class AdminOtpTemplateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'pattern_code': 'این مقدار شناسه قالب SMS.ir است، نه کد Pattern ایران‌پیامک. کد Pattern را از پنل ایران‌پیامک وارد کنید.',
                 })
-        elif mode == SmsProviderSettings.PROVIDER_SMSIR:
+        elif mode == SmsProviderProfile.PROVIDER_SMSIR:
             if sms_id is None:
                 raise serializers.ValidationError({'sms_ir_template_id': 'شناسه قالب SMS.ir الزامی است'})
         return attrs

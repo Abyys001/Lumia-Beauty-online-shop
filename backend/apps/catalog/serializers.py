@@ -16,7 +16,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'alt_text', 'is_primary', 'sort_order']
+        fields = ['id', 'image', 'alt_text', 'is_primary']
 
 
 class ProductAttributeSerializer(serializers.ModelSerializer):
@@ -59,7 +59,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_children(self, obj):
         if self.context.get('include_children', True):
-            children = obj.children.filter(is_active=True)
+            children = obj.children.filter(is_active=True).order_by('created_at')
             return CategorySerializer(children, many=True, context={'include_children': False}).data
         return []
 

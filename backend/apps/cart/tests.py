@@ -23,6 +23,19 @@ class CartConsistencyTests(TestCase):
             sku='TEST-1',
         )
 
+    def test_guest_can_add_and_view_cart(self):
+        response = self.client.post(
+            '/api/cart/',
+            {'product_id': str(self.product.id), 'quantity': 1},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['item_count'], 1)
+
+        response = self.client.get('/api/cart/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['item_count'], 1)
+
     def test_add_to_cart_rejects_quantity_above_limit(self):
         self.client.force_authenticate(self.user)
 

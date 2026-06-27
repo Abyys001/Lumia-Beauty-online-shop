@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 from unittest.mock import patch
 import os
 
-from apps.accounts.models import AuthSettings, OtpTemplate, SmsProviderSettings
+from apps.accounts.models import AuthSettings, OtpTemplate, SmsProviderProfile, SmsProviderSettings
 from apps.accounts.services.sms_config import SmsConfigService
 from apps.accounts.services.sms_sync import sync_default_template_for_mode
 from apps.accounts.sms import IranPayamakProvider, MockSmsProvider, SmsIrProvider, get_sms_provider
@@ -26,6 +26,26 @@ class SmsProviderTests(TestCase):
             pk=1,
             defaults={'provider_mode': SmsProviderSettings.PROVIDER_MOCK, 'is_active': True},
         )
+        SmsProviderProfile.ensure_profiles()
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_MOCK)
+        SmsProviderProfile.ensure_profiles()
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_MOCK)
+
+    def _activate_smsir(self, **kwargs):
+        profile = SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_SMSIR)
+        for k, v in kwargs.items():
+            setattr(profile, k, v)
+        profile.save()
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_SMSIR)
+        return profile
+
+    def _activate_iranpayamak(self, **kwargs):
+        profile = SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_IRANPAYAMAK)
+        for k, v in kwargs.items():
+            setattr(profile, k, v)
+        profile.save()
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_IRANPAYAMAK)
+        return profile
 
     def test_mock_provider_always_succeeds(self):
         tpl = OtpTemplate.objects.create(name='Test', sms_ir_template_id=1, parameter_name='Code')
@@ -34,21 +54,16 @@ class SmsProviderTests(TestCase):
 
     def test_smsir_provider_fails_gracefully_without_key(self):
         tpl = OtpTemplate.objects.create(name='Test', sms_ir_template_id=1, parameter_name='Code')
-        SmsProviderSettings.objects.filter(pk=1).update(api_key_encrypted='')
+        self._activate_smsir(api_key_encrypted='')
         result = SmsIrProvider().send_otp('09123456789', '123456', tpl)
         self.assertFalse(result.success)
 
     def test_factory_returns_smsir_when_configured(self):
-        SmsProviderSettings.objects.filter(pk=1).update(
-            provider_mode=SmsProviderSettings.PROVIDER_SMSIR,
-            is_active=True,
-        )
+        self._activate_smsir()
         self.assertIsInstance(get_sms_provider(), SmsIrProvider)
 
     def test_factory_returns_iranpayamak_when_configured(self):
-        SmsProviderSettings.objects.filter(pk=1).update(
-            provider_mode=SmsProviderSettings.PROVIDER_IRANPAYAMAK,
-            is_active=True,
+        self._activate_iranpayamak(
             line_number='50002178584000',
             api_key_encrypted=encrypt_value('test-key'),
         )
@@ -60,9 +75,7 @@ class SmsProviderTests(TestCase):
             IranPayamakApiResult(success=True, status='success', data=12345, http_status=201),
             {'code': 'PAT1', 'recipient': '09123456789'},
         )
-        SmsProviderSettings.objects.filter(pk=1).update(
-            provider_mode=SmsProviderSettings.PROVIDER_IRANPAYAMAK,
-            is_active=True,
+        self._activate_iranpayamak(
             line_number='50002178584000',
             api_key_encrypted=encrypt_value('test-key'),
             base_url='https://api.iranpayamak.com',
@@ -77,9 +90,7 @@ class SmsProviderTests(TestCase):
         self.assertEqual(result.message_id, '12345')
 
     def test_iranpayamak_send_otp_requires_pattern_code(self):
-        SmsProviderSettings.objects.filter(pk=1).update(
-            provider_mode=SmsProviderSettings.PROVIDER_IRANPAYAMAK,
-            is_active=True,
+        self._activate_iranpayamak(
             line_number='50002178584000',
             api_key_encrypted=encrypt_value('test-key'),
         )
@@ -96,16 +107,13 @@ class SmsProviderTests(TestCase):
 
     @patch.dict(os.environ, {'SMS_PROVIDER': 'iranpayamak'}, clear=False)
     def test_resolve_provider_mode_iranpayamak(self):
-        SmsProviderSettings.objects.filter(pk=1).update(provider_mode=SmsProviderSettings.PROVIDER_MOCK)
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_MOCK)
         SmsConfigService.bootstrap_from_env()
-        settings = SmsProviderSettings.get_settings()
-        self.assertEqual(settings.provider_mode, SmsProviderSettings.PROVIDER_IRANPAYAMAK)
+        self.assertEqual(SmsConfigService.resolve_provider_mode(), SmsProviderProfile.PROVIDER_IRANPAYAMAK)
 
     @patch.dict(os.environ, {'SMS_PROVIDER': 'mock'}, clear=False)
     def test_factory_returns_mock_by_default(self):
-        SmsProviderSettings.objects.filter(pk=1).update(
-            provider_mode=SmsProviderSettings.PROVIDER_MOCK,
-        )
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_MOCK)
         self.assertIsInstance(get_sms_provider(), MockSmsProvider)
 
     def test_format_mobile_for_smsir(self):
@@ -131,21 +139,21 @@ class SmsProviderTests(TestCase):
         self.assertIn('موبایل', msg)
 
     def test_resolve_api_key_uses_sandbox_key_when_sandbox(self):
-        SmsProviderSettings.objects.filter(pk=1).update(
-            api_key_encrypted=encrypt_value('prod-key'),
-            sandbox_api_key_encrypted=encrypt_value('sandbox-key'),
-            is_sandbox=True,
-        )
-        self.assertEqual(SmsConfigService.resolve_api_key(), 'sandbox-key')
-        self.assertEqual(SmsConfigService.resolve_api_key(sandbox=False), 'prod-key')
+        profile = SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_SMSIR)
+        profile.api_key_encrypted = encrypt_value('prod-key')
+        profile.sandbox_api_key_encrypted = encrypt_value('sandbox-key')
+        profile.is_sandbox = True
+        profile.save()
+        self.assertEqual(SmsConfigService.resolve_api_key(profile=profile), 'sandbox-key')
+        self.assertEqual(SmsConfigService.resolve_api_key(profile=profile, sandbox=False), 'prod-key')
 
     def test_resolve_api_key_falls_back_to_production_in_sandbox_mode(self):
-        SmsProviderSettings.objects.filter(pk=1).update(
-            api_key_encrypted=encrypt_value('shared-key'),
-            sandbox_api_key_encrypted='',
-            is_sandbox=True,
-        )
-        self.assertEqual(SmsConfigService.resolve_api_key(), 'shared-key')
+        profile = SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_SMSIR)
+        profile.api_key_encrypted = encrypt_value('shared-key')
+        profile.sandbox_api_key_encrypted = ''
+        profile.is_sandbox = True
+        profile.save()
+        self.assertEqual(SmsConfigService.resolve_api_key(profile=profile), 'shared-key')
 
     def test_sync_default_template_for_production(self):
         sync_default_template_for_mode(False)
@@ -158,6 +166,32 @@ class SmsProviderTests(TestCase):
         self.assertEqual(tpl.sms_ir_template_id, 123456)
         self.assertEqual(tpl.parameter_name, 'Code')
 
+    def test_profiles_store_keys_separately(self):
+        smsir = SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_SMSIR)
+        smsir.api_key_encrypted = encrypt_value('smsir-key')
+        smsir.save()
+        iranpayamak = SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_IRANPAYAMAK)
+        iranpayamak.api_key_encrypted = encrypt_value('ip-key')
+        iranpayamak.save()
+
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_IRANPAYAMAK)
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_SMSIR)
+
+        smsir.refresh_from_db()
+        iranpayamak.refresh_from_db()
+        self.assertEqual(SmsConfigService.resolve_api_key(profile=smsir, sandbox=False), 'smsir-key')
+        self.assertEqual(SmsConfigService.resolve_iranpayamak_api_key(profile=iranpayamak), 'ip-key')
+
+    def test_activate_only_one_profile(self):
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_SMSIR)
+        self.assertTrue(SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_SMSIR).is_active)
+        self.assertFalse(SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_IRANPAYAMAK).is_active)
+        self.assertFalse(SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_MOCK).is_active)
+
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_IRANPAYAMAK)
+        self.assertFalse(SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_SMSIR).is_active)
+        self.assertTrue(SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_IRANPAYAMAK).is_active)
+
 
 @patch.dict(os.environ, {'SMS_PROVIDER': 'mock'}, clear=False)
 class OTPRequestViewTests(TestCase):
@@ -169,6 +203,8 @@ class OTPRequestViewTests(TestCase):
             pk=1,
             defaults={'provider_mode': SmsProviderSettings.PROVIDER_MOCK, 'is_active': True},
         )
+        SmsProviderProfile.ensure_profiles()
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_MOCK)
         OtpSettings.objects.update_or_create(pk=1, defaults={
             'rate_limit_count': 5,
             'rate_limit_window_seconds': 900,
@@ -246,6 +282,8 @@ class OTPVerifyViewTests(TestCase):
             pk=1,
             defaults={'provider_mode': SmsProviderSettings.PROVIDER_MOCK, 'is_active': True},
         )
+        SmsProviderProfile.ensure_profiles()
+        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_MOCK)
         OtpSettings.objects.update_or_create(pk=1, defaults={
             'max_verify_attempts': 5,
             'verify_window_seconds': 900,

@@ -37,8 +37,8 @@ class AdminHomeHeroSerializer(serializers.ModelSerializer):
 class AdminTrustBadgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrustBadge
-        fields = ['id', 'icon', 'title', 'description', 'sort_order', 'is_active']
-        read_only_fields = ['id']
+        fields = ['id', 'icon', 'title', 'description', 'is_active', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
 
 class AdminInstagramPageSerializer(serializers.ModelSerializer):
@@ -46,8 +46,8 @@ class AdminInstagramPageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InstagramPage
-        fields = ['id', 'username', 'label', 'sort_order', 'is_active', 'profile_url']
-        read_only_fields = ['id', 'profile_url']
+        fields = ['id', 'username', 'label', 'is_active', 'profile_url', 'created_at']
+        read_only_fields = ['id', 'profile_url', 'created_at']
 
     def get_profile_url(self, obj):
         return obj.profile_url

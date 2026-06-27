@@ -7,7 +7,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 ### Full stack (Docker)
 ```bash
 cp .env.example .env
-docker compose up -d --build   # first time only; daily dev: docker compose up -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 # First-time seed
 docker compose exec backend python manage.py createsuperuser
@@ -19,7 +19,9 @@ docker compose exec backend python manage.py migrate
 docker compose exec backend python seed_db.py
 ```
 
-Site: http://localhost | Admin: http://localhost/admin/
+Site (dev): http://localhost:3000 | Admin: http://localhost:3000/admin/
+
+Production (Liara): build frontend locally (`cd frontend && npm run build`), then `docker compose up -d --build` (4 containers, no Nginx).
 
 ### Frontend only (no Docker)
 ```bash
@@ -42,9 +44,9 @@ No test suite or linter is configured yet.
 
 ## Architecture
 
-**Stack:** Nuxt 3 (SSR) → Nginx → Django 5 / DRF | PostgreSQL 16 | Redis 7
+**Stack:** Nuxt 3 (SSR) → Liara proxy (prod) or direct :3000/:8000 (dev) → Django 5 / DRF | PostgreSQL 16 | Redis 7
 
-All services communicate on the `lumia_net` Docker bridge. Nginx proxies `/api` and `/admin` to `backend:8000`; everything else goes to the Nuxt dev server or SSR output on `frontend:3000`.
+Four containers in production (`db`, `redis`, `backend`, `frontend`). Liara routes API/static/media to backend; WhiteNoise serves `/static/`. Dev uses `docker-compose.dev.yml` overlay without Nginx.
 
 ### Backend (`backend/`)
 

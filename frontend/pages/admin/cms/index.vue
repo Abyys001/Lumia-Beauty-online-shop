@@ -43,7 +43,6 @@
             </select>
             <input v-model="badge.title" class="input input-bordered input-sm rounded-xl" placeholder="عنوان" />
             <input v-model="badge.description" class="input input-bordered input-sm rounded-xl sm:col-span-2" placeholder="توضیح" />
-            <input v-model.number="badge.sort_order" type="number" class="input input-bordered input-sm rounded-xl w-24" placeholder="ترتیب" />
             <div class="flex gap-2 sm:col-span-2">
               <button class="btn btn-primary btn-xs rounded-full" @click="saveBadge(badge)">ذخیره</button>
               <button class="btn btn-ghost btn-xs text-error" @click="deleteBadge(badge.id)">حذف</button>
@@ -109,13 +108,16 @@ async function saveHero() {
 }
 
 async function saveBadge(badge: AdminTrustBadge) {
-  await apiFetch(`/admin/cms/trust-badges/${badge.id}/`, { method: 'PATCH', body: badge })
+  await apiFetch(`/admin/cms/trust-badges/${badge.id}/`, {
+    method: 'PATCH',
+    body: { icon: badge.icon, title: badge.title, description: badge.description, is_active: badge.is_active },
+  })
 }
 
 async function addBadge() {
   const created = await apiFetch<AdminTrustBadge>('/admin/cms/trust-badges/', {
     method: 'POST',
-    body: { icon: 'shield', title: 'عنوان جدید', description: '', sort_order: badges.value.length, is_active: true },
+    body: { icon: 'shield', title: 'عنوان جدید', description: '', is_active: true },
   })
   badges.value.push(created)
 }

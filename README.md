@@ -1,80 +1,112 @@
 # Lumia Beauty — فروشگاه آنلاین آرایشی و بهداشتی
 
-فروشگاه اینترنتی **Lumia Beauty** با معماری Decoupled (Nuxt 3 + Django/DRF)، Docker Compose، پشتیبانی فارسی/RTL، سئو، پرداخت زرین‌پال و احراز هویت پیامکی کاوه‌نگار.
+فروشگاه اینترنتی **Lumia Beauty** با معماری Decoupled (Nuxt 3 + Django/DRF)، Docker Compose، پشتیبانی فارسی/RTL، سئو، پرداخت زرین‌پال و احراز هویت پیامکی.
 
 ## Tech Stack
 
 | لایه | تکنولوژی |
 |------|----------|
 | Frontend | Nuxt 3, Tailwind CSS, DaisyUI, Pinia |
-| Backend | Django 5, Django REST Framework |
+| Backend | Django 5, Django REST Framework, WhiteNoise |
 | Database | PostgreSQL 16 |
 | Cache | Redis 7 |
-| Proxy | Nginx |
+| Proxy (production) | Liara edge proxy |
 | Payment | زرین‌پال |
-| SMS | کاوه‌نگار |
+| SMS | SMS.ir / IranPayamak |
 
 ## ساختار پروژه
 
 ```
-├── backend/          # Django + DRF
-├── frontend/         # Nuxt 3
-├── nginx/            # کانفیگ Nginx
-└── docker-compose.yml  # توسعه و production (با APP_ENV)
+├── backend/               # Django + DRF
+├── frontend/              # Nuxt 3
+├── docker-compose.yml     # Production / Liara (4 containers)
+├── docker-compose.dev.yml # Dev overlay (hot-reload, no Nginx)
+└── nginx/                 # Legacy config (not used in Compose)
 ```
 
-## راه‌اندازی
+## توسعه محلی (Docker)
 
 ```bash
-# 1. کپی متغیرهای محیطی
 cp .env.example .env
 
-# 2. اولین بار (نصب وابستگی‌ها در image)
-docker compose up -d --build
+# اولین بار
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
-# 3. روزمره توسعه — بدون build؛ تغییرات کد خودکار اعمال می‌شود
-docker compose up -d
+# روزمره
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
-# 4. ایجاد سوپرادمین
 docker compose exec backend python manage.py createsuperuser
 ```
 
-سایت: http://localhost  
-پنل ادمین: http://localhost/admin/
+- سایت: http://localhost:3000 (Nuxt dev + devProxy برای `/api`)
+- Django admin: http://localhost:8000/django-admin/
+- Vue admin: http://localhost:3000/admin/
 
-### Production
+## Production / Liara (۴ کانتینر)
 
-در `.env` تنظیم کنید:
+Stack: **Postgres + Redis + Django (Gunicorn) + Nuxt SSR** — بدون Nginx داخل Docker. Liara در لایه ورودی مسیریابی می‌کند.
+
+### Sitemap (SEO)
+
+- آدرس: `https://yourdomain.com/sitemap.xml`
+- با `@nuxtjs/sitemap` ساخته می‌شود و از API دجانگو (`/api/sitemap-urls/`) محصولات، دسته‌بندی‌ها و مقالات را **در هر درخواست** می‌خواند — با اضافه شدن محصول در پنل ادمین، rebuild لازم نیست.
+- در Google Search Console → Sitemaps → آدرس `sitemap.xml` را ثبت کنید.
+- `robots.txt` همین آدرس را معرفی می‌کند (`Sitemap: /sitemap.xml`).
+
+### ۱. Build فرانت روی سیستم خودتان
+
+```bash
+cd frontend
+npm ci
+export NUXT_PUBLIC_API_BASE=https://yourdomain.com/api
+export NUXT_PUBLIC_SITE_URL=https://yourdomain.com
+npm run build
+cd ..
+```
+
+### ۲. تنظیم `.env` برای production
+
 ```
 APP_ENV=production
 DJANGO_DEBUG=False
-DJANGO_SECRET_KEY=<کلید-امن>
-ZARINPAL_SANDBOX=False
+DJANGO_SECRET_KEY=<کلید-امن-۵۰+کاراکتر>
+DJANGO_ALLOWED_HOSTS=yourdomain.com,backend
+CSRF_TRUSTED_ORIGINS=https://yourdomain.com
+CORS_ALLOWED_ORIGINS=https://yourdomain.com
+NUXT_PUBLIC_API_BASE=https://yourdomain.com/api
+NUXT_PUBLIC_SITE_URL=https://yourdomain.com
+ZARINPAL_CALLBACK_URL=https://yourdomain.com/api/payments/zarinpal/verify/
+GUNICORN_WORKERS=2
+ADMIN_BYPASS_PHONE=
 ```
 
-سپس:
+### ۳. Deploy
+
 ```bash
 docker compose up -d --build
 docker compose exec backend python manage.py createsuperuser
 ```
 
-بعد از تغییر کد روی سرور: `git pull` و `docker compose restart backend frontend` (بدون `--build`).
+### مسیریابی Liara (الزامی)
 
-### SSL با Certbot
+| Path | سرویس |
+|------|--------|
+| `/api/` | backend:8000 |
+| `/django-admin/` | backend:8000 |
+| `/static/` | backend:8000 (WhiteNoise) |
+| `/media/` | backend:8000 |
+| `/` | frontend:3000 |
+| `/sitemap.xml` | frontend:3000 |
 
-```bash
-sudo apt install certbot
-sudo certbot certonly --standalone -d lumiabeauty.ir -d www.lumiabeauty.ir
-# کپی گواهی‌ها به nginx/ssl/
-```
+### تخمین RAM
 
-### CDN ابر آروان
-
-1. دامنه را در پنل ابر آروان ثبت کنید
-2. Origin را به IP سرور تنظیم کنید
-3. کش استاتیک (`/static/`, `/media/`, `/_nuxt/`) را فعال کنید
-4. Gzip/Brotli را روشن کنید
-5. DNS دامنه `.ir` را به CDN ابر آروان اشاره دهید
+| سرویس | سقف |
+|--------|------|
+| Postgres | 400 MB |
+| Redis | 150 MB |
+| Backend (2 worker) | ~300–400 MB |
+| Frontend (.output only) | ~200–300 MB |
+| **جمع** | ~1–1.2 GB |
 
 ## API Endpoints
 
@@ -90,17 +122,6 @@ sudo certbot certonly --standalone -d lumiabeauty.ir -d www.lumiabeauty.ir
 | `POST /api/payments/zarinpal/request/` | درخواست پرداخت |
 | `POST /api/coupons/validate/` | اعتبارسنجی کد تخفیف |
 | `GET /api/blog/posts/` | مقالات |
-
-## صفحات فرانت‌اند
-
-- `/` — صفحه اصلی
-- `/shop` — فروشگاه با فیلتر
-- `/shop/[slug]` — جزئیات محصول
-- `/cart` — سبد خرید
-- `/checkout` — تسویه حساب
-- `/blog` — وبلاگ
-- `/account` — پنل کاربر
-- `/auth` — ورود با OTP
 
 ## امنیت Production
 

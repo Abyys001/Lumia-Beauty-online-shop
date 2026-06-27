@@ -4,7 +4,7 @@ from typing import Any
 
 import requests
 
-from apps.accounts.models import OtpTemplate, SmsProviderSettings
+from apps.accounts.models import OtpTemplate, SmsProviderProfile
 from apps.accounts.services.sms_config import SmsConfigService
 from apps.accounts.sms.base import SmsProvider, SmsResult
 from apps.accounts.sms.iranpayamak_utils import (
@@ -156,25 +156,25 @@ def validate_iranpayamak_api_key(api_key: str, base_url: str = IRANPAYAMAK_BASE_
     return None, result.error_hint or map_iranpayamak_error(result.message, result.http_status)
 
 
-def get_iranpayamak_client(*, with_bearer: bool = False) -> IranPayamakClient | None:
-    api_key = SmsConfigService.resolve_iranpayamak_api_key()
+def get_iranpayamak_client(*, with_bearer: bool = False, profile: SmsProviderProfile | None = None) -> IranPayamakClient | None:
+    profile = profile or SmsConfigService.get_active_profile()
+    api_key = SmsConfigService.resolve_iranpayamak_api_key(profile=profile)
     if not api_key:
         return None
-    settings = SmsConfigService.get_provider_settings()
-    bearer = SmsConfigService.resolve_bearer_token() if with_bearer else ''
+    bearer = SmsConfigService.resolve_bearer_token(profile=profile) if with_bearer else ''
     return IranPayamakClient(
         api_key,
-        settings.base_url or IRANPAYAMAK_BASE_URL,
+        profile.base_url or IRANPAYAMAK_BASE_URL,
         bearer_token=bearer,
     )
 
 
 class IranPayamakProvider(SmsProvider):
-    def __init__(self, settings_obj: SmsProviderSettings | None = None):
-        self.settings_obj = settings_obj or SmsConfigService.get_provider_settings()
+    def __init__(self, settings_obj: SmsProviderProfile | None = None):
+        self.settings_obj = settings_obj or SmsConfigService.get_active_profile()
 
     def _client(self) -> IranPayamakClient | None:
-        return get_iranpayamak_client()
+        return get_iranpayamak_client(profile=self.settings_obj)
 
     def send_otp(self, phone: str, code: str, template: OtpTemplate | None) -> SmsResult:
         client = self._client()
