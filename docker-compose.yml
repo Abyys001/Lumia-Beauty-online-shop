@@ -1,11 +1,14 @@
-# Production-oriented Compose for Liara (4 containers: db, redis, backend, frontend).
-# Liara edge proxy routes /api, /static, /media, /django-admin → backend:8000 and / → frontend:3000.
+# Production-oriented Compose for PaaS platforms that disallow the `build` block
+# and local bind-mounts (images are pulled from a remote registry instead).
+# Edge proxy routes /api, /static, /media, /django-admin → backend:8000 and / → frontend:3000.
 #
 # Production:
-#   cd frontend && npm ci && npm run build
-#   docker compose up -d --build
+#   docker login <registry>
+#   docker compose pull
+#   docker compose up -d
+#   (see README/deploy docs for the build+push commands that produce these images)
 #
-# Local development (hot-reload, no Nginx):
+# Local development (hot-reload, no Nginx, builds from source):
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 services:
@@ -54,9 +57,7 @@ services:
       - lumia_net
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-siavashdev/lumia-backend:latest}
     restart: unless-stopped
     volumes:
       - media_data:/app/media
@@ -107,15 +108,13 @@ services:
       - lumia_net
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
+    image: ${FRONTEND_IMAGE:-siavashdev/lumia-frontend:latest}
     restart: unless-stopped
     environment:
       APP_ENV: production
       NODE_ENV: production
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-http://localhost/api}
-      NUXT_API_INTERNAL_URL: http://backend:8000/api
+      NUXT_API_INTERNAL_URL: ${NUXT_API_INTERNAL_URL:-http://backend:8000/api}
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost}
       NUXT_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost}
       NUXT_HOST: ${NUXT_HOST:-0.0.0.0}

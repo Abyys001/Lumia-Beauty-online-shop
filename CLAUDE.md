@@ -28,7 +28,7 @@ docker compose logs -f backend
 docker compose logs -f frontend
 ```
 
-**Production (Liara, 4 containers, no Nginx):** build frontend locally first (`cd frontend && npm ci && npm run build`), set `APP_ENV=production` and `DJANGO_DEBUG=False` in `.env`, then `docker compose up -d --build`. Liara routes `/api`, `/static`, `/media`, `/django-admin` → backend:8000 and `/` → frontend:3000.
+**Production (Liara, 4 containers, no Nginx):** `Dockerfile.prod` is a multi-stage build — the PaaS installs deps and runs `npm run build` inside the image, no local build step needed. Set `APP_ENV=production` and `DJANGO_DEBUG=False` in `.env`, then `docker compose up -d --build`. Liara routes `/api`, `/static`, `/media`, `/django-admin` → backend:8000 and `/` → frontend:3000.
 
 Site (dev): http://localhost:3000 | Django admin: http://localhost:8000/django-admin/ | Vue admin: http://localhost:3000/admin
 

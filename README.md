@@ -42,7 +42,14 @@ docker compose exec backend python manage.py createsuperuser
 - Django admin: http://localhost:8000/django-admin/
 - Vue admin: http://localhost:3000/admin/
 
-## Production / Liara (۴ کانتینر)
+## Production
+
+دو مسیر دیپلوی پشتیبانی می‌شود:
+
+- **VPS / تک‌سرور (زیر، همین بخش):** یک `docker-compose.yml` با ۴ کانتینر (db, redis, backend, frontend).
+- **Liara PaaS (دو اپ جدا + addon های مدیریت‌شده):** ببینید [`deploy.md`](./deploy.md) — این مسیر از `docker-compose.yml` استفاده نمی‌کند؛ هر اپ مستقل از روی Dockerfile خودش ساخته می‌شود و Postgres/Redis addon جدا هستند.
+
+### VPS / تک‌سرور (۴ کانتینر)
 
 Stack: **Postgres + Redis + Django (Gunicorn) + Nuxt SSR** — بدون Nginx داخل Docker. Liara در لایه ورودی مسیریابی می‌کند.
 
@@ -53,16 +60,9 @@ Stack: **Postgres + Redis + Django (Gunicorn) + Nuxt SSR** — بدون Nginx د
 - در Google Search Console → Sitemaps → آدرس `sitemap.xml` را ثبت کنید.
 - `robots.txt` همین آدرس را معرفی می‌کند (`Sitemap: /sitemap.xml`).
 
-### ۱. Build فرانت روی سیستم خودتان
+### ۱. Build فرانت
 
-```bash
-cd frontend
-npm ci
-export NUXT_PUBLIC_API_BASE=https://yourdomain.com/api
-export NUXT_PUBLIC_SITE_URL=https://yourdomain.com
-npm run build
-cd ..
-```
+`frontend/Dockerfile.prod` یک multi-stage build خودکفاست — `npm install` و `npm run build` را خودش داخل ایمیج اجرا می‌کند. نیازی به build دستی قبل از `docker compose up` نیست؛ کافیست `NUXT_PUBLIC_API_BASE`/`NUXT_PUBLIC_SITE_URL` در `.env` (مرحله‌ی بعد) درست تنظیم شده باشند.
 
 ### ۲. تنظیم `.env` برای production
 

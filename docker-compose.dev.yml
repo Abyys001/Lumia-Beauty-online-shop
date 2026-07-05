@@ -3,6 +3,9 @@
 
 services:
   backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     volumes:
       - ./backend:/app
       - media_data:/app/media

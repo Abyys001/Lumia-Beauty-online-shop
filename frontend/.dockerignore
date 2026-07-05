@@ -1,9 +1,8 @@
 node_modules
 .nuxt
 dist
+.output
 .git
 *.log
 .env
 .env.*
-
-# .output must NOT be ignored — it is copied into Dockerfile.prod

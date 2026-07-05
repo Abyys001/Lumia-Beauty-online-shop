@@ -1,13 +1,12 @@
-FROM node:20-alpine
-
+FROM node:20-slim AS builder
 WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
 
-ENV NODE_ENV=production
-
-# Fail fast if .output was not built locally before docker build.
-COPY .output ./.output
-RUN test -f .output/server/index.mjs || (echo "ERROR: run 'npm run build' in frontend/ before building this image" && exit 1)
-
+FROM node:20-slim
+WORKDIR /app
+COPY --from=builder /app/.output ./.output
 EXPOSE 3000
-
 CMD ["node", ".output/server/index.mjs"]
