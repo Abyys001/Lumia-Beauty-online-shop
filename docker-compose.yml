@@ -27,6 +27,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-lumia_beauty}
       POSTGRES_USER: ${POSTGRES_USER:-lumia}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lumia_secret}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
