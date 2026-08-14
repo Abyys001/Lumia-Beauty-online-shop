@@ -3,6 +3,7 @@
     <div class="flex flex-wrap items-center gap-3 mb-6">
       <h2 class="font-bold text-lumia-dark">سفارش {{ order?.order_number }}</h2>
       <AdminBadge v-if="order" :status="order.status" />
+      <span v-if="order?.purchase_code" class="font-mono text-sm text-lumia-gold bg-lumia-gold/10 rounded-lg px-3 py-1.5" dir="ltr">کد خرید: {{ order.purchase_code }}</span>
     </div>
 
     <div v-if="loading" class="p-12 text-center text-lumia-dark/40">در حال بارگذاری...</div>
@@ -52,6 +53,7 @@
             <div><span class="text-lumia-dark/50">شهر:</span> {{ order.shipping_city }}</div>
             <div class="col-span-2"><span class="text-lumia-dark/50">آدرس:</span> {{ order.shipping_address }}</div>
             <div><span class="text-lumia-dark/50">کد پستی:</span> {{ order.shipping_postal_code }}</div>
+            <div v-if="order.shipping_plate_number"><span class="text-lumia-dark/50">پلاک خودرو:</span> {{ order.shipping_plate_number }}</div>
             <div v-if="order.tracking_number"><span class="text-lumia-dark/50">کد رهگیری:</span> {{ order.tracking_number }}</div>
           </div>
         </div>
@@ -63,7 +65,8 @@
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-base-200">
           <h3 class="font-bold text-lumia-dark mb-3">خریدار</h3>
           <div class="text-sm space-y-1">
-            <div class="font-medium">{{ order.user_phone }}</div>
+            <div class="font-medium">{{ order.user_full_name || order.user_phone }}</div>
+            <div v-if="order.user_full_name" class="text-lumia-dark/50">{{ order.user_phone }}</div>
             <div class="text-lumia-dark/50">تاریخ: {{ formatDate(order.created_at) }}</div>
             <div v-if="order.coupon_code" class="text-lumia-dark/50">کوپن: {{ order.coupon_code }}</div>
           </div>
@@ -72,6 +75,15 @@
             <AdminBadge v-if="order.payment_status" :status="order.payment_status" />
             <span v-else class="text-xs text-lumia-dark/30">ندارد</span>
           </div>
+          <button
+            v-if="order.payment_status !== 'success'"
+            class="btn btn-primary w-full btn-sm mt-4"
+            :class="{ loading: markingPaid }"
+            @click="markPaid"
+          >
+            ثبت پرداخت کارت‌به‌کارت
+          </button>
+          <div v-if="markPaidMsg" class="text-xs mt-2" :class="markPaidOk ? 'text-success' : 'text-error'">{{ markPaidMsg }}</div>
         </div>
 
         <!-- Payment details -->
@@ -140,6 +152,9 @@ const reversing = ref(false)
 const refunding = ref(false)
 const paymentActionMsg = ref('')
 const paymentActionOk = ref(false)
+const markingPaid = ref(false)
+const markPaidMsg = ref('')
+const markPaidOk = ref(false)
 
 async function load() {
   loading.value = true
@@ -161,6 +176,25 @@ async function updateStatus() {
     statusError.value = e.data?.tracking_number ?? e.data?.detail ?? 'خطا در ذخیره'
   } finally {
     updating.value = false
+  }
+}
+
+async function markPaid() {
+  if (!order.value || !confirm('پرداخت کارت‌به‌کارت برای این سفارش تأیید شود؟')) return
+  markingPaid.value = true
+  markPaidMsg.value = ''
+  statusError.value = ''
+  try {
+    const updated = await apiFetch<any>(`/admin/orders/${route.params.id}/mark-paid/`, { method: 'POST' })
+    order.value = updated
+    newStatus.value = updated.status
+    markPaidOk.value = true
+    markPaidMsg.value = 'پرداخت با موفقیت ثبت شد'
+  } catch (e: any) {
+    markPaidOk.value = false
+    markPaidMsg.value = e.data?.detail || 'ثبت پرداخت ناموفق'
+  } finally {
+    markingPaid.value = false
   }
 }
 

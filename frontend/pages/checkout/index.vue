@@ -53,7 +53,8 @@
             </select>
             
             <input v-model="form.shipping_postal_code" class="input input-bordered rounded-xl text-right" placeholder="کد پستی (اختیاری)" :disabled="!!selectedAddress" />
-            <textarea v-model="form.shipping_address" class="textarea textarea-bordered rounded-xl md:col-span-2 text-right" placeholder="آدرس دقیق پستی، پلاک و واحد" :disabled="!!selectedAddress" :required="!selectedAddress" />
+            <input v-model="form.shipping_plate_number" class="input input-bordered rounded-xl text-right" placeholder="پلاک خودرو (اختیاری)" dir="ltr" :disabled="!!selectedAddress" />
+            <textarea v-model="form.shipping_address" class="textarea textarea-bordered rounded-xl md:col-span-2 text-right" placeholder="آدرس دقیق پستی" :disabled="!!selectedAddress" :required="!selectedAddress" />
             <label v-if="!selectedAddress" class="flex items-center gap-2 md:col-span-2 cursor-pointer">
               <input v-model="saveNewAddress" type="checkbox" class="checkbox checkbox-primary checkbox-sm" />
               <span class="text-sm">ذخیره این آدرس در دفترچه آدرس‌ها</span>
@@ -117,7 +118,7 @@
             </div>
             <div class="flex justify-between" style="flex-direction: row-reverse;">
               <span class="text-base-content/60">هزینه ارسال پستی:</span>
-              <span class="font-bold">{{ qualifiesForFreeShipping ? 'رایگان' : formatPrice(shippingCost) + ' تومان' }}</span>
+              <span class="font-bold">{{ formatPrice(shippingCost) }} تومان</span>
             </div>
           </div>
           
@@ -155,7 +156,6 @@ const couponCode = ref('')
 const couponValid = ref(false)
 const couponMessage = ref('')
 const discountAmount = ref(0)
-const freeShipping = ref(false)
 const submitting = ref(false)
 const redirecting = ref(false)
 const submitError = ref('')
@@ -168,6 +168,7 @@ const form = reactive({
   shipping_city: '',
   shipping_address: '',
   shipping_postal_code: '',
+  shipping_plate_number: '',
   note: '',
 })
 
@@ -196,19 +197,12 @@ function onAuthenticated() {
 const { data: shippingSettings } = await usePublicData(
   'shipping-settings',
   () => apiFetch<ShippingSettings>('/store/shipping/'),
-  { default: () => ({ shipping_cost: 50000, free_shipping_threshold: 500000 }) },
+  { default: () => ({ shipping_cost: 150000, free_shipping_threshold: 0 }) },
 )
 
-const shippingCost = computed(() => shippingSettings.value?.shipping_cost ?? 50000)
-const freeShippingThreshold = computed(() => shippingSettings.value?.free_shipping_threshold ?? 500000)
+const shippingCost = computed(() => shippingSettings.value?.shipping_cost ?? 150000)
 
-const qualifiesForFreeShipping = computed(() =>
-  freeShipping.value || cart.total >= freeShippingThreshold.value,
-)
-
-const appliedShippingCost = computed(() =>
-  qualifiesForFreeShipping.value ? 0 : shippingCost.value,
-)
+const appliedShippingCost = computed(() => shippingCost.value)
 
 const finalTotal = computed(() =>
   Math.max(cart.total - discountAmount.value + appliedShippingCost.value, 0),
@@ -220,7 +214,6 @@ async function validateCoupon() {
     const result = await apiFetch<{
       valid: boolean
       discount_amount: number
-      free_shipping: boolean
       detail?: string
     }>('/coupons/validate/', {
       method: 'POST',
@@ -228,12 +221,10 @@ async function validateCoupon() {
     })
     couponValid.value = result.valid
     discountAmount.value = result.discount_amount
-    freeShipping.value = result.free_shipping
     couponMessage.value = 'کد تخفیف اعمال شد'
   } catch (e: unknown) {
     couponValid.value = false
     discountAmount.value = 0
-    freeShipping.value = false
     const err = e as { data?: { detail?: string } }
     couponMessage.value = err.data?.detail || 'کد نامعتبر'
   }

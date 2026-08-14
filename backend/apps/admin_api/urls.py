@@ -20,7 +20,12 @@ from .views.inventory import (
     LowStockInventoryView,
 )
 from .views.notifications import AdminNotificationsSummaryView
-from .views.orders import AdminOrderDetailView, AdminOrderListView
+from .views.orders import (
+    AdminOrderDetailView,
+    AdminOrderListView,
+    AdminOrderLookupView,
+    AdminOrderMarkPaidView,
+)
 from .views.products import (
     AdminProductDetailView,
     AdminProductImageUploadView,
@@ -97,7 +102,9 @@ urlpatterns = [
     path('brands/<uuid:id>/', AdminBrandDetailView.as_view()),
 
     path('orders/', AdminOrderListView.as_view()),
+    path('orders/lookup/', AdminOrderLookupView.as_view()),
     path('orders/<uuid:id>/', AdminOrderDetailView.as_view()),
+    path('orders/<uuid:id>/mark-paid/', AdminOrderMarkPaidView.as_view()),
 
     path('users/', AdminUserListView.as_view()),
     path('users/<uuid:id>/', AdminUserDetailView.as_view()),

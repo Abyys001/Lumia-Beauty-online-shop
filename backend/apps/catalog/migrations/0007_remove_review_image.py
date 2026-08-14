@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             ],
             database_operations=[
                 migrations.RunSQL(
-                    sql='ALTER TABLE catalog_review DROP COLUMN IF EXISTS image;',
+                    sql='ALTER TABLE catalog_review DROP COLUMN image;',
                     reverse_sql=migrations.RunSQL.noop,
                 ),
             ],

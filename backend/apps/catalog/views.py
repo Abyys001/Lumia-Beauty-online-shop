@@ -26,6 +26,7 @@ from .serializers import (
     ProductListSerializer,
     ReviewCreateSerializer,
     ShippingSettingsSerializer,
+    StoreContactSerializer,
 )
 
 
@@ -264,3 +265,11 @@ class ShippingSettingsView(APIView):
     def get(self, request):
         settings, _ = StoreSettings.objects.get_or_create(pk=1)
         return Response(ShippingSettingsSerializer(settings).data)
+
+
+class StoreContactView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        settings, _ = StoreSettings.objects.get_or_create(pk=1)
+        return Response(StoreContactSerializer(settings).data)

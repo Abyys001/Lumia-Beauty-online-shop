@@ -27,6 +27,7 @@ class Order(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order_number = models.CharField('شماره سفارش', max_length=20, unique=True, db_index=True)
+    purchase_code = models.CharField('کد خرید', max_length=6, unique=True, db_index=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='orders')
     status = models.CharField('وضعیت', max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
 
@@ -44,6 +45,7 @@ class Order(models.Model):
     shipping_city = models.CharField('شهر', max_length=100)
     shipping_address = models.TextField('آدرس')
     shipping_postal_code = models.CharField('کد پستی', max_length=10, blank=True)
+    shipping_plate_number = models.CharField('شماره پلاک', max_length=20, blank=True)
     tracking_number = models.CharField('کد رهگیری پست', max_length=24, blank=True, null=True)
 
     note = models.TextField('یادداشت', blank=True)
@@ -62,11 +64,22 @@ class Order(models.Model):
     def total_formatted(self):
         return f"{self.total:,}"
 
+    def _generate_unique_code(self, field, length):
+        import random
+        import string
+
+        while True:
+            code = ''.join(random.choices(string.digits, k=length))
+            if not type(self).objects.filter(**{field: code}).exists():
+                return code
+
     def save(self, *args, **kwargs):
         if not self.order_number:
             import random
             import string
             self.order_number = 'LB' + ''.join(random.choices(string.digits, k=8))
+        if not self.purchase_code:
+            self.purchase_code = self._generate_unique_code('purchase_code', 6)
         super().save(*args, **kwargs)
 
 

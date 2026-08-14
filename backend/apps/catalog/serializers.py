@@ -133,3 +133,9 @@ class ShippingSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoreSettings
         fields = ['shipping_cost', 'free_shipping_threshold']
+
+
+class StoreContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreSettings
+        fields = ['contact_sms_phone', 'contact_telegram', 'contact_whatsapp', 'contact_bale']

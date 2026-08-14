@@ -286,10 +286,26 @@ class InstagramPost(models.Model):
 
 class StoreSettings(models.Model):
     zarinpal_merchant_id = models.CharField('کد مرچنت زرین‌پال', max_length=100, blank=True)
-    shipping_cost = models.PositiveIntegerField('هزینه ارسال بسته (تومان)', default=50000)
+    shipping_cost = models.PositiveIntegerField('هزینه ارسال بسته (تومان)', default=150000)
     free_shipping_threshold = models.PositiveIntegerField(
         'حداقل خرید برای ارسال رایگان (تومان)',
-        default=500000,
+        default=0,
+    )
+    contact_sms_phone = models.CharField(
+        'شماره تماس/پیامک', max_length=20, blank=True,
+        help_text='مثلاً 09123456789 — از طریق پیامک SMS',
+    )
+    contact_telegram = models.CharField(
+        'شناسه تلگرام', max_length=100, blank=True,
+        help_text='بدون @ — مثلاً lumia_beauty',
+    )
+    contact_whatsapp = models.CharField(
+        'شماره واتساپ', max_length=20, blank=True,
+        help_text='فرمت بین‌المللی بدون + — مثلاً 989123456789',
+    )
+    contact_bale = models.CharField(
+        'شناسه بله', max_length=100, blank=True,
+        help_text='مثلاً lumia_beauty',
     )
     default_low_stock_threshold = models.PositiveSmallIntegerField(
         'آستانه پیش‌فرض موجودی کم',

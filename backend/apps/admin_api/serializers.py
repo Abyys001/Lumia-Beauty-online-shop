@@ -267,6 +267,7 @@ class AdminStoreSettingsSerializer(serializers.ModelSerializer):
         model = StoreSettings
         fields = [
             'zarinpal_merchant_id', 'shipping_cost', 'free_shipping_threshold',
+            'contact_sms_phone', 'contact_telegram', 'contact_whatsapp', 'contact_bale',
             'default_low_stock_threshold', 'default_stock_pack_sizes',
         ]
 
@@ -292,6 +293,7 @@ class AdminOrderItemSerializer(serializers.ModelSerializer):
 class AdminOrderSerializer(serializers.ModelSerializer):
     items = AdminOrderItemSerializer(many=True, read_only=True)
     user_phone = serializers.CharField(source='user.phone', read_only=True)
+    user_full_name = serializers.CharField(source='user.full_name', read_only=True)
     payment_status = serializers.SerializerMethodField()
     payment_id = serializers.SerializerMethodField()
     payment_detail = serializers.SerializerMethodField()
@@ -299,20 +301,22 @@ class AdminOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'order_number', 'user', 'user_phone', 'status',
+            'id', 'order_number', 'purchase_code', 'user', 'user_phone', 'user_full_name', 'status',
             'subtotal', 'discount_amount', 'shipping_cost', 'total',
             'coupon_code', 'free_shipping',
             'shipping_name', 'shipping_phone', 'shipping_province',
             'shipping_city', 'shipping_address', 'shipping_postal_code',
+            'shipping_plate_number',
             'tracking_number', 'note', 'created_at', 'updated_at',
             'items', 'payment_status', 'payment_id', 'payment_detail',
         ]
         read_only_fields = [
-            'id', 'order_number', 'user', 'user_phone',
+            'id', 'order_number', 'purchase_code', 'user', 'user_phone', 'user_full_name',
             'subtotal', 'discount_amount', 'shipping_cost', 'total',
             'coupon_code', 'free_shipping',
             'shipping_name', 'shipping_phone', 'shipping_province',
             'shipping_city', 'shipping_address', 'shipping_postal_code',
+            'shipping_plate_number',
             'created_at', 'updated_at', 'items', 'payment_status',
             'payment_id', 'payment_detail',
         ]
@@ -360,7 +364,7 @@ class AdminOrderListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'user_phone', 'status', 'total', 'created_at']
+        fields = ['id', 'order_number', 'purchase_code', 'user_phone', 'status', 'total', 'created_at']
         read_only_fields = fields
 
 

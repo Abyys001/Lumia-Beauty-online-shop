@@ -16,27 +16,12 @@
           dir="ltr"
           required
         />
-        <p class="text-xs text-lumia-dark/40 mt-1">مبلغی که برای سفارش‌های زیر حد ارسال رایگان از مشتری دریافت می‌شود</p>
-      </div>
-
-      <div>
-        <label class="label-text text-xs block mb-1">حداقل خرید برای ارسال رایگان (تومان)</label>
-        <input
-          v-model.number="form.free_shipping_threshold"
-          type="number"
-          min="0"
-          step="10000"
-          class="input input-bordered w-full"
-          dir="ltr"
-          required
-        />
-        <p class="text-xs text-lumia-dark/40 mt-1">اگر جمع سبد خرید به این مبلغ برسد، هزینه ارسال صفر محاسبه می‌شود</p>
+        <p class="text-xs text-lumia-dark/40 mt-1">هزینه ثابت ارسال که برای هر سفارش از مشتری دریافت می‌شود</p>
       </div>
 
       <div class="rounded-xl bg-lumia-cream/30 border border-lumia-cream p-4 text-sm text-lumia-dark/70 space-y-1">
         <p><strong>پیش‌نمایش:</strong></p>
-        <p>خرید زیر {{ formatPrice(form.free_shipping_threshold) }} → ارسال {{ formatPrice(form.shipping_cost) }}</p>
-        <p>خرید از {{ formatPrice(form.free_shipping_threshold) }} به بالا → ارسال رایگان</p>
+        <p>هر سفارش → ارسال {{ formatPrice(form.shipping_cost) }}</p>
       </div>
 
       <div class="pt-2 flex items-center gap-3">
@@ -59,16 +44,14 @@ const saving = ref(false)
 const saved = ref(false)
 const error = ref('')
 
-const form = ref<Pick<StoreSettings, 'shipping_cost' | 'free_shipping_threshold'>>({
-  shipping_cost: 50000,
-  free_shipping_threshold: 500000,
+const form = ref<Pick<StoreSettings, 'shipping_cost'>>({
+  shipping_cost: 150000,
 })
 
 async function load() {
   try {
     const data = await apiFetch<StoreSettings>('/admin/settings/')
-    form.value.shipping_cost = data.shipping_cost ?? 50000
-    form.value.free_shipping_threshold = data.free_shipping_threshold ?? 500000
+    form.value.shipping_cost = data.shipping_cost ?? 150000
   } catch {
     error.value = 'خطا در بارگذاری تنظیمات'
   } finally {
@@ -85,7 +68,6 @@ async function save() {
       method: 'PATCH',
       body: {
         shipping_cost: form.value.shipping_cost,
-        free_shipping_threshold: form.value.free_shipping_threshold,
       },
     })
     saved.value = true

@@ -111,6 +111,7 @@ export interface Address {
 export interface Order {
   id: string
   order_number: string
+  purchase_code?: string
   status: string
   status_display: string
   subtotal: number
@@ -125,6 +126,7 @@ export interface Order {
   shipping_city?: string
   shipping_address?: string
   shipping_postal_code?: string
+  shipping_plate_number?: string
   tracking_number?: string | null
   note?: string
   payment_status?: string | null
@@ -209,6 +211,17 @@ export interface StoreSettings {
   zarinpal_merchant_id: string
   shipping_cost: number
   free_shipping_threshold: number
+  contact_sms_phone?: string
+  contact_telegram?: string
+  contact_whatsapp?: string
+  contact_bale?: string
+}
+
+export interface StoreContact {
+  contact_sms_phone: string
+  contact_telegram: string
+  contact_whatsapp: string
+  contact_bale: string
 }
 
 export interface ZarinpalSettings {

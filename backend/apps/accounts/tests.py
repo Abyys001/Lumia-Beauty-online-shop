@@ -1,10 +1,10 @@
 from django.core.cache import cache
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from rest_framework.test import APIClient
 from unittest.mock import patch
 import os
 
-from apps.accounts.models import AuthSettings, OtpTemplate, SmsProviderProfile, SmsProviderSettings
+from apps.accounts.models import AuthSettings, OtpTemplate, SmsProviderProfile, SmsProviderSettings, User
 from apps.accounts.services.sms_config import SmsConfigService
 from apps.accounts.services.sms_sync import sync_default_template_for_mode
 from apps.accounts.sms import IranPayamakProvider, MockSmsProvider, SmsIrProvider, get_sms_provider
@@ -193,156 +193,139 @@ class SmsProviderTests(TestCase):
         self.assertTrue(SmsProviderProfile.get_profile(SmsProviderProfile.PROVIDER_IRANPAYAMAK).is_active)
 
 
-@patch.dict(os.environ, {'SMS_PROVIDER': 'mock'}, clear=False)
-class OTPRequestViewTests(TestCase):
+class RegisterViewTests(TestCase):
     def setUp(self):
-        cache.clear()
         self.client = APIClient()
-        from apps.accounts.models import OtpSettings
-        SmsProviderSettings.objects.update_or_create(
-            pk=1,
-            defaults={'provider_mode': SmsProviderSettings.PROVIDER_MOCK, 'is_active': True},
+
+    def test_register_creates_user_and_returns_tokens(self):
+        response = self.client.post(
+            '/api/auth/register/',
+            {'phone': '09123456789', 'password': 'secret123'},
+            format='json',
         )
-        SmsProviderProfile.ensure_profiles()
-        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_MOCK)
-        OtpSettings.objects.update_or_create(pk=1, defaults={
-            'rate_limit_count': 5,
-            'rate_limit_window_seconds': 900,
-            'resend_delay_seconds': 0,
-        })
-        OtpTemplate.objects.get_or_create(
-            name='Default',
-            defaults={'sms_ir_template_id': 123456, 'parameter_name': 'CODE', 'is_default': True, 'is_active': True},
-        )
-
-    def _request_otp(self, phone='09123456789'):
-        return self.client.post('/api/auth/otp/request/', {'phone': phone}, format='json')
-
-    def test_fifth_request_succeeds(self):
-        for _ in range(4):
-            self._request_otp()
-        self.assertEqual(self._request_otp().status_code, 200)
-
-    def test_sixth_request_is_rate_limited(self):
-        for _ in range(5):
-            self._request_otp()
-        self.assertEqual(self._request_otp().status_code, 429)
-
-    def test_different_phones_have_independent_limits(self):
-        from apps.accounts.models import OtpSettings
-        OtpSettings.objects.filter(pk=1).update(rate_limit_count=1)
-        self._request_otp('09111111111')
-        r1 = self._request_otp('09111111111')
-        r2 = self._request_otp('09222222222')
-        self.assertEqual(r1.status_code, 429)
-        self.assertEqual(r2.status_code, 200)
-
-    @override_settings(DEBUG=True, OTP_DEBUG_CODE=False)
-    def test_otp_debug_code_requires_explicit_setting(self):
-        response = self._request_otp()
-        self.assertEqual(response.status_code, 200)
-        self.assertNotIn('debug_code', response.data)
-
-    @override_settings(DEBUG=True, OTP_DEBUG_CODE=True)
-    def test_debug_code_exposed_when_enabled(self):
-        response = self._request_otp()
-        self.assertIn('debug_code', response.data)
-        self.assertEqual(len(response.data['debug_code']), 6)
-        self.assertTrue(response.data['debug_code'].isdigit())
-
-    def test_invalid_phone_rejected_on_request(self):
-        self.assertEqual(self.client.post('/api/auth/otp/request/', {'phone': '12345'}, format='json').status_code, 400)
-
-    def test_phone_with_country_code_normalized(self):
-        self.assertEqual(self._request_otp('989123456789').status_code, 200)
-
-    def test_admin_bypass_skips_otp_and_grants_staff(self):
-        from apps.accounts.models import User
-        AuthSettings.objects.update_or_create(pk=1, defaults={'admin_bypass_phone': '09916122680'})
-
-        response = self._request_otp('09916122680')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
-        self.assertTrue(response.data['user']['is_staff'])
-        self.assertNotIn('debug_code', response.data)
+        self.assertIn('user', response.data)
+        self.assertEqual(response.data['user']['phone'], '09123456789')
+        user = User.objects.get(phone='09123456789')
+        self.assertTrue(user.check_password('secret123'))
 
-        user = User.objects.get(phone='09916122680')
-        self.assertTrue(user.is_staff)
-        self.assertTrue(user.is_superuser)
+    def test_register_with_names(self):
+        response = self.client.post(
+            '/api/auth/register/',
+            {'phone': '09123456789', 'password': 'secret123', 'first_name': 'سارا', 'last_name': 'احمدی'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 201)
+        user = User.objects.get(phone='09123456789')
+        self.assertEqual(user.first_name, 'سارا')
+        self.assertEqual(user.last_name, 'احمدی')
+
+    def test_register_rejects_short_password(self):
+        response = self.client.post(
+            '/api/auth/register/',
+            {'phone': '09123456789', 'password': '123'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('password', response.data)
+
+    def test_register_rejects_invalid_phone(self):
+        response = self.client.post(
+            '/api/auth/register/',
+            {'phone': '12345', 'password': 'secret123'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('phone', response.data)
+
+    def test_register_normalizes_country_code(self):
+        response = self.client.post(
+            '/api/auth/register/',
+            {'phone': '989123456789', 'password': 'secret123'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['user']['phone'], '09123456789')
+
+    def test_register_existing_user_with_password_rejected(self):
+        User.objects.create_user(phone='09123456789', password='secret123')
+        response = self.client.post(
+            '/api/auth/register/',
+            {'phone': '09123456789', 'password': 'newpass'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('phone', response.data)
+
+    def test_register_sets_password_for_passwordless_user(self):
+        user = User.objects.create_user(phone='09123456789')
+        self.assertFalse(user.has_usable_password())
+        response = self.client.post(
+            '/api/auth/register/',
+            {'phone': '09123456789', 'password': 'secret123'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 201)
+        user.refresh_from_db()
+        self.assertTrue(user.check_password('secret123'))
 
 
 @patch.dict(os.environ, {'SMS_PROVIDER': 'mock'}, clear=False)
-class OTPVerifyViewTests(TestCase):
+class LoginViewTests(TestCase):
     def setUp(self):
-        cache.clear()
         self.client = APIClient()
-        from apps.accounts.models import OtpSettings
-        SmsProviderSettings.objects.update_or_create(
-            pk=1,
-            defaults={'provider_mode': SmsProviderSettings.PROVIDER_MOCK, 'is_active': True},
+        self.user = User.objects.create_user(phone='09123456789', password='secret123')
+
+    def test_login_with_valid_credentials(self):
+        response = self.client.post(
+            '/api/auth/login/',
+            {'phone': '09123456789', 'password': 'secret123'},
+            format='json',
         )
-        SmsProviderProfile.ensure_profiles()
-        SmsProviderProfile.activate(SmsProviderProfile.PROVIDER_MOCK)
-        OtpSettings.objects.update_or_create(pk=1, defaults={
-            'max_verify_attempts': 5,
-            'verify_window_seconds': 900,
-            'resend_delay_seconds': 0,
-        })
-        OtpTemplate.objects.get_or_create(
-            name='Default',
-            defaults={'sms_ir_template_id': 123456, 'parameter_name': 'CODE', 'is_default': True, 'is_active': True},
-        )
-
-    def _request_otp(self, phone='09123456789'):
-        with self.settings(OTP_DEBUG_CODE=True, DEBUG=True):
-            r = self.client.post('/api/auth/otp/request/', {'phone': phone}, format='json')
-        return r.data.get('debug_code')
-
-    def _verify(self, phone, code):
-        return self.client.post('/api/auth/otp/verify/', {'phone': phone, 'code': code}, format='json')
-
-    def test_correct_otp_returns_jwt_tokens(self):
-        code = self._request_otp()
-        response = self._verify('09123456789', code)
         self.assertEqual(response.status_code, 200)
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
         self.assertIn('user', response.data)
 
-    def test_wrong_otp_returns_400(self):
-        self._request_otp()
-        self.assertEqual(self._verify('09123456789', '000000').status_code, 400)
+    def test_login_with_wrong_password(self):
+        response = self.client.post(
+            '/api/auth/login/',
+            {'phone': '09123456789', 'password': 'wrongpass'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('detail', response.data)
 
-    def test_otp_is_single_use(self):
-        code = self._request_otp()
-        self._verify('09123456789', code)
-        self.assertEqual(self._verify('09123456789', code).status_code, 400)
+    def test_login_unknown_phone(self):
+        response = self.client.post(
+            '/api/auth/login/',
+            {'phone': '09111111111', 'password': 'secret123'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
 
-    def test_otp_verify_is_rate_limited(self):
-        from apps.accounts.models import OtpSettings
-        OtpSettings.objects.filter(pk=1).update(max_verify_attempts=2, verify_window_seconds=600)
-        payload = {'phone': '09123456789', 'code': '000000'}
-        self.client.post('/api/auth/otp/verify/', payload, format='json')
-        self.client.post('/api/auth/otp/verify/', payload, format='json')
-        response = self.client.post('/api/auth/otp/verify/', payload, format='json')
-        self.assertEqual(response.status_code, 429)
+    def test_login_normalizes_phone(self):
+        response = self.client.post(
+            '/api/auth/login/',
+            {'phone': '989123456789', 'password': 'secret123'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 200)
 
-    def test_fifth_failed_verify_returns_400_not_429(self):
-        for _ in range(4):
-            self._verify('09123456789', '000000')
-        self.assertEqual(self._verify('09123456789', '000000').status_code, 400)
+    def test_login_admin_bypass_grants_staff(self):
+        AuthSettings.objects.update_or_create(pk=1, defaults={'admin_bypass_phone': '09916122680'})
+        response = self.client.post(
+            '/api/auth/login/',
+            {'phone': '09916122680', 'password': 'anything'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['user']['is_staff'])
+        user = User.objects.get(phone='09916122680')
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
 
-    def test_sixth_failed_verify_returns_429(self):
-        for _ in range(5):
-            self._verify('09123456789', '000000')
-        self.assertEqual(self._verify('09123456789', '000000').status_code, 429)
 
-    def test_user_created_on_first_verify(self):
-        from apps.accounts.models import User
-        code = self._request_otp()
-        self._verify('09123456789', code)
-        self.assertTrue(User.objects.filter(phone='09123456789').exists())
 
-    def test_invalid_phone_format_rejected(self):
-        self.assertEqual(self._verify('12345', '123456').status_code, 400)

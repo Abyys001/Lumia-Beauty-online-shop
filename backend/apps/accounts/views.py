@@ -1,15 +1,15 @@
 import logging
 
-from django.conf import settings
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import OTPRequestSerializer, OTPVerifySerializer, UserSerializer
-from .services.otp_service import OtpService
-from .throttling import OtpScopedThrottle
+from .models import AuthAuditLog
+from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
+from .services.audit import AuthAuditService
+from .services.tokens import issue_tokens
 
-logger = logging.getLogger('accounts.otp')
+logger = logging.getLogger('accounts.auth')
 
 
 def _client_ip(request) -> str | None:
@@ -19,64 +19,41 @@ def _client_ip(request) -> str | None:
     return request.META.get('REMOTE_ADDR')
 
 
-class OTPRequestView(APIView):
+def _auth_response(request, user, created: bool = False) -> Response:
+    tokens = issue_tokens(user)
+    data = {
+        'access': tokens['access'],
+        'refresh': tokens['refresh'],
+        'user': UserSerializer(user).data,
+    }
+    AuthAuditService.log(
+        AuthAuditLog.ACTION_LOGIN_SUCCESS,
+        phone=user.phone,
+        user=user,
+        ip_address=_client_ip(request),
+        metadata={'method': 'password', 'new_user': created},
+    )
+    return Response(data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [OtpScopedThrottle]
-    throttle_scope = 'otp'
 
     def post(self, request):
-        serializer = OTPRequestSerializer(data=request.data)
+        serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        phone = serializer.validated_data['phone']
-        ip = _client_ip(request)
-        user_agent = request.META.get('HTTP_USER_AGENT', '')
-
-        result = OtpService.request_otp(phone, ip_address=ip, user_agent=user_agent)
-
-        if result.bypass_tokens and result.user:
-            return Response({
-                'access': result.bypass_tokens['access'],
-                'refresh': result.bypass_tokens['refresh'],
-                'user': UserSerializer(result.user).data,
-            })
-
-        if not result.success:
-            return Response({'detail': result.detail}, status=result.status_code)
-
-        response_data = {'detail': result.detail}
-        if result.debug_code:
-            response_data['debug_code'] = result.debug_code
-        if result.simulated:
-            response_data['simulated'] = True
-
-        from .services.sms_config import SmsConfigService
-        response_data['expires_in'] = SmsConfigService.get_otp_settings().expiry_seconds
-
-        return Response(response_data)
+        user = serializer.save()
+        return _auth_response(request, user, created=True)
 
 
-class OTPVerifyView(APIView):
+class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [OtpScopedThrottle]
-    throttle_scope = 'otp'
 
     def post(self, request):
-        serializer = OTPVerifySerializer(data=request.data)
+        serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        phone = serializer.validated_data['phone']
-        code = serializer.validated_data['code']
-        ip = _client_ip(request)
-
-        result = OtpService.verify_otp(phone, code, ip_address=ip)
-
-        if not result.success:
-            return Response({'detail': result.detail}, status=result.status_code)
-
-        return Response({
-            'access': result.tokens['access'],
-            'refresh': result.tokens['refresh'],
-            'user': UserSerializer(result.user).data,
-        })
+        user = serializer.validated_data['user']
+        return _auth_response(request, user)
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

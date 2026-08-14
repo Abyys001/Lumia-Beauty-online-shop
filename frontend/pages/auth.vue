@@ -11,150 +11,141 @@
       </div>
       <p class="text-xs font-semibold tracking-wide text-lumia-gold uppercase mb-2">خوش آمدید</p>
       <h1 class="text-2xl sm:text-3xl font-bold text-lumia-dark leading-snug">
-        {{ step === 'phone' ? 'به لومیا بیوتی خوش آمدید' : 'کد تأیید را وارد کنید' }}
+        به لومیا بیوتی خوش آمدید
       </h1>
       <p class="text-sm text-base-content/60 mt-3 leading-relaxed max-w-xs mx-auto">
-        <template v-if="step === 'phone'">
-          با شماره موبایل خود وارد شوید یا ثبت‌نام کنید — سریع، امن و بدون رمز عبور.
-        </template>
-        <template v-else>
-          پیامک حاوی کد ۶ رقمی به شماره
-          <span class="font-mono text-lumia-dark/80" dir="ltr">{{ phone }}</span>
-          ارسال شد.
-        </template>
+        با شماره موبایل و رمز عبور خود وارد شوید یا یک حساب جدید بسازید.
       </p>
     </div>
 
     <!-- Card -->
     <div class="bg-white/90 backdrop-blur-sm rounded-3xl border border-lumia-cream shadow-lg shadow-lumia-dark/5 p-6 sm:p-8">
-      <form v-if="step === 'phone'" class="space-y-5" @submit.prevent="requestOtp">
+      <!-- Tabs -->
+      <div class="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-base-200/70 mb-6" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="mode === 'login'"
+          class="btn btn-sm h-11 rounded-xl border-0 font-bold transition-all"
+          :class="mode === 'login' ? 'btn-primary shadow-md shadow-lumia-gold/20' : 'btn-ghost text-base-content/60'"
+          @click="mode = 'login'"
+        >
+          ورود
+        </button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="mode === 'register'"
+          class="btn btn-sm h-11 rounded-xl border-0 font-bold transition-all"
+          :class="mode === 'register' ? 'btn-primary shadow-md shadow-lumia-gold/20' : 'btn-ghost text-base-content/60'"
+          @click="mode = 'register'"
+        >
+          ثبت‌نام
+        </button>
+      </div>
+
+      <form class="space-y-5" @submit.prevent="submit">
         <div>
           <label class="block text-sm font-medium text-lumia-dark/80 mb-2">شماره موبایل</label>
           <input
-            v-model="phone"
+            v-model="form.phone"
             type="tel"
             class="input input-bordered w-full rounded-2xl h-12 text-base focus:border-lumia-gold focus:outline-none transition-colors"
+            :class="{ 'input-error': fieldErrors.phone }"
             placeholder="۰۹۱۲۳۴۵۶۷۸۹"
             dir="ltr"
             inputmode="tel"
-            autocomplete="tel"
+            autocomplete="username"
             required
-            @input="phone = toEnDigits(phone)"
+            @input="form.phone = toEnDigits(form.phone)"
           />
+          <p v-if="fieldErrors.phone" class="text-error text-xs mt-1.5 pr-1">{{ fieldErrors.phone }}</p>
         </div>
+
+        <template v-if="mode === 'register'">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-lumia-dark/80 mb-2">نام</label>
+              <input
+                v-model="form.first_name"
+                type="text"
+                class="input input-bordered w-full rounded-2xl h-12 text-base focus:border-lumia-gold focus:outline-none transition-colors"
+                autocomplete="given-name"
+              />
+              <p v-if="fieldErrors.first_name" class="text-error text-xs mt-1.5 pr-1">{{ fieldErrors.first_name }}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-lumia-dark/80 mb-2">نام خانوادگی</label>
+              <input
+                v-model="form.last_name"
+                type="text"
+                class="input input-bordered w-full rounded-2xl h-12 text-base focus:border-lumia-gold focus:outline-none transition-colors"
+                autocomplete="family-name"
+              />
+              <p v-if="fieldErrors.last_name" class="text-error text-xs mt-1.5 pr-1">{{ fieldErrors.last_name }}</p>
+            </div>
+          </div>
+        </template>
+
+        <div>
+          <label class="block text-sm font-medium text-lumia-dark/80 mb-2">رمز عبور</label>
+          <div class="relative">
+            <input
+              v-model="form.password"
+              :type="showPassword ? 'text' : 'password'"
+              class="input input-bordered w-full rounded-2xl h-12 text-base pl-12 focus:border-lumia-gold focus:outline-none transition-colors"
+              :class="{ 'input-error': fieldErrors.password }"
+              :placeholder="mode === 'register' ? 'حداقل ۴ کاراکتر' : ''"
+              autocomplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              class="absolute left-1 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs text-base-content/50"
+              aria-label="نمایش رمز عبور"
+              @click="showPassword = !showPassword"
+            >
+              <svg v-if="showPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+              <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+          <p v-if="fieldErrors.password" class="text-error text-xs mt-1.5 pr-1">{{ fieldErrors.password }}</p>
+        </div>
+
+        <div v-if="mode === 'register'">
+          <label class="block text-sm font-medium text-lumia-dark/80 mb-2">تکرار رمز عبور</label>
+          <input
+            v-model="confirmPassword"
+            :type="showPassword ? 'text' : 'password'"
+            class="input input-bordered w-full rounded-2xl h-12 text-base focus:border-lumia-gold focus:outline-none transition-colors"
+            :class="{ 'input-error': confirmError }"
+            autocomplete="new-password"
+            required
+          />
+          <p v-if="confirmError" class="text-error text-xs mt-1.5 pr-1">رمز عبور و تکرار آن یکسان نیستند</p>
+        </div>
+
         <button
           type="submit"
           class="btn btn-primary w-full rounded-full h-12 text-base font-bold shadow-md shadow-lumia-gold/20 hover:shadow-lg transition-all"
-          :disabled="loading"
+          :disabled="submitting"
         >
-          <span v-if="loading" class="loading loading-spinner loading-sm" />
-          <span v-else>دریافت کد تأیید</span>
+          <span v-if="submitting" class="loading loading-spinner loading-sm" />
+          <span v-else>{{ mode === 'login' ? 'ورود' : 'ایجاد حساب و ورود' }}</span>
         </button>
-      </form>
 
-      <form v-else class="space-y-5" @submit.prevent="verifyOtp">
-        <!-- OTP Timer -->
-        <div class="flex flex-col items-center py-2">
-          <div class="relative w-28 h-28">
-            <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
-              <defs>
-                <linearGradient id="otp-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#c9a96e" />
-                  <stop offset="100%" stop-color="#8b6f5c" />
-                </linearGradient>
-              </defs>
-              <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="6" class="text-base-200" />
-              <circle
-                cx="60"
-                cy="60"
-                r="52"
-                fill="none"
-                stroke="url(#otp-ring-gradient)"
-                stroke-width="6"
-                stroke-linecap="round"
-                :stroke-dasharray="ringCircumference"
-                :stroke-dashoffset="ringOffset"
-                class="transition-[stroke-dashoffset] duration-1000 ease-linear"
-              />
-            </svg>
-            <div class="absolute inset-0 flex flex-col items-center justify-center">
-              <span
-                class="text-2xl font-bold tabular-nums tracking-tight"
-                :class="remainingSeconds > 30 ? 'text-lumia-dark' : remainingSeconds > 0 ? 'text-warning' : 'text-error'"
-                dir="ltr"
-              >
-                {{ formattedTime }}
-              </span>
-              <span class="text-[10px] text-base-content/50 mt-0.5">اعتبار کد</span>
-            </div>
-          </div>
-          <p class="text-xs text-center text-base-content/55 mt-4 leading-relaxed max-w-[240px]">
-            <template v-if="remainingSeconds > 0">
-              کد پیامکی تا
-              <strong class="text-lumia-dark/80">{{ formattedTime }}</strong>
-              معتبر است — همین کد را وارد کنید.
-            </template>
-            <template v-else>
-              زمان اعتبار کد به پایان رسید. می‌توانید کد جدید دریافت کنید.
-            </template>
-          </p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-lumia-dark/80 mb-2 text-center">کد ۶ رقمی</label>
-          <input
-            ref="codeInputRef"
-            v-model="code"
-            type="text"
-            class="input input-bordered w-full rounded-2xl h-14 text-center tracking-[0.35em] text-xl font-mono focus:border-lumia-gold focus:outline-none"
-            placeholder="• • • • • •"
-            maxlength="6"
-            dir="ltr"
-            inputmode="numeric"
-            autocomplete="one-time-code"
-            required
-            :disabled="remainingSeconds === 0"
-            @input="code = toEnDigits(code).replace(/\D/g, '').slice(0, 6)"
-          />
-        </div>
-
-        <p v-if="simulated && debugCode" class="text-xs text-warning text-center bg-warning/10 rounded-xl py-2 px-3">
-          حالت تست: کد
-          <strong dir="ltr" class="font-mono">{{ debugCode }}</strong>
+        <p v-if="error" class="text-error text-sm text-center bg-error/5 rounded-xl py-2.5 px-3">
+          {{ error }}
         </p>
-
-        <button
-          type="submit"
-          class="btn btn-primary w-full rounded-full h-12 font-bold"
-          :disabled="loading || remainingSeconds === 0 || code.length < 6"
-        >
-          <span v-if="loading" class="loading loading-spinner loading-sm" />
-          <span v-else>تأیید و ورود</span>
-        </button>
-
-        <div class="flex flex-col gap-2 pt-1">
-          <button
-            type="button"
-            class="btn btn-outline btn-sm rounded-full border-lumia-gold/40 text-lumia-gold hover:bg-lumia-gold/10"
-            :disabled="remainingSeconds > 0 || resending"
-            @click="resendOtp"
-          >
-            <span v-if="resending" class="loading loading-spinner loading-xs" />
-            <span v-else-if="remainingSeconds > 0">ارسال مجدد ({{ formattedTime }})</span>
-            <span v-else>دریافت کد جدید</span>
-          </button>
-          <button type="button" class="btn btn-ghost btn-sm rounded-full text-base-content/60" @click="goBackToPhone">
-            تغییر شماره موبایل
-          </button>
-        </div>
       </form>
-
-      <p v-if="error" class="text-error text-sm mt-5 text-center bg-error/5 rounded-xl py-2.5 px-3">
-        {{ error }}
-      </p>
     </div>
 
-    <p v-if="step === 'phone'" class="text-center text-xs text-base-content/45 mt-6 leading-relaxed">
+    <p class="text-center text-xs text-base-content/45 mt-6 leading-relaxed">
       با ورود، شرایط استفاده و حریم خصوصی لومیا بیوتی را می‌پذیرید.
     </p>
   </div>
@@ -170,157 +161,77 @@ const router = useRouter()
 const route = useRoute()
 const { apiFetch } = useApi()
 
-const OTP_DEFAULT_SECONDS = 120
-
 function toEnDigits(s: string): string {
   return s
     .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0))
     .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
 }
 
-function toFaDigits(n: number | string): string {
-  return String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
-}
-
-const step = ref<'phone' | 'code'>('phone')
-const phone = ref('')
-const code = ref('')
-const loading = ref(false)
-const resending = ref(false)
+const mode = ref<'login' | 'register'>('login')
+const form = reactive({ phone: '', first_name: '', last_name: '', password: '' })
+const confirmPassword = ref('')
+const showPassword = ref(false)
+const submitting = ref(false)
 const error = ref('')
-const debugCode = ref('')
-const simulated = ref(false)
-const codeInputRef = ref<HTMLInputElement | null>(null)
+const fieldErrors = reactive<Record<string, string>>({})
 
-const totalSeconds = ref(OTP_DEFAULT_SECONDS)
-const remainingSeconds = ref(0)
-let timerId: ReturnType<typeof setInterval> | null = null
+const confirmError = computed(() => mode.value === 'register' && form.password !== confirmPassword.value)
 
-const ringCircumference = 2 * Math.PI * 52
-const ringOffset = computed(() => {
-  if (totalSeconds.value <= 0) return ringCircumference
-  const progress = remainingSeconds.value / totalSeconds.value
-  return ringCircumference * (1 - progress)
-})
-
-const formattedTime = computed(() => {
-  const m = Math.floor(remainingSeconds.value / 60)
-  const s = remainingSeconds.value % 60
-  return `${toFaDigits(m)}:${toFaDigits(String(s).padStart(2, '0'))}`
-})
-
-function clearTimer() {
-  if (timerId) {
-    clearInterval(timerId)
-    timerId = null
-  }
+function pickFieldError(data: Record<string, unknown>, field: string): string {
+  const value = data?.[field]
+  if (Array.isArray(value) && value.length) return String(value[0])
+  if (typeof value === 'string' && value) return value
+  return ''
 }
 
-function startTimer(seconds: number) {
-  clearTimer()
-  totalSeconds.value = seconds
-  remainingSeconds.value = seconds
-  timerId = setInterval(() => {
-    if (remainingSeconds.value > 0) {
-      remainingSeconds.value -= 1
-    } else {
-      clearTimer()
-    }
-  }, 1000)
+function pickGeneralError(data: Record<string, unknown>): string {
+  const detail = data?.detail
+  if (typeof detail === 'string' && detail) return detail
+  if (Array.isArray(detail) && detail.length) return String(detail[0])
+  return ''
 }
 
-function goBackToPhone() {
-  clearTimer()
-  remainingSeconds.value = 0
-  step.value = 'phone'
-  code.value = ''
+function resetErrors() {
   error.value = ''
-  debugCode.value = ''
-  simulated.value = false
+  fieldErrors.phone = ''
+  fieldErrors.password = ''
+  fieldErrors.first_name = ''
+  fieldErrors.last_name = ''
 }
 
-async function requestOtp() {
-  loading.value = true
-  error.value = ''
+async function submit() {
+  if (mode.value === 'register' && confirmError.value) return
+  resetErrors()
+  submitting.value = true
   try {
-    const result = await apiFetch<{
-      detail?: string
-      debug_code?: string
-      simulated?: boolean
-      expires_in?: number
-      access?: string
-      refresh?: string
-      user?: User
-    }>('/auth/otp/request/', {
-      method: 'POST',
-      body: { phone: phone.value },
-    })
-    if (result.access && result.refresh && result.user) {
-      auth.setTokens(result.access, result.refresh, result.user)
-      redirectAfterLogin(result.user)
-      return
-    }
-    simulated.value = Boolean(result.simulated)
-    debugCode.value = result.debug_code || ''
-    if (debugCode.value) {
-      code.value = debugCode.value
-    } else {
-      code.value = ''
-    }
-    step.value = 'code'
-    startTimer(result.expires_in ?? OTP_DEFAULT_SECONDS)
-    await nextTick()
-    codeInputRef.value?.focus()
-  } catch (e: unknown) {
-    const err = e as { data?: { detail?: string } }
-    error.value = err.data?.detail || 'خطا در ارسال کد'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function resendOtp() {
-  if (remainingSeconds.value > 0 || resending.value) return
-  resending.value = true
-  error.value = ''
-  code.value = ''
-  try {
-    const result = await apiFetch<{ detail?: string; debug_code?: string; simulated?: boolean; expires_in?: number }>('/auth/otp/request/', {
-      method: 'POST',
-      body: { phone: phone.value },
-    })
-    simulated.value = Boolean(result.simulated)
-    debugCode.value = result.debug_code || ''
-    if (debugCode.value) {
-      code.value = debugCode.value
-    }
-    startTimer(result.expires_in ?? OTP_DEFAULT_SECONDS)
-    await nextTick()
-    codeInputRef.value?.focus()
-  } catch (e: unknown) {
-    const err = e as { data?: { detail?: string } }
-    error.value = err.data?.detail || 'خطا در ارسال مجدد کد'
-  } finally {
-    resending.value = false
-  }
-}
-
-async function verifyOtp() {
-  loading.value = true
-  error.value = ''
-  try {
-    const result = await apiFetch<{ access: string; refresh: string; user: User }>('/auth/otp/verify/', {
-      method: 'POST',
-      body: { phone: phone.value, code: code.value },
-    })
-    clearTimer()
+    const body = mode.value === 'login'
+      ? { phone: form.phone, password: form.password }
+      : {
+          phone: form.phone,
+          password: form.password,
+          first_name: form.first_name,
+          last_name: form.last_name,
+        }
+    const result = await apiFetch<{ access: string; refresh: string; user: User }>(
+      mode.value === 'login' ? '/auth/login/' : '/auth/register/',
+      { method: 'POST', body },
+    )
     auth.setTokens(result.access, result.refresh, result.user)
     redirectAfterLogin(result.user)
   } catch (e: unknown) {
-    const err = e as { data?: { detail?: string; message?: string } }
-    error.value = err.data?.detail || err.data?.message || 'کد نامعتبر'
+    const err = e as { data?: Record<string, unknown> }
+    const data = err.data || {}
+    const general = pickGeneralError(data)
+    const phoneErr = pickFieldError(data, 'phone')
+    const passwordErr = pickFieldError(data, 'password')
+    if (phoneErr) fieldErrors.phone = phoneErr
+    if (passwordErr) fieldErrors.password = passwordErr
+    error.value = general
+      || pickFieldError(data, 'first_name')
+      || pickFieldError(data, 'last_name')
+      || (mode.value === 'login' ? 'شماره موبایل یا رمز عبور اشتباه است' : 'خطا در ثبت‌نام')
   } finally {
-    loading.value = false
+    submitting.value = false
   }
 }
 
@@ -334,8 +245,6 @@ function redirectAfterLogin(user: User) {
   }
   router.push(user.is_staff ? '/admin' : '/account')
 }
-
-onUnmounted(clearTimer)
 
 useSeoMeta({
   title: 'ورود / ثبت‌نام | لومیا بیوتی',

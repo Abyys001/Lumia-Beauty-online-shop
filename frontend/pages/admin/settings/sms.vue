@@ -393,8 +393,8 @@
     <form v-else class="bg-white rounded-2xl p-6 shadow-sm border border-base-200 space-y-4" @submit.prevent="saveAuth">
       <h2 class="font-bold text-lumia-dark pb-4 border-b border-base-200">احراز هویت</h2>
       <div class="flex items-center gap-2 text-sm text-lumia-dark/70">
-        <span class="badge badge-success badge-sm">OTP</span>
-        تنها روش ورود — ورود با رمز عبور پشتیبانی نمی‌شود.
+        <span class="badge badge-success badge-sm">رمز عبور</span>
+        ورود با شماره موبایل و رمز عبور — OTP برای ورود کاربران غیرفعال است.
       </div>
       <div class="grid sm:grid-cols-2 gap-4">
         <div>

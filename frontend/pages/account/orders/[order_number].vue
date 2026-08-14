@@ -19,6 +19,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 class="text-xl sm:text-2xl font-bold text-lumia-dark">سفارش {{ order.order_number }}</h1>
+            <p v-if="order.purchase_code" class="text-sm text-lumia-gold font-mono mt-1" dir="ltr">کد خرید: {{ order.purchase_code }}</p>
             <p class="text-sm text-base-content/60 mt-1">{{ formatDate(order.created_at) }}</p>
           </div>
           <span class="badge badge-lg shrink-0" :class="statusBadge(order.status)">{{ order.status_display }}</span>
@@ -104,6 +105,7 @@
           {{ order.shipping_province }}، {{ order.shipping_city }} — {{ order.shipping_address }}
         </p>
         <p v-if="order.shipping_postal_code" class="text-sm text-base-content/50 mt-1">کد پستی: {{ order.shipping_postal_code }}</p>
+        <p v-if="order.shipping_plate_number" class="text-sm text-base-content/50 mt-1">پلاک خودرو: {{ order.shipping_plate_number }}</p>
         <p v-if="order.coupon_code" class="text-sm mt-3">کد تخفیف: <span class="font-mono">{{ order.coupon_code }}</span></p>
         <p v-if="order.note" class="text-sm mt-2 text-base-content/60">یادداشت: {{ order.note }}</p>
       </div>

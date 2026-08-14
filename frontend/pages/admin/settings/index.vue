@@ -41,7 +41,7 @@
           </svg>
         </div>
         <h2 class="font-bold text-lumia-dark mb-1">SMS و OTP</h2>
-        <p class="text-xs text-lumia-dark/50">SMS.ir، قالب OTP، محدودیت‌ها و JWT</p>
+        <p class="text-xs text-lumia-dark/50">SMS.ir، قالب OTP، محدودیت‌ها و احراز هویت</p>
       </NuxtLink>
 
       <NuxtLink

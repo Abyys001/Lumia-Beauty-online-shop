@@ -164,6 +164,49 @@ def _mark_payment_success(payment, order, data, result_data, fulfill=True):
 
 
 @transaction.atomic
+def confirm_manual_payment(order, initiated_by=None):
+    """Mark an order as paid manually (card-to-card, no gateway).
+
+    Decrements stock, records coupon usage and clears the customer's cart
+    exactly like a successful gateway payment.
+    """
+    order = Order.objects.select_for_update().get(pk=order.pk)
+    payment, _ = Payment.objects.select_for_update().get_or_create(
+        order=order,
+        defaults={'amount': order.total, 'status': Payment.STATUS_PENDING},
+    )
+
+    if payment.amount != order.total:
+        payment.amount = order.total
+        payment.save(update_fields=['amount'])
+
+    if payment.status == Payment.STATUS_SUCCESS:
+        return order, 'success', payment.ref_id
+
+    ref_id = f'MANUAL-{order.purchase_code}'
+    result_data = {
+        'manual': True,
+        'initiated_by': str(initiated_by) if initiated_by else None,
+        'purchase_code': order.purchase_code,
+    }
+    PaymentLog.objects.create(
+        payment=payment,
+        action='manual_confirm',
+        request_data={'order': order.order_number, 'purchase_code': order.purchase_code},
+        response_data=result_data,
+    )
+
+    result_order, result, msg = _mark_payment_success(
+        payment, order, {'ref_id': ref_id}, result_data, fulfill=True,
+    )
+    if result == 'failed':
+        return result_order, 'failed', msg or 'تکمیل سفارش ناموفق بود'
+
+    result_order.refresh_from_db()
+    return result_order, 'success', ref_id
+
+
+@transaction.atomic
 def verify_payment_callback(authority, status_param):
     try:
         payment = Payment.objects.select_for_update().get(authority=authority)

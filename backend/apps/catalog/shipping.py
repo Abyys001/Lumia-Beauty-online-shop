@@ -1,7 +1,10 @@
-"""Shipping cost helpers backed by StoreSettings singleton."""
+"""Shipping cost helpers backed by StoreSettings singleton.
 
-DEFAULT_SHIPPING_COST = 50000
-DEFAULT_FREE_SHIPPING_THRESHOLD = 500000
+Shipping is a flat fee applied to every order (no free-shipping threshold).
+"""
+
+DEFAULT_SHIPPING_COST = 150000
+DEFAULT_FREE_SHIPPING_THRESHOLD = 0
 
 
 def get_shipping_settings() -> dict[str, int]:
@@ -15,13 +18,8 @@ def get_shipping_settings() -> dict[str, int]:
 
 
 def calculate_shipping_cost(subtotal: int, *, free_shipping: bool = False) -> int:
-    cfg = get_shipping_settings()
-    if free_shipping or subtotal >= cfg['free_shipping_threshold']:
-        return 0
-    return cfg['shipping_cost']
+    return get_shipping_settings()['shipping_cost']
 
 
 def qualifies_for_free_shipping(subtotal: int, *, free_shipping: bool = False) -> bool:
-    if free_shipping:
-        return True
-    return subtotal >= get_shipping_settings()['free_shipping_threshold']
+    return False

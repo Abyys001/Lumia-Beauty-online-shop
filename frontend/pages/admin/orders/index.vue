@@ -3,6 +3,10 @@
     <!-- Filters -->
     <div class="flex flex-wrap gap-3 mb-5">
       <input v-model="search" type="text" placeholder="جستجو شماره سفارش / شماره تلفن..." class="input input-bordered input-sm w-full sm:w-64 flex-1 min-w-0" @input="debouncedFetch" />
+      <form class="flex items-center gap-2" @submit.prevent="lookupByCode">
+        <input v-model="lookupCode" type="text" placeholder="جستجو با کد خرید..." class="input input-bordered input-sm w-44" dir="ltr" />
+        <button class="btn btn-outline btn-sm" :class="{ loading: lookingUp }">کد خرید</button>
+      </form>
       <select v-model="filterStatus" class="select select-bordered select-sm w-full sm:w-auto" @change="fetchOrders">
         <option value="">همه وضعیت‌ها</option>
         <option value="pending">در انتظار پرداخت</option>
@@ -17,6 +21,8 @@
       <input v-model="dateTo" type="date" class="input input-bordered input-sm w-full sm:w-auto" @change="fetchOrders" dir="ltr" />
     </div>
 
+    <div v-if="lookupError" class="alert alert-error text-sm mb-4 py-2">{{ lookupError }}</div>
+
     <div class="bg-white rounded-2xl shadow-sm border border-base-200 overflow-hidden min-w-0">
       <div v-if="loading" class="p-8 text-center text-lumia-dark/40">در حال بارگذاری...</div>
 
@@ -26,6 +32,7 @@
             <div class="flex flex-wrap items-start justify-between gap-2">
               <div class="min-w-0">
                 <div class="font-mono text-sm font-medium">{{ order.order_number }}</div>
+                <div v-if="order.purchase_code" class="font-mono text-xs text-lumia-gold mt-0.5" dir="ltr">کد خرید: {{ order.purchase_code }}</div>
                 <div class="text-xs text-lumia-dark/50 mt-0.5">{{ order.user_phone }}</div>
                 <div class="text-xs text-lumia-dark/40 mt-1">{{ formatDate(order.created_at) }}</div>
               </div>
@@ -43,6 +50,7 @@
             <thead class="bg-base-200/50">
               <tr class="text-lumia-dark/60 text-xs">
                 <th class="font-medium text-right">شماره سفارش</th>
+                <th class="font-medium text-right">کد خرید</th>
                 <th class="font-medium text-right">خریدار</th>
                 <th class="font-medium text-right">وضعیت</th>
                 <th class="font-medium text-right">مبلغ</th>
@@ -53,6 +61,7 @@
             <tbody>
               <tr v-for="order in orders" :key="order.id" class="hover:bg-base-200/30 transition-colors">
                 <td class="font-mono text-sm">{{ order.order_number }}</td>
+                <td class="font-mono text-sm text-lumia-gold">{{ order.purchase_code }}</td>
                 <td class="text-sm">{{ order.user_phone }}</td>
                 <td><AdminBadge :status="order.status" /></td>
                 <td class="text-sm font-bold">{{ formatPrice(order.total) }}</td>
@@ -84,6 +93,9 @@ definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 const { apiFetch, formatPrice, formatDate } = useApi()
 
 const search = ref('')
+const lookupCode = ref('')
+const lookingUp = ref(false)
+const lookupError = ref('')
 const filterStatus = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
@@ -113,6 +125,22 @@ async function fetchOrders() {
 }
 
 function goToPage(page: number) { currentPage.value = page; fetchOrders() }
+
+async function lookupByCode() {
+  const code = lookupCode.value.trim()
+  if (!code || lookingUp.value) return
+  lookingUp.value = true
+  lookupError.value = ''
+  try {
+    const order = await apiFetch<{ id: string }>('/admin/orders/lookup/', { params: { code } })
+    await navigateTo(`/admin/orders/${order.id}`)
+  } catch (e: unknown) {
+    const err = e as { data?: { detail?: string } }
+    lookupError.value = err.data?.detail || 'سفارشی با این کد پیدا نشد'
+  } finally {
+    lookingUp.value = false
+  }
+}
 
 let debounceTimer: ReturnType<typeof setTimeout>
 function debouncedFetch() {

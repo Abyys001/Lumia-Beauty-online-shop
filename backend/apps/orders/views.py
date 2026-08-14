@@ -112,6 +112,7 @@ class CreateOrderView(APIView):
             'shipping_city': data['shipping_city'],
             'shipping_address': data['shipping_address'],
             'shipping_postal_code': data.get('shipping_postal_code', ''),
+            'shipping_plate_number': data.get('shipping_plate_number', ''),
         }
 
 
