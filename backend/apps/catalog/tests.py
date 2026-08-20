@@ -11,7 +11,7 @@ class APIPermissionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-    def test_cart_requires_authentication(self):
+    def test_cart_is_public(self):
         response = self.client.get('/api/cart/')
 
-        self.assertIn(response.status_code, (401, 403))
+        self.assertEqual(response.status_code, 200)

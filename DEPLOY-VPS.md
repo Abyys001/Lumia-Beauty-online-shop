@@ -15,7 +15,7 @@ build-and-push.sh  ──►  registry  ──►  docker compose pull
 
 ## 0. Prerequisites
 
-- A VPS with a public IP (Iran-based recommended for Zarinpal/SMS latency + access).
+- A VPS with a public IP (Iran-based recommended for latency + access).
 - DNS **A records** for `lumiabeauty.ir` and `www.lumiabeauty.ir` → the VPS IP.
 - Ports **80** and **443** open in the firewall.
 - A registry account (Docker Hub `siavashdev`, or override `REGISTRY`).
@@ -54,7 +54,7 @@ Then **edit `.env`** and fill in the real values (these are placeholders in `.en
 |---|---|
 | `DJANGO_SECRET_KEY` | Generate a **new** one — do not reuse the sample. |
 | `ZARINPAL_MERCHANT_ID` | Real Zarinpal merchant id; keep `ZARINPAL_SANDBOX=False`. |
-| `IRANPAYAMAK_API_KEY` / line / pattern | Real SMS credentials, or switch `SMS_PROVIDER`. |
+| `PENDING_ORDER_EXPIRY_DAYS` | Days before an unconfirmed card-to-card order is cancelled (default `7`). |
 | `POSTGRES_PASSWORD` | Change from the sample value. |
 
 Already correct for this domain: `DJANGO_ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`,
@@ -115,6 +115,28 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 docker compose logs -f nginx
 docker compose logs -f backend
 ```
+
+**Expire unpaid orders** (optional — an hourly in-request sweep already does this;
+a cron job just makes it deterministic when nobody is browsing):
+```bash
+# crontab -e, daily at 03:00
+0 3 * * * cd /srv/lumia && docker compose exec -T backend python manage.py expire_pending_orders
+```
+
+**Images not loading?** Work through the two layers in order:
+```bash
+# 1. Are the files actually on the server? (DB rows vs. the media_data volume)
+docker compose exec backend python manage.py check_media
+
+# 2. Is the routing right? Both must return 200 image/...
+curl -I https://lumiabeauty.ir/media/<path-from-the-api>
+docker compose exec frontend wget -S -O /dev/null http://backend:8000/media/<path>
+```
+If step 1 reports missing files, the database and the volume are out of sync —
+copy the uploads back in (`docker compose cp ./media/. backend:/app/media/`) or
+re-upload them in the admin. If step 1 is clean and step 2 fails, nginx is not
+mapping `/media/` — check `nginx/prod.conf` and that the `media_data` volume is
+mounted read-only at `/var/www/media`.
 
 **Postgres backup:**
 ```bash

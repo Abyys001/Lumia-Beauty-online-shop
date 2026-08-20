@@ -37,16 +37,14 @@
 | `CORS_ALLOWED_ORIGINS` | `https://yourdomain.com,https://www.yourdomain.com` |
 | `DJANGO_SECURE_SSL_REDIRECT` | `True` |
 | `DJANGO_SECURE_HSTS_SECONDS` | `0` یا مقدار دلخواه |
-| `DJANGO_OTP_DEBUG_CODE` | `False` |
 | `GUNICORN_WORKERS` | `2` (بر اساس RAM پلن Liara تنظیم کنید) |
 | `GUNICORN_MAX_REQUESTS` | `1000` |
 | `ZARINPAL_MERCHANT_ID` | مقدار واقعی زرین‌پال |
 | `ZARINPAL_SANDBOX` | `False` |
 | `ZARINPAL_MOCK` | `False` |
 | `ZARINPAL_CALLBACK_URL` | `https://yourdomain.com/api/payments/zarinpal/verify/` |
-| `SMS_PROVIDER` | `smsir` یا `iranpayamak` |
-| `SMS_IR_API_KEY` / `IRANPAYAMAK_API_KEY` | بر اساس provider انتخابی |
-| `ADMIN_BYPASS_PHONE` | **خالی بماند در production** |
+| `PENDING_ORDER_EXPIRY_DAYS` | `7` — مهلت پرداخت کارت‌به‌کارت پیش از لغو خودکار سفارش |
+| `ADMIN_BYPASS_PHONE` | شماره‌ای که هنگام بالا آمدن کانتینر staff/superuser می‌شود |
 
 ## ۲. اپ Frontend
 

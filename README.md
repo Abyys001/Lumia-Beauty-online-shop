@@ -1,6 +1,6 @@
 # Lumia Beauty — فروشگاه آنلاین آرایشی و بهداشتی
 
-فروشگاه اینترنتی **Lumia Beauty** با معماری Decoupled (Nuxt 3 + Django/DRF)، Docker Compose، پشتیبانی فارسی/RTL، سئو، پرداخت زرین‌پال و احراز هویت پیامکی.
+فروشگاه اینترنتی **Lumia Beauty** با معماری Decoupled (Nuxt 3 + Django/DRF)، Docker Compose، پشتیبانی فارسی/RTL، سئو، پرداخت کارت‌به‌کارت با تأیید فروشنده و احراز هویت با موبایل و رمز عبور.
 
 ## Tech Stack
 
@@ -11,8 +11,7 @@
 | Database | PostgreSQL 16 |
 | Cache | Redis 7 |
 | Proxy (production) | Liara edge proxy |
-| Payment | زرین‌پال |
-| SMS | SMS.ir / IranPayamak |
+| Payment | کارت‌به‌کارت با تأیید دستی فروشنده (زرین‌پال به‌صورت اختیاری وصل است) |
 
 ## ساختار پروژه
 
@@ -115,10 +114,13 @@ docker compose exec backend python manage.py createsuperuser
 | `GET /api/products/` | لیست محصولات |
 | `GET /api/products/{slug}/` | جزئیات محصول |
 | `GET /api/products/search/?q=` | جستجوی آنی |
-| `POST /api/auth/otp/request/` | درخواست OTP |
-| `POST /api/auth/otp/verify/` | تأیید OTP |
+| `POST /api/auth/register/` | ثبت‌نام با موبایل و رمز عبور |
+| `POST /api/auth/login/` | ورود و دریافت توکن |
 | `GET/POST /api/cart/` | سبد خرید |
-| `POST /api/orders/` | ثبت سفارش |
+| `POST /api/orders/` | ثبت سفارش و دریافت کد خرید ۶ رقمی |
+| `GET /api/store/contact/` | راه‌های ارتباطی فروشنده (پیامک، تلگرام، واتس‌اپ، بله) |
+| `GET /api/admin/orders/lookup/?code=` | جستجوی سفارش با کد خرید (فقط ادمین) |
+| `POST /api/admin/orders/{id}/mark-paid/` | تأیید پرداخت کارت‌به‌کارت (فقط ادمین) |
 | `POST /api/payments/zarinpal/request/` | درخواست پرداخت |
 | `POST /api/coupons/validate/` | اعتبارسنجی کد تخفیف |
 | `GET /api/blog/posts/` | مقالات |
@@ -128,8 +130,8 @@ docker compose exec backend python manage.py createsuperuser
 - `DEBUG=False`
 - Secret ها فقط در `.env`
 - PostgreSQL و Redis فقط در شبکه داخلی Docker
-- Rate limiting روی OTP
-- تأیید دو مرحله‌ای پرداخت زرین‌پال
+- Rate limiting روی API (DRF throttling)
+- تأیید پرداخت فقط توسط ادمین (`IsStaff`) و لغو خودکار سفارش‌های پرداخت‌نشده پس از ۷ روز
 
 ## لایسنس
 

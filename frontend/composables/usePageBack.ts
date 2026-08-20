@@ -23,7 +23,6 @@ const PARENT_LABELS: Record<string, string> = {
   '/admin/instagram': 'بازگشت به اینستاگرام',
   '/admin/cms': 'بازگشت به صفحه اصلی',
   '/admin/settings': 'بازگشت به تنظیمات',
-  '/admin/sms/dashboard': 'بازگشت به داشبورد SMS',
 }
 
 const ROUTE_RULES: Array<{ test: (path: string) => boolean; to: string; label: string }> = [

@@ -2,11 +2,11 @@ from datetime import timedelta
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.accounts.services.sms_config import SmsConfigService
+from apps.accounts.models import AuthSettings
 
 
 def issue_tokens(user):
-    auth_settings = SmsConfigService.get_auth_settings()
+    auth_settings = AuthSettings.get_settings()
     refresh = RefreshToken.for_user(user)
     refresh.set_exp(
         lifetime=timedelta(days=auth_settings.refresh_token_lifetime_days),

@@ -543,10 +543,6 @@ def seed():
         TrustBadge.objects.get_or_create(title=title, defaults={'icon': icon, 'description': desc, 'sort_order': order})
     print("CMS content created.")
 
-    from apps.accounts.services.sms_config import SmsConfigService
-    SmsConfigService.bootstrap_from_env()
-    print("SMS/OTP settings bootstrapped.")
-
     print("Database seeding completed successfully!")
 
 if __name__ == "__main__":

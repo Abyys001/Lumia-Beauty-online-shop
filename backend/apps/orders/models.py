@@ -1,7 +1,9 @@
+import random
+import string
 import uuid
 
 from django.conf import settings
-from django.db import models
+from django.db import IntegrityError, models, transaction
 
 from apps.catalog.models import Product
 
@@ -65,22 +67,31 @@ class Order(models.Model):
         return f"{self.total:,}"
 
     def _generate_unique_code(self, field, length):
-        import random
-        import string
-
         while True:
             code = ''.join(random.choices(string.digits, k=length))
             if not type(self).objects.filter(**{field: code}).exists():
                 return code
 
     def save(self, *args, **kwargs):
-        if not self.order_number:
-            import random
-            import string
-            self.order_number = 'LB' + ''.join(random.choices(string.digits, k=8))
-        if not self.purchase_code:
-            self.purchase_code = self._generate_unique_code('purchase_code', 6)
-        super().save(*args, **kwargs)
+        if self.order_number and self.purchase_code:
+            return super().save(*args, **kwargs)
+
+        # Both codes are random, so two concurrent checkouts can pick the same one
+        # between the uniqueness check and the INSERT. Retry inside a savepoint so a
+        # collision costs a retry instead of failing the customer's checkout.
+        for attempt in range(5):
+            if not self.order_number:
+                self.order_number = 'LB' + ''.join(random.choices(string.digits, k=8))
+            if not self.purchase_code:
+                self.purchase_code = self._generate_unique_code('purchase_code', 6)
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except IntegrityError:
+                if attempt == 4:
+                    raise
+                self.order_number = ''
+                self.purchase_code = ''
 
 
 class OrderItem(models.Model):

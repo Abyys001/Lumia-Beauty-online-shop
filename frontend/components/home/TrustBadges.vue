@@ -40,7 +40,7 @@ const defaultBadges: TrustBadge[] = [
   { icon: 'shield', title: 'تضمین ۱۰۰٪ اصالت کالا', description: 'ضمانت بازگشت و تاییدیه اصالت' },
   { icon: 'shipping', title: 'ارسال فوق‌سریع و بهداشتی', description: 'بسته‌بندی ایمن ضدعفونی شده' },
   { icon: 'consult', title: 'مشاوره انتخاب عطر و روتین', description: 'پشتیبانی رایگان متخصصان' },
-  { icon: 'payment', title: 'درگاه پرداخت امن زرین‌پال', description: 'پرداخت آنلاین با تمامی کارت‌ها' },
+  { icon: 'payment', title: 'پرداخت کارت به کارت با هماهنگی', description: 'ثبت سفارش، دریافت کد خرید و تماس با فروشنده' },
 ]
 
 const displayBadges = computed(() => (props.badges?.length ? props.badges : defaultBadges))

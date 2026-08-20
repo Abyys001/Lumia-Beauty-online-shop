@@ -128,6 +128,7 @@ export interface Order {
   shipping_postal_code?: string
   shipping_plate_number?: string
   tracking_number?: string | null
+  expires_at?: string | null
   note?: string
   payment_status?: string | null
   payment_status_display?: string
@@ -257,118 +258,15 @@ export interface ShippingSettings {
   free_shipping_threshold: number
 }
 
-export interface SmsProviderProfile {
-  provider_type: 'mock' | 'smsir' | 'iranpayamak'
-  api_key?: string
-  sandbox_api_key?: string
-  panel_password?: string
-  base_url: string
-  is_sandbox: boolean
-  is_active: boolean
-  has_api_key?: boolean
-  line_number?: string
-  number_format?: 'english' | 'persian'
-  panel_username?: string
-  has_bearer_token?: boolean
-  last_test_at: string | null
-  last_test_status: string
-  last_test_message: string
-  updated_at?: string
-}
-
-export interface SmsProviderSettings {
-  provider_mode: 'mock' | 'smsir' | 'iranpayamak'
-  api_key?: string
-  sandbox_api_key?: string
-  panel_password?: string
-  base_url: string
-  is_sandbox: boolean
-  is_active: boolean
-  line_number?: string
-  number_format?: 'english' | 'persian'
-  panel_username?: string
-  has_bearer_token?: boolean
-  last_test_at: string | null
-  last_test_status: string
-  last_test_message: string
-  updated_at?: string
-}
-
-export interface SmsProviderStatus {
-  provider_mode: string
-  is_active: boolean
-  is_sandbox: boolean
-  has_api_key: boolean
-  has_production_api_key?: boolean
-  has_sandbox_api_key?: boolean
-  has_bearer_token?: boolean
-  line_number?: string
-  number_format?: string
-  panel_username?: string
-  last_test_at: string | null
-  last_test_status: string
-  last_test_message: string
-  credit: number | null
-  balance_count?: number | null
-  balance_details?: Array<{ count: number; rate: number; amount: number }> | null
-  runtime_provider: 'mock' | 'smsir' | 'iranpayamak'
-}
-
-export interface OtpTemplate {
-  id: string
-  name: string
-  sms_ir_template_id?: number | null
-  pattern_code?: string
-  provider_type?: string
-  parameter_name: string
-  body_preview: string
-  is_active: boolean
-  is_default: boolean
-  created_at?: string
-  updated_at?: string
-}
-
-export interface OtpSettings {
-  otp_length: number
-  expiry_seconds: number
-  max_verify_attempts: number
-  verify_window_seconds: number
-  rate_limit_count: number
-  rate_limit_window_seconds: number
-  resend_delay_seconds: number
-  ip_rate_limit_count: number
-  ip_rate_limit_window_seconds: number
-}
-
 export interface AuthSettings {
-  otp_login_enabled: boolean
   access_token_lifetime_minutes: number
   refresh_token_lifetime_days: number
   rotate_refresh_tokens: boolean
   admin_bypass_phone: string
 }
 
-export interface SmsApiResult {
-  success: boolean
-  status?: number | null
-  message?: string
-  data?: unknown
-  error_hint?: string
-  http_status?: number
-  raw?: Record<string, unknown>
-  is_sandbox?: boolean
-  credit?: number | null
-  payload?: Record<string, unknown>
-  code_used?: string
-  delivery_state_label?: string
-}
-
-export interface SmsErrorCodesResponse {
-  status_codes: { code: number; message: string }[]
-  delivery_states: { code: number; message: string }[]
-}
-
 export interface AdminNotificationsSummary {
+  awaiting_payment: number
   pending_orders: number
   pending_reviews: number
   low_stock_count: number
@@ -521,21 +419,5 @@ export interface AdminTrustBadge {
   description?: string
   is_active: boolean
   created_at?: string
-}
-
-export interface SmsLog {
-  id: string
-  phone: string
-  message_type: string
-  template: string | null
-  template_name?: string
-  provider: string
-  status: string
-  request_data: Record<string, unknown>
-  response_data: Record<string, unknown>
-  provider_message_id: string
-  error_message: string
-  ip_address: string | null
-  created_at: string
 }
 

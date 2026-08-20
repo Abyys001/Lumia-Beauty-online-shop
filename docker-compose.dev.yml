@@ -12,7 +12,6 @@ services:
     environment:
       APP_ENV: development
       DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
-      OTP_DISABLE_RATE_LIMIT: ${OTP_DISABLE_RATE_LIMIT:-True}
       ADMIN_BYPASS_PHONE: ${ADMIN_BYPASS_PHONE:-09916122680}
     ports:
       - "${BACKEND_HTTP_PORT:-8000}:8000"

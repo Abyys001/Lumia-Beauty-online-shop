@@ -53,7 +53,7 @@
             </select>
             
             <input v-model="form.shipping_postal_code" class="input input-bordered rounded-xl text-right" placeholder="کد پستی (اختیاری)" :disabled="!!selectedAddress" />
-            <input v-model="form.shipping_plate_number" class="input input-bordered rounded-xl text-right" placeholder="پلاک خودرو (اختیاری)" dir="ltr" :disabled="!!selectedAddress" />
+            <input v-model="form.shipping_plate_number" class="input input-bordered rounded-xl text-right" placeholder="پلاک و واحد" dir="ltr" :disabled="!!selectedAddress" />
             <textarea v-model="form.shipping_address" class="textarea textarea-bordered rounded-xl md:col-span-2 text-right" placeholder="آدرس دقیق پستی" :disabled="!!selectedAddress" :required="!selectedAddress" />
             <label v-if="!selectedAddress" class="flex items-center gap-2 md:col-span-2 cursor-pointer">
               <input v-model="saveNewAddress" type="checkbox" class="checkbox checkbox-primary checkbox-sm" />
@@ -130,11 +130,20 @@
           </div>
           
           <button @click="submitOrder" type="button" class="btn-lumia w-full py-4 text-center font-bold text-base shadow-lg transition-transform hover:scale-[1.01]" :disabled="submitting || redirecting || cart.itemCount === 0">
-            <span v-if="redirecting">در حال انتقال به درگاه...</span>
+            <span v-if="redirecting">در حال آماده‌سازی کد خرید...</span>
             <span v-else-if="submitting" class="loading loading-spinner loading-sm" />
-            <span v-else><i class="fas fa-lock ml-2"></i> پرداخت امن با زرین‌پال</span>
+            <span v-else><i class="fas fa-receipt ml-2"></i> ثبت سفارش و دریافت کد خرید</span>
           </button>
           <div v-if="submitError" class="alert alert-error text-sm mt-3">{{ submitError }}</div>
+
+          <div class="mt-4 rounded-2xl border-r-4 border-lumia-gold bg-lumia-cream/60 p-4 text-right">
+            <p class="text-sm font-black text-lumia-dark leading-7">
+              پرداخت این فروشگاه کارت به کارت است.
+            </p>
+            <p class="mt-1 text-xs font-bold text-lumia-dark/70 leading-6">
+              پس از ثبت سفارش، یک <span class="text-lumia-gold">کد خرید ۶ رقمی</span> دریافت می‌کنید. آن را از طریق پیامک، تلگرام، واتس‌اپ یا بله برای فروشنده بفرستید تا شماره کارت برای شما ارسال شود. راهنمای کامل در صفحه بعد نمایش داده می‌شود.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -261,15 +270,11 @@ async function submitOrder() {
       }).catch(() => {})
     }
     redirecting.value = true
-    const payment = await apiFetch<{ redirect_url: string; authority?: string }>('/payments/zarinpal/request/', {
-      method: 'POST',
-      body: { order_number: order.order_number },
-    })
-    window.location.href = payment.redirect_url
+    await navigateTo({ path: '/checkout/pending', query: { order: order.order_number } })
   } catch (e: unknown) {
     redirecting.value = false
     const err = e as { data?: { detail?: string } }
-    submitError.value = err.data?.detail || 'خطا در ثبت سفارش یا اتصال به درگاه'
+    submitError.value = err.data?.detail || 'خطا در ثبت سفارش'
   } finally {
     submitting.value = false
   }

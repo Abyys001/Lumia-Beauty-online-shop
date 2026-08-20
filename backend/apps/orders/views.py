@@ -11,6 +11,7 @@ from apps.coupons.services import apply_coupon, validate_coupon
 
 from .models import Order, OrderItem
 from .serializers import CreateOrderSerializer, OrderSerializer
+from .services import maybe_expire_stale_orders
 
 
 class CreateOrderView(APIView):
@@ -83,6 +84,11 @@ class CreateOrderView(APIView):
                 subtotal=product.price * item.quantity,
             )
 
+        # Payment is card-to-card and confirmed manually by the seller, possibly hours
+        # later. The order is the record from here on, so free the cart immediately
+        # instead of leaving stale items around until confirmation.
+        cart.items.all().delete()
+
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
     def _get_shipping_info(self, user, data):
@@ -96,6 +102,7 @@ class CreateOrderView(APIView):
                     'shipping_city': addr.city,
                     'shipping_address': addr.address_line,
                     'shipping_postal_code': addr.postal_code,
+                    'shipping_plate_number': data.get('shipping_plate_number', ''),
                 }
             except Address.DoesNotExist:
                 return None
@@ -122,6 +129,7 @@ class OrderDetailView(generics.RetrieveAPIView):
     lookup_field = 'order_number'
 
     def get_queryset(self):
+        maybe_expire_stale_orders()
         return Order.objects.filter(user=self.request.user).select_related('payment').prefetch_related('items')
 
 
@@ -131,4 +139,5 @@ class UserOrderListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
+        maybe_expire_stale_orders()
         return Order.objects.filter(user=self.request.user).select_related('payment').prefetch_related('items')

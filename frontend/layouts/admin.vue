@@ -29,6 +29,7 @@
       <nav class="flex-1 py-4 overflow-y-auto">
         <div class="px-3 mb-2 text-white/30 text-xs font-medium tracking-wider px-4">فروشگاه</div>
         <AdminNavItem to="/admin" icon="dashboard" label="داشبورد" :exact="true" />
+        <AdminNavItem to="/admin/lookup" icon="lookup" label="پیگیری کد خرید" :badge="summary?.awaiting_payment" />
         <AdminNavItem to="/admin/products" icon="products" label="محصولات" />
         <AdminNavItem to="/admin/categories" icon="categories" label="دسته‌بندی‌ها" />
         <AdminNavItem to="/admin/brands" icon="brands" label="برندها" />
@@ -47,14 +48,6 @@
 
         <div class="px-4 mt-4 mb-2 text-white/30 text-xs font-medium tracking-wider">سیستم</div>
         <AdminNavItem to="/admin/settings" icon="settings" label="تنظیمات" :exact="true" />
-        <div class="px-4 mt-4 mb-2 text-white/30 text-xs font-medium tracking-wider">SMS.ir</div>
-        <AdminNavItem to="/admin/sms/dashboard" icon="sms" label="داشبورد SMS" />
-        <AdminNavItem to="/admin/settings/sms" icon="settings" label="تنظیمات SMS" />
-        <AdminNavItem to="/admin/sms/test-send" icon="sms" label="ارسال تست" />
-        <AdminNavItem to="/admin/sms/reports" icon="logs" label="گزارش ارسال" />
-        <AdminNavItem to="/admin/sms/receive" icon="logs" label="پیامک دریافتی" />
-        <AdminNavItem to="/admin/sms/logs" icon="logs" label="لاگ محلی" />
-        <AdminNavItem to="/admin/sms/error-codes" icon="settings" label="کدهای خطا" />
       </nav>
 
       <!-- User -->
@@ -144,13 +137,7 @@ const pageTitles: Record<string, string> = {
   '/admin/settings': 'تنظیمات',
   '/admin/settings/payment': 'درگاه پرداخت',
   '/admin/settings/shipping': 'هزینه ارسال',
-  '/admin/settings/sms': 'تنظیمات SMS',
-  '/admin/sms/dashboard': 'داشبورد SMS',
-  '/admin/sms/test-send': 'ارسال تست SMS',
-  '/admin/sms/reports': 'گزارش ارسال',
-  '/admin/sms/receive': 'پیامک دریافتی',
-  '/admin/sms/logs': 'لاگ پیامک',
-  '/admin/sms/error-codes': 'کدهای خطا SMS.ir',
+  '/admin/settings/contact': 'اطلاعات تماس',
 }
 
 const pageTitle = computed(() => {

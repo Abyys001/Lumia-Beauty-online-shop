@@ -54,7 +54,7 @@ Django project at `config/`. Seven Django apps under `apps/`:
 
 | App | Responsibility |
 |---|---|
-| `accounts` | Custom `User` model (phone-based), OTP via Kavenegar, JWT via simplejwt, address management |
+| `accounts` | Custom `User` model (phone-based), password auth, JWT via simplejwt, address management |
 | `catalog` | `Product`, `Category`, `Brand`, `Review`, `InstagramPost`, `StoreSettings` (singleton pk=1) |
 | `cart` | Session cart tied to user |
 | `orders` | `Order` + `OrderItem`, tracking numbers |
@@ -62,7 +62,13 @@ Django project at `config/`. Seven Django apps under `apps/`:
 | `coupons` | `Coupon` model + usage tracking |
 | `blog` | `Post` model |
 
-**Auth flow:** phone → OTP stored in cache (`otp:<phone>`) → verified → JWT pair issued. Rate-limited to `OTP_RATE_LIMIT=3` requests per `OTP_RATE_WINDOW_SECONDS=600`. Tokens: access 15 min, refresh 7 days (rotated).
+**Auth flow:** phone + password → JWT pair issued (admin bypass phone gets staff/superuser). Tokens: access 15 min, refresh 7 days (rotated).
+
+**Checkout flow (card-to-card — the default):** `POST /api/orders/` creates the order with a unique 6-digit `purchase_code` and empties the cart; no gateway is called. The customer sends that code to the seller over SMS / Telegram / WhatsApp / Bale — the handles live on `StoreSettings.contact_*` (public read at `/api/store/contact/`, edited at `/admin/settings/contact`) and drive the buttons on `/checkout/pending`. The seller looks the code up at `/admin/lookup` (`GET /api/admin/orders/lookup/?code=`) and confirms with `POST /api/admin/orders/<id>/mark-paid/`, which runs `confirm_manual_payment`: same fulfilment as a gateway success (stock, `sales_count`, coupon usage, cart) in one `@transaction.atomic`, idempotent, refused for cancelled/refunded orders. After posting the parcel the seller PATCHes `status=shipped` plus a 24-digit `tracking_number` (Persian digits accepted); the customer sees it on `/account/orders/<order_number>`. The Zarinpal path is still wired but nothing in checkout uses it.
+
+**Unpaid-order expiry:** pending orders are cancelled `PENDING_ORDER_EXPIRY_DAYS` (default 7) after creation — `apps/orders/services.py`. Nothing is reserved before confirmation, so expiry only flips the status and fails any pending `Payment` row. Run `python manage.py expire_pending_orders [--days N]` from cron; without one, a cache-throttled sweep (once an hour) runs off the order read paths and the admin notifications poll. `OrderSerializer.expires_at` gives the customer the deadline while the order is pending.
+
+**Images & media (why they break, and why they can't now):** Django owns `/media` (uploads) and `/static`, but the browser only ever talks to the frontend origin — every API payload is normalized to a root-relative `/media/...` path (`apps/catalog/media_utils.py` server-side, `composables/useMediaUrl.ts` client-side). Three layers map that prefix onto Django, in the order they take effect: nginx (`nginx/prod.conf`, `nginx/conf.d/default.conf`, serving the shared `media_data` volume with a proxy fallback), the Liara edge proxy, and — when neither is in front — `frontend/server/routes/media/[...path].ts`, a Nitro proxy that resolves its target *at request time* from `NUXT_MEDIA_PROXY` or `NUXT_API_INTERNAL_URL` (never from build-time env, which would bake in the build machine's host). `nuxt dev` has no nginx at all, so that server route is what makes images work locally. Two commands diagnose the two failure modes: `python manage.py check_media` finds DB rows whose files are missing from `MEDIA_ROOT` (volume out of sync with the database), and `curl -I http://localhost:3000/media/<path>` shows whether the routing layer is doing its job. `apps/catalog/tests_media.py` locks the relative-path contract.
 
 **Payment flow (Zarinpal):** In `ZARINPAL_SANDBOX=True` mode, `create_payment_request` generates a `MOCK_<order_number>` authority and immediately redirects to the callback URL — no external HTTP call. `verify_payment_callback` detects the `MOCK_` prefix and skips the real verify call. On success: stock decremented, `sales_count` incremented, coupon usage recorded, cart cleared — all in a single `@transaction.atomic`.
 
@@ -93,6 +99,6 @@ Key vars (see `.env.example` for full list):
 |---|---|
 | `USE_SQLITE` | `True` = SQLite dev mode (no Postgres/Redis needed) |
 | `ZARINPAL_SANDBOX` | `True` = mock payment, no real API calls |
-| `KAVENEGAR_API_KEY` | Leave empty in dev; OTP will fail silently |
+| `ADMIN_BYPASS_PHONE` | Leave empty in production; this phone logs in as staff/superuser with any password |
 | `NUXT_API_INTERNAL_URL` | Backend URL for Nuxt SSR (Docker internal) |
 | `NUXT_PUBLIC_API_BASE` | Backend URL for browser JS |

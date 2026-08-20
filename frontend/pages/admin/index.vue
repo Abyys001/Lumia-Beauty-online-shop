@@ -1,5 +1,24 @@
 <template>
   <div class="min-w-0 max-w-full">
+    <!-- Quick purchase-code lookup: the seller's most-used action -->
+    <form
+      class="mb-6 flex flex-col gap-3 rounded-2xl border-2 border-lumia-gold/40 bg-gradient-to-bl from-lumia-gold/15 to-white p-4 sm:flex-row sm:items-center"
+      @submit.prevent="goToLookup"
+    >
+      <div class="min-w-0 flex-1">
+        <p class="font-black text-lumia-dark">پیگیری سریع کد خرید</p>
+        <p class="text-xs text-lumia-dark/50">کد ۶ رقمی مشتری را وارد کنید تا اطلاعات سفارش باز شود.</p>
+      </div>
+      <input
+        v-model="quickCode"
+        class="input input-bordered w-full rounded-xl text-center font-mono text-xl font-black tracking-[0.3em] sm:w-52"
+        dir="ltr"
+        placeholder="------"
+        inputmode="numeric"
+      />
+      <button type="submit" class="btn btn-primary rounded-xl px-6 font-bold" :disabled="!quickCode">جستجو</button>
+    </form>
+
     <!-- Stats grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <AdminStatsCard label="سفارشات پرداخت‌شده جدید" :value="stats?.new_orders_count ?? '—'" colorClass="bg-green-100">
@@ -162,6 +181,17 @@ const { apiFetch, formatPrice, formatDate } = useApi()
 
 const stats = ref<AdminDashboardStats | null>(null)
 const loading = ref(true)
+
+const quickCode = ref('')
+
+function goToLookup() {
+  const code = quickCode.value
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[^0-9a-zA-Z]/g, '')
+    .toUpperCase()
+  if (!code) return
+  navigateTo({ path: '/admin/lookup', query: { code } })
+}
 
 const maxRevenue = computed(() => {
   if (!stats.value?.daily_revenue?.length) return 1

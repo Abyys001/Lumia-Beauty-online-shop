@@ -26,6 +26,14 @@
         </div>
       </div>
 
+      <!-- Awaiting card-to-card payment: show the full instructions inline -->
+      <CheckoutPaymentInstructions
+        v-if="order.status === 'pending' && order.purchase_code"
+        :purchase-code="order.purchase_code"
+        :total="order.total"
+        :expires-at="order.expires_at"
+      />
+
       <!-- Status timeline -->
       <div class="bg-white rounded-3xl border border-base-200 shadow-sm p-5 sm:p-6">
         <h2 class="font-bold text-lumia-dark mb-4">وضعیت سفارش</h2>
@@ -75,16 +83,13 @@
           <div class="flex justify-between font-bold text-lg pt-2"><span>مبلغ نهایی</span><span class="text-primary">{{ formatPrice(order.total) }}</span></div>
         </div>
         <div class="flex flex-col gap-2 mt-4">
-          <button
+          <NuxtLink
             v-if="order.status === 'pending'"
+            :to="`/checkout/pending?order=${order.order_number}`"
             class="btn btn-primary rounded-full w-full"
-            :disabled="paying"
-            @click="payOrder"
           >
-            <span v-if="paying" class="loading loading-spinner loading-sm" />
-            <span v-else>پرداخت سفارش</span>
-          </button>
-          <p v-if="payError" class="text-error text-sm text-center">{{ payError }}</p>
+            راهنمای پرداخت و کد خرید
+          </NuxtLink>
           <button
             v-if="canReorder"
             class="btn btn-outline btn-primary rounded-full w-full"
@@ -105,7 +110,7 @@
           {{ order.shipping_province }}، {{ order.shipping_city }} — {{ order.shipping_address }}
         </p>
         <p v-if="order.shipping_postal_code" class="text-sm text-base-content/50 mt-1">کد پستی: {{ order.shipping_postal_code }}</p>
-        <p v-if="order.shipping_plate_number" class="text-sm text-base-content/50 mt-1">پلاک خودرو: {{ order.shipping_plate_number }}</p>
+        <p v-if="order.shipping_plate_number" class="text-sm text-base-content/50 mt-1">پلاک و واحد: {{ order.shipping_plate_number }}</p>
         <p v-if="order.coupon_code" class="text-sm mt-3">کد تخفیف: <span class="font-mono">{{ order.coupon_code }}</span></p>
         <p v-if="order.note" class="text-sm mt-2 text-base-content/60">یادداشت: {{ order.note }}</p>
       </div>
@@ -141,8 +146,6 @@ const { apiFetch, formatPrice, formatDate } = useApi()
 
 const orderNumber = computed(() => route.params.order_number as string)
 const reordering = ref(false)
-const paying = ref(false)
-const payError = ref('')
 
 const { data: order, pending } = await useAsyncData(
   () => `order-${orderNumber.value}`,
@@ -196,23 +199,6 @@ function statusBadge(status: string) {
 async function copyTracking() {
   if (!order.value?.tracking_number || !import.meta.client) return
   await navigator.clipboard.writeText(order.value.tracking_number)
-}
-
-async function payOrder() {
-  if (!order.value) return
-  paying.value = true
-  payError.value = ''
-  try {
-    const payment = await apiFetch<{ redirect_url: string }>('/payments/zarinpal/request/', {
-      method: 'POST',
-      body: { order_number: order.value.order_number },
-    })
-    window.location.href = payment.redirect_url
-  } catch (e: unknown) {
-    const err = e as { data?: { detail?: string } }
-    payError.value = err.data?.detail || 'خطا در اتصال به درگاه'
-    paying.value = false
-  }
 }
 
 async function reorder() {

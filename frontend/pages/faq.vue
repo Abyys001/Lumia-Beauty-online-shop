@@ -13,11 +13,38 @@
 
       <!-- FAQ Container -->
       <div class="space-y-4">
-        <!-- Section: Authenticity -->
-        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۱. اصالت کالا و کیفیت</h2>
-        
+        <!-- Section: Payment -->
+        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۱. نحوه پرداخت سفارش</h2>
+
+        <div class="rounded-3xl border-2 border-lumia-gold/40 bg-lumia-cream/40 p-5 sm:p-6">
+          <p class="font-black text-lumia-dark mb-3">پرداخت در لومیا بیوتی کارت به کارت و با هماهنگی مستقیم فروشنده انجام می‌شود.</p>
+          <ol class="space-y-2 text-sm font-bold text-lumia-dark/80 leading-7">
+            <li>۱. محصولات را به سبد خرید اضافه کنید و فرم اطلاعات ارسال را تکمیل کنید.</li>
+            <li>۲. پس از ثبت سفارش، یک <span class="text-lumia-gold">کد خرید ۶ رقمی</span> دریافت می‌کنید. آن را یادداشت کنید.</li>
+            <li>۳. از طریق یکی از راه‌های پیامک، تلگرام، واتس‌اپ یا بله کد خرید را برای فروشنده بفرستید.</li>
+            <li>۴. فروشنده شماره کارت را ارسال می‌کند؛ مبلغ فاکتور را واریز و رسید را همان‌جا بفرستید.</li>
+            <li>۵. پس از تأیید فروشنده، سفارش شما بسته‌بندی و ارسال می‌شود.</li>
+          </ol>
+          <p class="mt-4 text-xs font-bold text-error">
+            هرگز قبل از دریافت شماره کارت از فروشنده وجهی واریز نکنید.
+          </p>
+        </div>
+
         <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
           <input type="radio" name="faq-accordion" checked="checked" />
+          <div class="collapse-title text-sm font-bold text-lumia-dark">
+            کد خرید خود را گم کرده‌ام، چه کار کنم؟
+          </div>
+          <div class="collapse-content text-xs text-base-content/70 leading-relaxed">
+            <p>وارد حساب کاربری خود شوید و از بخش «سفارشات من» سفارش مورد نظر را باز کنید. کد خرید ۶ رقمی به همراه راهنمای کامل پرداخت در همان صفحه نمایش داده می‌شود.</p>
+          </div>
+        </div>
+
+        <!-- Section: Authenticity -->
+        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۲. اصالت کالا و کیفیت</h2>
+
+        <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
+          <input type="radio" name="faq-accordion" />
           <div class="collapse-title text-sm font-bold text-lumia-dark">
             چگونه از اصالت ادکلن‌ها و محصولات بهداشتی در لومیا بیوتی مطمئن شوم؟
           </div>
@@ -37,7 +64,7 @@
         </div>
 
         <!-- Section: Shipping -->
-        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۲. ارسال سفارش‌ها و هزینه‌ها</h2>
+        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۳. ارسال سفارش‌ها و هزینه‌ها</h2>
 
         <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
           <input type="radio" name="faq-accordion" />
@@ -52,15 +79,15 @@
         <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
           <input type="radio" name="faq-accordion" />
           <div class="collapse-title text-sm font-bold text-lumia-dark">
-            شرایط ارسال رایگان به چه صورت است؟
+            هزینه ارسال چقدر است؟
           </div>
           <div class="collapse-content text-xs text-base-content/70 leading-relaxed">
-            <p>خریدهای بالای ۵۰۰,۰۰۰ تومان در سراسر کشور مشمول ارسال رایگان خواهند بود. برای خریدهای زیر این مبلغ، هزینه ثابت ۵۰,۰۰۰ تومان بابت بسته‌بندی ایمن و ارسال پستی دریافت می‌گردد.</p>
+            <p>هزینه ارسال برای همه سفارش‌ها در سراسر کشور به صورت ثابت ۱۵۰,۰۰۰ تومان است و در فاکتور شما به مبلغ اقلام اضافه می‌شود. این مبلغ شامل بسته‌بندی ایمن و ارسال پستی می‌شود.</p>
           </div>
         </div>
 
         <!-- Section: Return -->
-        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۳. رویه‌های بازگشت کالا و عودت وجه</h2>
+        <h2 class="text-lg font-bold text-lumia-dark border-r-2 border-lumia-gold pr-3 my-6">۴. رویه‌های بازگشت کالا و عودت وجه</h2>
 
         <div class="collapse collapse-arrow bg-white border border-lumia-cream rounded-3xl">
           <input type="radio" name="faq-accordion" />

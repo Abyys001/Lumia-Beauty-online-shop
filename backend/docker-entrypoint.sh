@@ -21,15 +21,6 @@ if phone:
 
 sync_admin_bypass
 
-sync_sms_settings() {
-  python manage.py shell -c "
-from apps.accounts.services.sms_sync import sync_sms_settings
-sync_sms_settings()
-" 2>/dev/null || true
-}
-
-sync_sms_settings
-
 if [ "$APP_ENV" = "production" ]; then
   python manage.py collectstatic --noinput
   exec gunicorn config.wsgi:application \

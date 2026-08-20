@@ -171,6 +171,9 @@ def confirm_manual_payment(order, initiated_by=None):
     exactly like a successful gateway payment.
     """
     order = Order.objects.select_for_update().get(pk=order.pk)
+    if order.status in (Order.STATUS_CANCELLED, Order.STATUS_REFUNDED):
+        return order, 'failed', 'این سفارش لغو یا مرجوع شده و قابل تأیید نیست'
+
     payment, _ = Payment.objects.select_for_update().get_or_create(
         order=order,
         defaults={'amount': order.total, 'status': Payment.STATUS_PENDING},

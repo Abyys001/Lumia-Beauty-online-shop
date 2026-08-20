@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import Order, OrderItem
+from .services import expires_at
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -14,6 +15,7 @@ class OrderSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     payment_status = serializers.SerializerMethodField()
     payment_status_display = serializers.SerializerMethodField()
+    expires_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -23,8 +25,12 @@ class OrderSerializer(serializers.ModelSerializer):
             'free_shipping', 'shipping_name', 'shipping_phone',
             'shipping_province', 'shipping_city', 'shipping_address',
             'shipping_postal_code', 'shipping_plate_number', 'tracking_number', 'note', 'items',
-            'payment_status', 'payment_status_display', 'created_at', 'updated_at',
+            'payment_status', 'payment_status_display', 'expires_at',
+            'created_at', 'updated_at',
         ]
+
+    def get_expires_at(self, obj):
+        return expires_at(obj)
 
     def get_payment_status(self, obj):
         payment = getattr(obj, 'payment', None)

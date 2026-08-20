@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 
 from apps.catalog.models import Review
 from apps.orders.models import Order
+from apps.orders.services import maybe_expire_stale_orders
 
 from ..permissions import IsStaff
 from ..services.inventory import count_low_stock_products
@@ -12,12 +13,14 @@ class AdminNotificationsSummaryView(APIView):
     permission_classes = [IsStaff]
 
     def get(self, request):
+        maybe_expire_stale_orders()
         try:
             threshold = int(request.query_params.get('threshold', 5))
         except (TypeError, ValueError):
             threshold = 5
 
         return Response({
+            'awaiting_payment': Order.objects.filter(status=Order.STATUS_PENDING).count(),
             'pending_orders': Order.objects.filter(
                 status__in=[Order.STATUS_PAID, Order.STATUS_PROCESSING],
             ).count(),

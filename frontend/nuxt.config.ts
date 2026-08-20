@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
@@ -152,6 +153,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     apiInternal: process.env.NUXT_API_INTERNAL_URL || 'http://localhost/api',
+    // Origin that serves Django's /media and /static. Empty = derive from apiInternal.
+    // See server/utils/backendOrigin.ts and server/routes/media/[...path].ts.
+    mediaProxy: process.env.NUXT_MEDIA_PROXY || '',
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost/api',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost',

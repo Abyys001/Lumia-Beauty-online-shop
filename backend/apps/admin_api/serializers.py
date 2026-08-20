@@ -1,9 +1,6 @@
 from rest_framework import serializers
 
-from apps.accounts.models import (
-    Address, AuthAuditLog, AuthSettings, OtpSettings, OtpTemplate,
-    SmsLog, SmsProviderProfile, SmsProviderSettings, User,
-)
+from apps.accounts.models import Address, AuthAuditLog, AuthSettings, User
 from apps.blog.models import Post, PostCategory, Tag
 from apps.catalog.media_utils import relative_media_url
 from apps.catalog.models import (
@@ -283,6 +280,9 @@ class AdminStoreSettingsSerializer(serializers.ModelSerializer):
 
 # ── Orders ────────────────────────────────────────────────────────────────────
 
+_DIGIT_MAP = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
+
+
 class AdminOrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
@@ -348,9 +348,14 @@ class AdminOrderSerializer(serializers.ModelSerializer):
         except Exception:
             return None
 
+    def validate_tracking_number(self, value):
+        # Admins paste the code straight from the post office receipt or a chat
+        # message, so it can arrive with Persian digits, spaces or dashes.
+        return (value or '').translate(_DIGIT_MAP).replace(' ', '').replace('-', '')
+
     def validate(self, data):
-        status = data.get('status')
-        tracking = data.get('tracking_number', '')
+        status = data.get('status', getattr(self.instance, 'status', None))
+        tracking = data.get('tracking_number', getattr(self.instance, 'tracking_number', '') or '')
         if status == Order.STATUS_SHIPPED:
             if not tracking or len(tracking) != 24 or not tracking.isdigit():
                 raise serializers.ValidationError(
@@ -434,110 +439,17 @@ class AdminPostSerializer(serializers.ModelSerializer):
         return ''
 
 
-# ── SMS / OTP Settings ────────────────────────────────────────────────────────
-
-from apps.accounts.sms.iranpayamak_utils import to_ascii_digits
-
-
-class AdminSmsProviderProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SmsProviderProfile
-        fields = [
-            'provider_type', 'base_url', 'is_sandbox', 'is_active',
-            'line_number', 'number_format', 'panel_username',
-            'last_test_at', 'last_test_status', 'last_test_message', 'updated_at',
-        ]
-        read_only_fields = [
-            'provider_type', 'is_active',
-            'last_test_at', 'last_test_status', 'last_test_message', 'updated_at',
-        ]
-
-    def validate_line_number(self, value):
-        return to_ascii_digits((value or '').strip())
-
-
-class AdminSmsProviderSettingsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SmsProviderSettings
-        fields = [
-            'provider_mode', 'base_url', 'is_sandbox', 'is_active',
-            'line_number', 'number_format', 'panel_username',
-            'last_test_at', 'last_test_status', 'last_test_message', 'updated_at',
-        ]
-        read_only_fields = ['last_test_at', 'last_test_status', 'last_test_message', 'updated_at']
-
-    def validate_line_number(self, value):
-        return to_ascii_digits((value or '').strip())
-
-
-class AdminOtpTemplateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OtpTemplate
-        fields = [
-            'id', 'name', 'sms_ir_template_id', 'pattern_code', 'provider_type',
-            'parameter_name', 'body_preview',
-            'is_active', 'is_default', 'created_at', 'updated_at',
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-
-    def validate(self, attrs):
-        from apps.accounts.services.sms_config import SmsConfigService
-
-        active = SmsConfigService.get_active_profile()
-        mode = attrs.get('provider_type') or getattr(self.instance, 'provider_type', '') or active.provider_type
-        sms_id = attrs.get('sms_ir_template_id', getattr(self.instance, 'sms_ir_template_id', None))
-        pattern = attrs.get('pattern_code', getattr(self.instance, 'pattern_code', None))
-        if mode == SmsProviderProfile.PROVIDER_IRANPAYAMAK:
-            pattern_value = (pattern or '').strip()
-            if not pattern_value:
-                raise serializers.ValidationError({'pattern_code': 'کد Pattern برای IranPayamak الزامی است'})
-            if pattern_value in {str(i) for i in (123456, 394212, 100000)}:
-                raise serializers.ValidationError({
-                    'pattern_code': 'این مقدار شناسه قالب SMS.ir است، نه کد Pattern ایران‌پیامک. کد Pattern را از پنل ایران‌پیامک وارد کنید.',
-                })
-        elif mode == SmsProviderProfile.PROVIDER_SMSIR:
-            if sms_id is None:
-                raise serializers.ValidationError({'sms_ir_template_id': 'شناسه قالب SMS.ir الزامی است'})
-        return attrs
-
-
-class AdminOtpSettingsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OtpSettings
-        fields = [
-            'otp_length', 'expiry_seconds', 'max_verify_attempts', 'verify_window_seconds',
-            'rate_limit_count', 'rate_limit_window_seconds', 'resend_delay_seconds',
-            'ip_rate_limit_count', 'ip_rate_limit_window_seconds', 'updated_at',
-        ]
-        read_only_fields = ['updated_at']
-
-    def validate_otp_length(self, value):
-        if value < 4 or value > 8:
-            raise serializers.ValidationError('طول OTP باید بین ۴ تا ۸ باشد')
-        return value
-
+# ── Auth Settings ─────────────────────────────────────────────────────────────
 
 class AdminAuthSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthSettings
         fields = [
-            'otp_login_enabled', 'access_token_lifetime_minutes',
+            'access_token_lifetime_minutes',
             'refresh_token_lifetime_days', 'rotate_refresh_tokens',
             'admin_bypass_phone', 'updated_at',
         ]
         read_only_fields = ['updated_at']
-
-
-class AdminSmsLogSerializer(serializers.ModelSerializer):
-    template_name = serializers.CharField(source='template.name', read_only=True, default='')
-
-    class Meta:
-        model = SmsLog
-        fields = [
-            'id', 'phone', 'message_type', 'template', 'template_name', 'provider',
-            'status', 'request_data', 'response_data', 'provider_message_id',
-            'error_message', 'ip_address', 'created_at',
-        ]
 
 
 class AdminAuthAuditLogSerializer(serializers.ModelSerializer):

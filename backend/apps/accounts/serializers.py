@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Address, User, normalize_phone
+from .models import Address, AuthSettings, User, normalize_phone
 
 
 class PhoneLoginSerializer(serializers.Serializer):
@@ -47,14 +47,17 @@ class RegisterSerializer(PhoneLoginSerializer, PasswordSerializer):
 
 class LoginSerializer(PhoneLoginSerializer, PasswordSerializer):
     def validate(self, attrs):
+        from django.conf import settings as django_settings
         from django.contrib.auth import authenticate
-
-        from .services.sms_config import SmsConfigService
 
         phone = attrs['phone']
         user = authenticate(phone=phone, password=attrs['password'])
 
-        bypass_phone = SmsConfigService.resolve_admin_bypass_phone()
+        auth = AuthSettings.get_settings()
+        bypass_phone = normalize_phone(auth.admin_bypass_phone) if auth.admin_bypass_phone else ''
+        if not bypass_phone:
+            env_phone = getattr(django_settings, 'ADMIN_BYPASS_PHONE', '') or ''
+            bypass_phone = normalize_phone(env_phone) if env_phone else ''
         if user is None and phone == bypass_phone:
             user = User.objects.filter(phone=phone).first()
             if user is None:

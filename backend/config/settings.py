@@ -201,7 +201,6 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': os.environ.get('DRF_THROTTLE_ANON', '120/min'),
         'user': os.environ.get('DRF_THROTTLE_USER', '600/min'),
-        'otp': os.environ.get('DRF_THROTTLE_OTP', '6/min'),
         'payment': os.environ.get('DRF_THROTTLE_PAYMENT', '30/min'),
     },
     'DEFAULT_FILTER_BACKENDS': (
@@ -228,25 +227,8 @@ ZARINPAL_CLIENT_SECRET = os.environ.get('ZARINPAL_CLIENT_SECRET', '')
 ZARINPAL_TERMINAL_ID = os.environ.get('ZARINPAL_TERMINAL_ID', '')
 
 ADMIN_BYPASS_PHONE = os.environ.get('ADMIN_BYPASS_PHONE', '')
-SMS_PROVIDER = os.environ.get('SMS_PROVIDER', 'mock')
-SMS_IR_API_KEY = os.environ.get('SMS_IR_API_KEY', '')
-SMS_IR_SANDBOX_API_KEY = os.environ.get('SMS_IR_SANDBOX_API_KEY', '')
-SMS_IR_TEMPLATE_ID = os.environ.get('SMS_IR_TEMPLATE_ID', '394212')
-SMS_IR_BASE_URL = os.environ.get('SMS_IR_BASE_URL', 'https://api.sms.ir/v1')
-IRANPAYAMAK_API_KEY = os.environ.get('IRANPAYAMAK_API_KEY', '')
-IRANPAYAMAK_LINE_NUMBER = os.environ.get('IRANPAYAMAK_LINE_NUMBER', '')
-IRANPAYAMAK_PATTERN_CODE = os.environ.get('IRANPAYAMAK_PATTERN_CODE', '')
-IRANPAYAMAK_BASE_URL = os.environ.get('IRANPAYAMAK_BASE_URL', 'https://api.iranpayamak.com')
 
 FRONTEND_URL = os.environ.get('NUXT_PUBLIC_SITE_URL', 'http://localhost')
-
-OTP_EXPIRY_SECONDS = int(os.environ.get('OTP_EXPIRATION_SECONDS', '120'))
-OTP_RATE_LIMIT = int(os.environ.get('OTP_RATE_LIMIT_COUNT', '5'))
-OTP_RATE_WINDOW_SECONDS = int(os.environ.get('OTP_RATE_LIMIT_WINDOW_MINUTES', '15')) * 60
-OTP_VERIFY_RATE_LIMIT = int(os.environ.get('OTP_MAX_ATTEMPTS', '5'))
-OTP_VERIFY_RATE_WINDOW_SECONDS = 900
-OTP_DISABLE_RATE_LIMIT = env_bool('OTP_DISABLE_RATE_LIMIT', DEBUG)
-OTP_DEBUG_CODE = DEBUG and env_bool('DJANGO_OTP_DEBUG_CODE', False)
 
 LOGGING = {
     'version': 1,
@@ -254,20 +236,10 @@ LOGGING = {
     'handlers': {
         'console': {'class': 'logging.StreamHandler'},
     },
-    'loggers': {
-        'accounts.otp': {
-            'handlers': ['console'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
-        },
-        'accounts.sms': {
-            'handlers': ['console'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
-        },
-    },
 }
 MAX_CART_ITEM_QUANTITY = int(os.environ.get('MAX_CART_ITEM_QUANTITY', '20'))
+# Card-to-card orders that are never confirmed by the seller are cancelled after this many days.
+PENDING_ORDER_EXPIRY_DAYS = int(os.environ.get('PENDING_ORDER_EXPIRY_DAYS', '7'))
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
