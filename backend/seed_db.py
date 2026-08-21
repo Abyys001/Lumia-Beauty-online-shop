@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
+from django.conf import settings as django_settings
 from django.contrib.auth import get_user_model
 from apps.accounts.models import AuthSettings, normalize_phone
 from apps.catalog.models import Category, Brand, Product, ProductImage, ProductAttribute, Review
@@ -47,18 +48,32 @@ def seed():
     print("Starting database seeding...")
     
     # 1. Create Superuser and Users
-    admin_bypass_phone = normalize_phone(os.environ.get('ADMIN_BYPASS_PHONE', '09916122680'))
+    owner_phone = normalize_phone(getattr(django_settings, 'OWNER_PHONE', '') or '')
+    admin_phones = [normalize_phone(p) for p in getattr(django_settings, 'ADMIN_PHONES', [])]
+    admin_phones = [p for p in admin_phones if p]
+    if owner_phone and owner_phone not in admin_phones:
+        admin_phones.append(owner_phone)
+
+    if admin_phones:
+        auth = AuthSettings.get_settings()
+        auth.admin_phones = sorted(set(auth.admin_phones or []) | set(admin_phones))
+        auth.save(update_fields=['admin_phones'])
+        for phone in admin_phones:
+            admin = User.objects.filter(phone=phone).first() or User.objects.create_user(phone=phone)
+            if not admin.password:
+                admin.set_unusable_password()
+            admin.is_staff = True
+            admin.is_superuser = True
+            if phone == owner_phone and not admin.last_name:
+                owner_name = getattr(django_settings, 'OWNER_NAME', '') or ''
+                admin.first_name, _, admin.last_name = owner_name.rpartition(' ')
+            admin.save()
+        print(f"Admin users ready ({', '.join(admin_phones)})")
+
+    admin_bypass_phone = normalize_phone(os.environ.get('ADMIN_BYPASS_PHONE', ''))
     if admin_bypass_phone:
-        bypass_user, created = User.objects.get_or_create(phone=admin_bypass_phone)
-        if not bypass_user.is_staff or not bypass_user.is_superuser:
-            bypass_user.is_staff = True
-            bypass_user.is_superuser = True
-            bypass_user.save(update_fields=['is_staff', 'is_superuser'])
-        AuthSettings.objects.update_or_create(
-            pk=1,
-            defaults={'admin_bypass_phone': admin_bypass_phone},
-        )
-        print(f"Admin bypass user ready ({admin_bypass_phone})")
+        AuthSettings.objects.filter(pk=1).update(admin_bypass_phone=admin_bypass_phone)
+        print(f"Admin bypass phone set ({admin_bypass_phone})")
 
     superuser_phone = "09121111111"
     if not User.objects.filter(phone=superuser_phone).exists():

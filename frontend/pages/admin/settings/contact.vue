@@ -11,6 +11,12 @@
       </div>
 
       <div>
+        <label class="label-text text-xs block mb-1">نام مسئول فروش</label>
+        <input v-model="form.contact_person_name" class="input input-bordered w-full" placeholder="خانم قراچه" />
+        <p class="text-xs text-lumia-dark/40 mt-1">در صفحه تماس با ما و مرحله پرداخت به مشتری نمایش داده می‌شود.</p>
+      </div>
+
+      <div>
         <label class="label-text text-xs block mb-1">شماره پیامک (SMS)</label>
         <input v-model="form.contact_sms_phone" class="input input-bordered w-full" dir="ltr" placeholder="09123456789" />
         <p class="text-xs text-lumia-dark/40 mt-1">مشتری با زدن دکمه، پیامک آماده به این شماره ارسال می‌کند.</p>
@@ -65,6 +71,7 @@ const saved = ref(false)
 const error = ref('')
 
 const form = ref<StoreContact>({
+  contact_person_name: '',
   contact_sms_phone: '',
   contact_telegram: '',
   contact_whatsapp: '',
@@ -82,6 +89,7 @@ async function load() {
   try {
     const data = await apiFetch<StoreSettings>('/admin/settings/')
     form.value = {
+      contact_person_name: data.contact_person_name || '',
       contact_sms_phone: data.contact_sms_phone || '',
       contact_telegram: data.contact_telegram || '',
       contact_whatsapp: data.contact_whatsapp || '',

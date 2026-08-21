@@ -3,7 +3,6 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.models import Address
 from apps.cart.services import get_or_create_cart
 from apps.catalog.models import Product
 from apps.catalog.shipping import calculate_shipping_cost, qualifies_for_free_shipping
@@ -19,14 +18,14 @@ class CreateOrderView(APIView):
 
     @transaction.atomic
     def post(self, request):
-        serializer = CreateOrderSerializer(data=request.data)
+        serializer = CreateOrderSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         cart = get_or_create_cart(request)
         cart_items = list(cart.items.select_for_update().select_related('product'))
         if not cart_items:
-            return Response({'detail': 'سبد خرید خالی است'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'سبد خرید شما خالی است.'}, status=status.HTTP_400_BAD_REQUEST)
 
         product_ids = [item.product_id for item in cart_items]
         locked_products = {
@@ -37,14 +36,18 @@ class CreateOrderView(APIView):
         for item in cart_items:
             product = locked_products[item.product_id]
             if product.stock < item.quantity:
+                available = (
+                    f'تنها {product.stock} عدد باقی مانده است'
+                    if product.stock
+                    else 'این محصول در حال حاضر ناموجود است'
+                )
                 return Response(
-                    {'detail': f'موجودی {product.name} کافی نیست'},
+                    {'detail': f'موجودی «{product.name}» کافی نیست — {available}. '
+                               'لطفاً تعداد را در سبد خرید اصلاح کنید.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        shipping = self._get_shipping_info(request.user, data)
-        if not shipping:
-            return Response({'detail': 'اطلاعات آدرس الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+        shipping = serializer.shipping_info()
 
         subtotal = cart.total
         discount_amount = 0
@@ -90,37 +93,6 @@ class CreateOrderView(APIView):
         cart.items.all().delete()
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
-
-    def _get_shipping_info(self, user, data):
-        if data.get('address_id'):
-            try:
-                addr = Address.objects.get(id=data['address_id'], user=user)
-                return {
-                    'shipping_name': addr.receiver_name,
-                    'shipping_phone': addr.receiver_phone,
-                    'shipping_province': addr.province,
-                    'shipping_city': addr.city,
-                    'shipping_address': addr.address_line,
-                    'shipping_postal_code': addr.postal_code,
-                    'shipping_plate_number': data.get('shipping_plate_number', ''),
-                }
-            except Address.DoesNotExist:
-                return None
-
-        required = ['shipping_phone', 'shipping_province', 'shipping_city', 'shipping_address']
-        if not all(data.get(f) for f in required):
-            return None
-
-        user_name = user.full_name if user else ''
-        return {
-            'shipping_name': data.get('shipping_name') or user_name or 'مشتری',
-            'shipping_phone': data['shipping_phone'],
-            'shipping_province': data['shipping_province'],
-            'shipping_city': data['shipping_city'],
-            'shipping_address': data['shipping_address'],
-            'shipping_postal_code': data.get('shipping_postal_code', ''),
-            'shipping_plate_number': data.get('shipping_plate_number', ''),
-        }
 
 
 class OrderDetailView(generics.RetrieveAPIView):

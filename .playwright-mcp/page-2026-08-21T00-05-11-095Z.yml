@@ -1,0 +1,184 @@
+- generic [active] [ref=f1e32]:
+  - generic [ref=f1e34]:
+    - banner [ref=f1e36]:
+      - generic [ref=f1e38]:
+        - link "Lumia Beauty Logo Lumia Beauty" [ref=f1e40] [cursor=pointer]:
+          - /url: /
+          - img "Lumia Beauty Logo" [ref=f1e41]
+          - generic [ref=f1e42]: Lumia Beauty
+        - list [ref=f1e44]:
+          - listitem [ref=f1e45]:
+            - link "خانه" [ref=f1e46] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f1e47]:
+            - link "فروشگاه" [ref=f1e48] [cursor=pointer]:
+              - /url: /shop
+          - listitem [ref=f1e49]:
+            - link "وبلاگ" [ref=f1e50] [cursor=pointer]:
+              - /url: /blog
+          - listitem [ref=f1e51]:
+            - link "درباره ما" [ref=f1e52] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=f1e53]:
+            - link "تماس با ما" [ref=f1e54] [cursor=pointer]:
+              - /url: /contact
+        - generic [ref=f1e55]:
+          - searchbox "جستجوی محصول..." [ref=f1e58]
+          - button [ref=f1e59] [cursor=pointer]
+          - link [ref=f1e62] [cursor=pointer]:
+            - /url: /account
+    - main [ref=f1e1]:
+      - link "بازگشت به خانه" [ref=f1e3] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f1e7]:
+        - heading "تکمیل خرید و تسویه حساب" [level=1] [ref=f1e8]
+        - generic [ref=f1e167]:
+          - generic [ref=f1e168]:
+            - generic [ref=f1e169]:
+              - heading "آدرس گیرنده و ارسال" [level=2] [ref=f1e170]
+              - group [ref=f1e172]:
+                - generic [ref=f1e173]:
+                  - generic [ref=f1e174]:
+                    - generic [ref=f1e175]: نام و نام خانوادگی گیرنده
+                    - generic [ref=f1e176]: "*"
+                    - generic [ref=f1e177]: (الزامی)
+                  - textbox "نام و نام خانوادگی گیرنده (الزامی)" [ref=f1e178]:
+                    - /placeholder: "مثال: مریم رضایی"
+                - generic [ref=f1e179]:
+                  - generic [ref=f1e180]:
+                    - generic [ref=f1e181]: شماره موبایل گیرنده
+                    - generic [ref=f1e182]: "*"
+                    - generic [ref=f1e183]: (الزامی)
+                  - textbox "شماره موبایل گیرنده (الزامی)" [ref=f1e184]:
+                    - /placeholder: "09123456789"
+                  - paragraph [ref=f1e185]: برای هماهنگی ارسال و پیگیری مرسوله
+                - generic [ref=f1e186]:
+                  - generic [ref=f1e187]:
+                    - generic [ref=f1e188]: استان
+                    - generic [ref=f1e189]: "*"
+                    - generic [ref=f1e190]: (الزامی)
+                  - combobox "استان (الزامی)" [ref=f1e191] [cursor=pointer]:
+                    - option "استان را انتخاب کنید" [disabled] [selected]
+                    - option "آذربایجان شرقی"
+                    - option "آذربایجان غربی"
+                    - option "اردبیل"
+                    - option "اصفهان"
+                    - option "البرز"
+                    - option "ایلام"
+                    - option "بوشهر"
+                    - option "تهران"
+                    - option "چهارمحال و بختیاری"
+                    - option "خراسان جنوبی"
+                    - option "خراسان رضوی"
+                    - option "خراسان شمالی"
+                    - option "خوزستان"
+                    - option "زنجان"
+                    - option "سمنان"
+                    - option "سیستان و بلوچستان"
+                    - option "فارس"
+                    - option "قزوین"
+                    - option "قم"
+                    - option "کردستان"
+                    - option "کرمان"
+                    - option "کرمانشاه"
+                    - option "کهگیلویه وبویراحمد"
+                    - option "گلستان"
+                    - option "گیلان"
+                    - option "لرستان"
+                    - option "مازندران"
+                    - option "مرکزی"
+                    - option "هرمزگان"
+                    - option "همدان"
+                    - option "یزد"
+                - generic [ref=f1e192]:
+                  - generic [ref=f1e193]:
+                    - generic [ref=f1e194]: شهر
+                    - generic [ref=f1e195]: "*"
+                    - generic [ref=f1e196]: (الزامی)
+                  - combobox "شهر (الزامی)" [disabled] [ref=f1e197]:
+                    - option "شهر را انتخاب کنید" [disabled] [selected]
+                  - paragraph [ref=f1e198]: ابتدا استان را انتخاب کنید
+                - generic [ref=f1e199]:
+                  - generic [ref=f1e200]:
+                    - generic [ref=f1e201]: کد پستی
+                    - generic [ref=f1e202]: "*"
+                    - generic [ref=f1e203]: (الزامی)
+                  - textbox "کد پستی (الزامی)" [ref=f1e204]:
+                    - /placeholder: "1234567890"
+                  - paragraph [ref=f1e205]: ۱۰ رقم، بدون خط تیره
+                - generic [ref=f1e206]:
+                  - generic [ref=f1e207]: پلاک و واحد
+                  - textbox "پلاک و واحد" [ref=f1e209]:
+                    - /placeholder: 12 — واحد 3
+                  - paragraph [ref=f1e210]: اختیاری
+                - generic [ref=f1e211]:
+                  - generic [ref=f1e212]:
+                    - generic [ref=f1e213]: آدرس دقیق پستی
+                    - generic [ref=f1e214]: "*"
+                    - generic [ref=f1e215]: (الزامی)
+                  - textbox "آدرس دقیق پستی (الزامی)" [ref=f1e216]:
+                    - /placeholder: "مثال: خیابان ولیعصر، کوچه شهید احمدی، ساختمان نگین"
+                  - paragraph [ref=f1e217]: خیابان، کوچه و نشانی کامل — بدون نام استان و شهر
+                - generic [ref=f1e218] [cursor=pointer]:
+                  - checkbox "ذخیره این آدرس در دفترچه آدرس‌ها" [ref=f1e219]
+                  - generic [ref=f1e220]: ذخیره این آدرس در دفترچه آدرس‌ها
+            - generic [ref=f1e221]:
+              - heading "کد تخفیف" [level=2] [ref=f1e222]
+              - generic [ref=f1e224]:
+                - textbox "کد تخفیف خود را وارد کنید" [ref=f1e225]
+                - button "اعمال کد" [ref=f1e226] [cursor=pointer]
+          - generic [ref=f1e228]:
+            - heading "فاکتور پرداخت" [level=2] [ref=f1e229]
+            - generic [ref=f1e232]:
+              - generic [ref=f1e233]:
+                - generic [ref=f1e234]: "جمع اقلام (0 عدد):"
+                - generic [ref=f1e235]: ۰ تومان تومان
+              - generic [ref=f1e236]:
+                - generic [ref=f1e237]: "هزینه ارسال پستی:"
+                - generic [ref=f1e238]: ۱۵۰٬۰۰۰ تومان تومان
+            - generic [ref=f1e240]:
+              - generic [ref=f1e241]: "مبلغ قابل پرداخت:"
+              - generic [ref=f1e242]: ۱۵۰٬۰۰۰ تومان تومان
+            - button "ثبت سفارش و دریافت کد خرید" [disabled]
+            - generic [ref=f1e243]:
+              - paragraph [ref=f1e244]: پرداخت این فروشگاه کارت به کارت است.
+              - paragraph [ref=f1e245]: پس از ثبت سفارش، یک کد خرید ۶ رقمی دریافت می‌کنید. آن را از طریق پیامک، تلگرام، واتس‌اپ یا بله برای فروشنده بفرستید تا شماره کارت برای شما ارسال شود. راهنمای کامل در صفحه بعد نمایش داده می‌شود.
+    - contentinfo [ref=f1e86]:
+      - generic [ref=f1e87]:
+        - generic [ref=f1e88]:
+          - generic [ref=f1e89]:
+            - generic [ref=f1e90]:
+              - img "Lumia Beauty Logo" [ref=f1e91]
+              - heading "Lumia Beauty" [level=3] [ref=f1e92]
+            - paragraph [ref=f1e93]: فروشگاه آنلاین محصولات آرایشی، بهداشتی و خوش‌بوکننده با کیفیت اصل و ارسال سریع در سراسر ایران.
+          - generic [ref=f1e94]:
+            - heading "دسترسی سریع" [level=4] [ref=f1e95]
+            - list [ref=f1e96]:
+              - listitem [ref=f1e97]:
+                - link "فروشگاه" [ref=f1e98] [cursor=pointer]:
+                  - /url: /shop
+              - listitem [ref=f1e99]:
+                - link "وبلاگ" [ref=f1e100] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=f1e101]:
+                - link "حساب کاربری" [ref=f1e102] [cursor=pointer]:
+                  - /url: /account
+          - generic [ref=f1e103]:
+            - heading "تماس با ما" [level=4] [ref=f1e104]
+            - generic [ref=f1e105]:
+              - link "واتس‌اپ" [ref=f1e106] [cursor=pointer]:
+                - /url: https://wa.me/989121111111
+              - link "تلگرام" [ref=f1e110] [cursor=pointer]:
+                - /url: https://t.me/lumiabeauty
+              - link "اینستاگرام" [ref=f1e114] [cursor=pointer]:
+                - /url: https://instagram.com/lumia.beauty
+        - generic [ref=f1e118]: © 2026 Lumia Beauty — تمامی حقوق محفوظ است.
+  - generic [ref=f1e119]:
+    - button "Toggle Nuxt DevTools" [ref=f1e120] [cursor=pointer]
+    - generic "Page load time" [ref=f1e124]:
+      - generic [ref=f1e125]: "53"
+      - generic [ref=f1e126]: ms
+    - button "Toggle Component Inspector" [ref=f1e128] [cursor=pointer]
+  - link "چت در واتس‌اپ" [ref=f1e133] [cursor=pointer]:
+    - /url: https://wa.me/989121111111
+    - generic: پیام در واتس‌اپ

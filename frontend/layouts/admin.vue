@@ -81,7 +81,7 @@
     </aside>
 
     <!-- Main content -->
-    <div class="w-full min-w-0 lg:mr-64 flex flex-col min-h-screen">
+    <div class="min-w-0 lg:mr-64 flex flex-col min-h-screen">
       <!-- Top bar -->
       <header class="bg-white border-b border-base-200 px-4 py-4 flex items-center gap-3 sticky top-0 z-30 min-w-0">
         <PageBack variant="icon" />

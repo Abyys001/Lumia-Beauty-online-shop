@@ -72,7 +72,7 @@
     <!-- Contact channels -->
     <div class="rounded-3xl border-2 border-lumia-gold/40 bg-white p-5 sm:p-7 shadow-sm">
       <h2 class="mb-1 text-xl sm:text-2xl font-black text-lumia-dark">
-        از یکی از این راه‌ها با فروشنده تماس بگیرید
+        از یکی از این راه‌ها با {{ sellerName }} تماس بگیرید
       </h2>
       <p class="mb-5 text-sm text-lumia-dark/60">
         روی هر گزینه بزنید — برنامه باز می‌شود و متن پیام همراه با کد خرید شما از قبل آماده است. فقط دکمه ارسال را بزنید.
@@ -144,7 +144,9 @@ const props = defineProps<{
   expiresAt?: string | null
 }>()
 
-const { loadContact, buildChannels, buildMessage } = usePaymentChannels()
+const { contact, loadContact, buildChannels, buildMessage } = usePaymentChannels()
+
+const sellerName = computed(() => contact.value?.contact_person_name?.trim() || 'فروشنده')
 
 const copied = ref(false)
 const messageCopied = ref(false)

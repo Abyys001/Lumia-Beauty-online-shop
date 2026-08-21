@@ -226,6 +226,16 @@ ZARINPAL_CLIENT_ID = os.environ.get('ZARINPAL_CLIENT_ID', '')
 ZARINPAL_CLIENT_SECRET = os.environ.get('ZARINPAL_CLIENT_SECRET', '')
 ZARINPAL_TERMINAL_ID = os.environ.get('ZARINPAL_TERMINAL_ID', '')
 
+# Phones that are promoted to staff/superuser on registration (and on boot).
+# The last one is the store owner (خانم قراچه) whose number is shown to customers.
+ADMIN_PHONES = [
+    p.strip()
+    for p in os.environ.get('ADMIN_PHONES', '09916122680,09332279699,09166099383').split(',')
+    if p.strip()
+]
+OWNER_PHONE = os.environ.get('OWNER_PHONE', '09166099383')
+OWNER_NAME = os.environ.get('OWNER_NAME', 'خانم قراچه')
+
 ADMIN_BYPASS_PHONE = os.environ.get('ADMIN_BYPASS_PHONE', '')
 
 FRONTEND_URL = os.environ.get('NUXT_PUBLIC_SITE_URL', 'http://localhost')

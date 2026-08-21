@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='order',
             name='purchase_code',
-            field=models.CharField(db_index=True, default='', max_length=6, verbose_name='کد خرید'),
+            field=models.CharField(default='', max_length=6, verbose_name='کد خرید'),
         ),
         migrations.RunPython(backfill_purchase_codes, migrations.RunPython.noop),
         migrations.AlterField(

@@ -5,8 +5,16 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 
 
+_EN_DIGITS = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
+
+
+def to_en_digits(value: str) -> str:
+    """Fold Persian and Arabic-Indic digits to ASCII, so keyboards don't matter."""
+    return value.translate(_EN_DIGITS)
+
+
 def normalize_phone(phone: str) -> str:
-    phone = phone.translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789'))
+    phone = to_en_digits(phone)
     phone = re.sub(r'\D', '', phone)
     if phone.startswith('98') and len(phone) == 12:
         phone = '0' + phone[2:]
@@ -93,6 +101,12 @@ class AuthSettings(models.Model):
     refresh_token_lifetime_days = models.PositiveSmallIntegerField('عمر Refresh Token (روز)', default=7)
     rotate_refresh_tokens = models.BooleanField('چرخش Refresh Token', default=True)
     admin_bypass_phone = models.CharField('شماره bypass ادمین', max_length=11, blank=True)
+    admin_phones = models.JSONField(
+        'شماره‌های ادمین',
+        default=list,
+        blank=True,
+        help_text='هر شماره در این لیست هنگام ثبت‌نام به‌صورت خودکار ادمین می‌شود.',
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -107,6 +121,40 @@ class AuthSettings(models.Model):
     def get_settings(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+    @classmethod
+    def admin_phone_set(cls) -> set:
+        """Every phone that grants admin access: DB list + bypass phone + env defaults."""
+        from django.conf import settings as django_settings
+
+        phones = set()
+        try:
+            obj = cls.get_settings()
+        except Exception:
+            obj = None
+        if obj is not None:
+            phones.update(obj.admin_phones or [])
+            if obj.admin_bypass_phone:
+                phones.add(obj.admin_bypass_phone)
+        phones.update(getattr(django_settings, 'ADMIN_PHONES', []) or [])
+        env_bypass = getattr(django_settings, 'ADMIN_BYPASS_PHONE', '') or ''
+        if env_bypass:
+            phones.add(env_bypass)
+        return {normalize_phone(p) for p in phones if p and normalize_phone(p)}
+
+
+def is_admin_phone(phone: str) -> bool:
+    return normalize_phone(phone) in AuthSettings.admin_phone_set()
+
+
+def promote_to_admin(user) -> None:
+    """Give an admin phone staff + superuser rights (no-op if it already has them)."""
+    if user.is_staff and user.is_superuser:
+        return
+    user.is_staff = True
+    user.is_superuser = True
+    if user.pk:
+        user.save(update_fields=['is_staff', 'is_superuser'])
 
 
 class AuthAuditLog(models.Model):

@@ -13,6 +13,7 @@ export interface PaymentChannel {
 }
 
 const EMPTY_CONTACT: StoreContact = {
+  contact_person_name: '',
   contact_sms_phone: '',
   contact_telegram: '',
   contact_whatsapp: '',

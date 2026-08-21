@@ -212,6 +212,7 @@ export interface StoreSettings {
   zarinpal_merchant_id: string
   shipping_cost: number
   free_shipping_threshold: number
+  contact_person_name?: string
   contact_sms_phone?: string
   contact_telegram?: string
   contact_whatsapp?: string
@@ -219,6 +220,7 @@ export interface StoreSettings {
 }
 
 export interface StoreContact {
+  contact_person_name: string
   contact_sms_phone: string
   contact_telegram: string
   contact_whatsapp: string

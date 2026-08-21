@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from apps.accounts.models import User
+from apps.accounts.models import Address, User
 from apps.catalog.models import Category, Product
 from apps.payments.models import Payment
 
@@ -44,7 +44,7 @@ class ManualCheckoutFlowTests(TestCase):
                 'shipping_phone': '09123456789',
                 'shipping_province': 'تهران',
                 'shipping_city': 'تهران',
-                'shipping_address': 'آدرس تست',
+                'shipping_address': 'خیابان ولیعصر، کوچه دوم، ساختمان تست',
                 'shipping_postal_code': '1234567890',
                 'shipping_plate_number': '12/3',
             },
@@ -246,3 +246,124 @@ class PendingOrderExpiryTests(TestCase):
         Order.objects.filter(pk=order.pk).update(status=Order.STATUS_PAID)
         response = self.client.get(f'/api/orders/{order.order_number}/')
         self.assertIsNone(response.data['expires_at'])
+
+
+class CheckoutValidationTests(TestCase):
+    """Every rejected checkout must name the offending field, not just fail."""
+
+    VALID = {
+        'shipping_name': 'مریم رضایی',
+        'shipping_phone': '09123456789',
+        'shipping_province': 'تهران',
+        'shipping_city': 'تهران',
+        'shipping_address': 'خیابان ولیعصر، کوچه دوم، پلاک ۱۲',
+        'shipping_postal_code': '1234567890',
+    }
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(phone='09123456789')
+        self.category = Category.objects.create(name='پوست', slug='skin')
+        self.product = Product.objects.create(
+            name='کرم تست',
+            slug='test-cream',
+            description='توضیح تست',
+            category=self.category,
+            price=100000,
+            stock=5,
+            sku='TEST-CREAM',
+        )
+        self.client.force_authenticate(self.user)
+        self.client.post(
+            '/api/cart/',
+            {'product_id': str(self.product.id), 'quantity': 1},
+            format='json',
+        )
+
+    def post(self, **overrides):
+        return self.client.post('/api/orders/', {**self.VALID, **overrides}, format='json')
+
+    def test_blank_optional_looking_fields_are_reported_per_field(self):
+        """The old serializer rejected blanks with DRF's generic message and no
+        `detail` key, so the UI could only say "خطا در ثبت سفارش"."""
+        response = self.client.post(
+            '/api/orders/',
+            {key: '' for key in self.VALID},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        for field in self.VALID:
+            self.assertIn(field, response.data, f'{field} was not reported')
+            self.assertIn('الزامی', str(response.data[field][0]))
+
+    def test_name_and_postal_code_are_required(self):
+        for field in ('shipping_name', 'shipping_postal_code'):
+            with self.subTest(field=field):
+                response = self.post(**{field: ''})
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(field, response.data)
+
+    def test_phone_must_be_an_iranian_mobile_number(self):
+        for bad in ('12345', '02112345678', '0912345678'):
+            with self.subTest(phone=bad):
+                response = self.post(shipping_phone=bad)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn('shipping_phone', response.data)
+
+    def test_postal_code_must_be_ten_digits(self):
+        response = self.post(shipping_postal_code='12345')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('shipping_postal_code', response.data)
+
+    def test_persian_digits_are_accepted_and_normalized(self):
+        response = self.post(shipping_phone='۰۹۱۲۳۴۵۶۷۸۹', shipping_postal_code='۱۲۳۴۵۶۷۸۹۰')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['shipping_phone'], '09123456789')
+        self.assertEqual(response.data['shipping_postal_code'], '1234567890')
+
+    def test_too_short_address_is_rejected(self):
+        response = self.post(shipping_address='تهران')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('shipping_address', response.data)
+
+    def test_address_belonging_to_another_user_is_reported_on_the_field(self):
+        other = User.objects.create_user(phone='09120000001')
+        address = Address.objects.create(
+            user=other,
+            province='تهران',
+            city='تهران',
+            address_line='خیابان آزادی، پلاک ۵',
+            postal_code='1234567890',
+            receiver_name='کاربر دیگر',
+            receiver_phone='09120000001',
+        )
+        response = self.client.post('/api/orders/', {'address_id': str(address.id)}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('address_id', response.data)
+
+    def test_saved_address_supplies_every_shipping_field(self):
+        address = Address.objects.create(
+            user=self.user,
+            province='فارس',
+            city='شیراز',
+            address_line='بلوار زند، پلاک ۹',
+            postal_code='7134567890',
+            receiver_name='مریم رضایی',
+            receiver_phone='09123456789',
+        )
+        response = self.client.post(
+            '/api/orders/',
+            {'address_id': str(address.id), 'shipping_plate_number': '9'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['shipping_city'], 'شیراز')
+        self.assertEqual(response.data['shipping_postal_code'], '7134567890')
+        self.assertEqual(response.data['shipping_plate_number'], '9')
+
+    def test_insufficient_stock_names_the_product_and_the_remaining_count(self):
+        self.product.stock = 0
+        self.product.save(update_fields=['stock'])
+        response = self.post()
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('کرم تست', response.data['detail'])

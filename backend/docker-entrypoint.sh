@@ -3,23 +3,52 @@ set -e
 
 python manage.py migrate
 
-sync_admin_bypass() {
+sync_admins() {
   python manage.py shell -c "
-import os
+from django.conf import settings
 from apps.accounts.models import AuthSettings, User, normalize_phone
 
-phone = normalize_phone(os.environ.get('ADMIN_BYPASS_PHONE', '09916122680'))
-if phone:
-    AuthSettings.objects.update_or_create(pk=1, defaults={'admin_bypass_phone': phone})
-    user, _ = User.objects.get_or_create(phone=phone)
-    if not user.is_staff or not user.is_superuser:
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(update_fields=['is_staff', 'is_superuser'])
+phones = [normalize_phone(p) for p in settings.ADMIN_PHONES]
+phones = [p for p in phones if p]
+bypass = normalize_phone(settings.ADMIN_BYPASS_PHONE) if settings.ADMIN_BYPASS_PHONE else ''
+owner = normalize_phone(settings.OWNER_PHONE) if settings.OWNER_PHONE else ''
+if owner and owner not in phones:
+    phones.append(owner)
+
+if phones:
+    auth = AuthSettings.get_settings()
+    auth.admin_phones = sorted(set(auth.admin_phones or []) | set(phones))
+    auth_fields = ['admin_phones']
+    if bypass:
+        auth.admin_bypass_phone = bypass
+        auth_fields.append('admin_bypass_phone')
+    auth.save(update_fields=auth_fields)
+
+    for phone in phones:
+        user = User.objects.filter(phone=phone).first()
+        if user is None:
+            # create_user() marks the password unusable, so the owner can still
+            # sign up through /api/auth/register/ and pick their own password.
+            user = User.objects.create_user(phone=phone)
+        fields = []
+        if not user.password:
+            user.set_unusable_password()
+            fields.append('password')
+        if not user.is_staff or not user.is_superuser:
+            user.is_staff = True
+            user.is_superuser = True
+            fields += ['is_staff', 'is_superuser']
+        if phone == owner and not user.last_name and settings.OWNER_NAME:
+            first, _, last = settings.OWNER_NAME.rpartition(' ')
+            user.first_name = first
+            user.last_name = last
+            fields += ['first_name', 'last_name']
+        if fields:
+            user.save(update_fields=fields)
 " 2>/dev/null || true
 }
 
-sync_admin_bypass
+sync_admins
 
 if [ "$APP_ENV" = "production" ]; then
   python manage.py collectstatic --noinput

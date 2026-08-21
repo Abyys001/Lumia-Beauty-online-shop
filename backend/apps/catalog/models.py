@@ -291,6 +291,10 @@ class StoreSettings(models.Model):
         'حداقل خرید برای ارسال رایگان (تومان)',
         default=0,
     )
+    contact_person_name = models.CharField(
+        'نام مسئول فروش', max_length=100, blank=True,
+        help_text='نامی که به مشتری نمایش داده می‌شود — مثلاً خانم قراچه',
+    )
     contact_sms_phone = models.CharField(
         'شماره تماس/پیامک', max_length=20, blank=True,
         help_text='مثلاً 09123456789 — از طریق پیامک SMS',

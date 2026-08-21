@@ -16,17 +16,7 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     mem_limit: 400m
-    command: >
-      sh -c "
-        mkdir -p /tmp/postgresql &&
-        ln -sf /tmp/postgresql /var/run/postgresql &&
-        exec postgres
-        -c shared_buffers=96MB
-        -c effective_cache_size=192MB
-        -c work_mem=4MB
-        -c maintenance_work_mem=32MB
-        -c max_connections=50
-      "
+    command: postgres -c shared_buffers=96MB -c effective_cache_size=192MB -c work_mem=4MB -c maintenance_work_mem=32MB -c max_connections=50
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-lumia_beauty}
       POSTGRES_USER: ${POSTGRES_USER:-lumia}
@@ -90,6 +80,9 @@ services:
       ZARINPAL_CLIENT_SECRET: ${ZARINPAL_CLIENT_SECRET:-}
       ZARINPAL_TERMINAL_ID: ${ZARINPAL_TERMINAL_ID:-}
       ADMIN_BYPASS_PHONE: ${ADMIN_BYPASS_PHONE:-}
+      ADMIN_PHONES: "${ADMIN_PHONES:-09916122680,09332279699,09166099383}"
+      OWNER_PHONE: ${OWNER_PHONE:-09166099383}
+      OWNER_NAME: ${OWNER_NAME:-خانم قراچه}
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
       PYTHONDONTWRITEBYTECODE: "1"
     depends_on:

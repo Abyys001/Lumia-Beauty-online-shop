@@ -28,7 +28,7 @@
           :aria-selected="mode === 'login'"
           class="btn btn-sm h-11 rounded-xl border-0 font-bold transition-all"
           :class="mode === 'login' ? 'btn-primary shadow-md shadow-lumia-gold/20' : 'btn-ghost text-base-content/60'"
-          @click="mode = 'login'"
+          @click="switchMode('login')"
         >
           ورود
         </button>
@@ -38,66 +38,71 @@
           :aria-selected="mode === 'register'"
           class="btn btn-sm h-11 rounded-xl border-0 font-bold transition-all"
           :class="mode === 'register' ? 'btn-primary shadow-md shadow-lumia-gold/20' : 'btn-ghost text-base-content/60'"
-          @click="mode = 'register'"
+          @click="switchMode('register')"
         >
           ثبت‌نام
         </button>
       </div>
 
-      <form class="space-y-5" @submit.prevent="submit">
-        <div>
-          <label class="block text-sm font-medium text-lumia-dark/80 mb-2">شماره موبایل</label>
+      <form class="space-y-5" novalidate @submit.prevent="submit">
+        <CheckoutField id="phone" label="شماره موبایل" required :error="fieldErrors.phone">
           <input
+            id="phone"
             v-model="form.phone"
             type="tel"
-            class="input input-bordered w-full rounded-2xl h-12 text-base focus:border-lumia-gold focus:outline-none transition-colors"
+            class="input input-bordered w-full rounded-2xl h-12 text-base text-left focus:border-lumia-gold focus:outline-none transition-colors"
             :class="{ 'input-error': fieldErrors.phone }"
-            placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+            placeholder="09123456789"
             dir="ltr"
             inputmode="tel"
+            maxlength="11"
             autocomplete="username"
-            required
-            @input="form.phone = toEnDigits(form.phone)"
+            @input="form.phone = toEnDigits(form.phone).replace(/\D/g, '')"
           />
-          <p v-if="fieldErrors.phone" class="text-error text-xs mt-1.5 pr-1">{{ fieldErrors.phone }}</p>
-        </div>
+        </CheckoutField>
 
         <template v-if="mode === 'register'">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-lumia-dark/80 mb-2">نام</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
+            <CheckoutField id="first_name" label="نام" required :error="fieldErrors.first_name">
               <input
+                id="first_name"
                 v-model="form.first_name"
                 type="text"
                 class="input input-bordered w-full rounded-2xl h-12 text-base focus:border-lumia-gold focus:outline-none transition-colors"
+                :class="{ 'input-error': fieldErrors.first_name }"
+                placeholder="مریم"
                 autocomplete="given-name"
               />
-              <p v-if="fieldErrors.first_name" class="text-error text-xs mt-1.5 pr-1">{{ fieldErrors.first_name }}</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-lumia-dark/80 mb-2">نام خانوادگی</label>
+            </CheckoutField>
+            <CheckoutField id="last_name" label="نام خانوادگی" required :error="fieldErrors.last_name">
               <input
+                id="last_name"
                 v-model="form.last_name"
                 type="text"
                 class="input input-bordered w-full rounded-2xl h-12 text-base focus:border-lumia-gold focus:outline-none transition-colors"
+                :class="{ 'input-error': fieldErrors.last_name }"
+                placeholder="رضایی"
                 autocomplete="family-name"
               />
-              <p v-if="fieldErrors.last_name" class="text-error text-xs mt-1.5 pr-1">{{ fieldErrors.last_name }}</p>
-            </div>
+            </CheckoutField>
           </div>
         </template>
 
-        <div>
-          <label class="block text-sm font-medium text-lumia-dark/80 mb-2">رمز عبور</label>
+        <CheckoutField
+          id="password"
+          label="رمز عبور"
+          required
+          :hint="mode === 'register' ? 'حداقل ۴ کاراکتر' : ''"
+          :error="fieldErrors.password"
+        >
           <div class="relative">
             <input
+              id="password"
               v-model="form.password"
               :type="showPassword ? 'text' : 'password'"
               class="input input-bordered w-full rounded-2xl h-12 text-base pl-12 focus:border-lumia-gold focus:outline-none transition-colors"
               :class="{ 'input-error': fieldErrors.password }"
-              :placeholder="mode === 'register' ? 'حداقل ۴ کاراکتر' : ''"
-              autocomplete="current-password"
-              required
+              :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
             />
             <button
               type="button"
@@ -114,20 +119,32 @@
               </svg>
             </button>
           </div>
-          <p v-if="fieldErrors.password" class="text-error text-xs mt-1.5 pr-1">{{ fieldErrors.password }}</p>
-        </div>
+        </CheckoutField>
 
-        <div v-if="mode === 'register'">
-          <label class="block text-sm font-medium text-lumia-dark/80 mb-2">تکرار رمز عبور</label>
+        <CheckoutField
+          v-if="mode === 'register'"
+          id="password_confirm"
+          label="تکرار رمز عبور"
+          required
+          :error="fieldErrors.password_confirm"
+        >
           <input
-            v-model="confirmPassword"
+            id="password_confirm"
+            v-model="form.password_confirm"
             :type="showPassword ? 'text' : 'password'"
             class="input input-bordered w-full rounded-2xl h-12 text-base focus:border-lumia-gold focus:outline-none transition-colors"
-            :class="{ 'input-error': confirmError }"
+            :class="{ 'input-error': fieldErrors.password_confirm }"
             autocomplete="new-password"
-            required
           />
-          <p v-if="confirmError" class="text-error text-xs mt-1.5 pr-1">رمز عبور و تکرار آن یکسان نیستند</p>
+        </CheckoutField>
+
+        <div v-if="summary.length" class="rounded-2xl border border-error/30 bg-error/5 p-4 text-right" role="alert">
+          <p class="text-sm font-bold text-error mb-1">
+            {{ mode === 'login' ? 'ورود انجام نشد' : 'ثبت‌نام انجام نشد' }}
+          </p>
+          <ul class="space-y-1 text-xs text-error/90 leading-6 list-disc pr-4">
+            <li v-for="message in summary" :key="message">{{ message }}</li>
+          </ul>
         </div>
 
         <button
@@ -138,10 +155,6 @@
           <span v-if="submitting" class="loading loading-spinner loading-sm" />
           <span v-else>{{ mode === 'login' ? 'ورود' : 'ایجاد حساب و ورود' }}</span>
         </button>
-
-        <p v-if="error" class="text-error text-sm text-center bg-error/5 rounded-xl py-2.5 px-3">
-          {{ error }}
-        </p>
       </form>
     </div>
 
@@ -156,52 +169,68 @@ import type { User } from '~/types'
 
 definePageMeta({ layout: 'auth' })
 
+const FIELD_LABELS: Record<string, string> = {
+  phone: 'شماره موبایل',
+  first_name: 'نام',
+  last_name: 'نام خانوادگی',
+  password: 'رمز عبور',
+  password_confirm: 'تکرار رمز عبور',
+}
+
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const { apiFetch } = useApi()
-
-function toEnDigits(s: string): string {
-  return s
-    .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0))
-    .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
-}
+const { fieldErrors, summary, clear: clearErrors, setField, setFromApi } = useFormErrors(FIELD_LABELS)
 
 const mode = ref<'login' | 'register'>('login')
-const form = reactive({ phone: '', first_name: '', last_name: '', password: '' })
-const confirmPassword = ref('')
+const form = reactive({ phone: '', first_name: '', last_name: '', password: '', password_confirm: '' })
 const showPassword = ref(false)
 const submitting = ref(false)
-const error = ref('')
-const fieldErrors = reactive<Record<string, string>>({})
 
-const confirmError = computed(() => mode.value === 'register' && form.password !== confirmPassword.value)
-
-function pickFieldError(data: Record<string, unknown>, field: string): string {
-  const value = data?.[field]
-  if (Array.isArray(value) && value.length) return String(value[0])
-  if (typeof value === 'string' && value) return value
-  return ''
+function switchMode(next: 'login' | 'register') {
+  if (mode.value === next) return
+  mode.value = next
+  clearErrors()
 }
 
-function pickGeneralError(data: Record<string, unknown>): string {
-  const detail = data?.detail
-  if (typeof detail === 'string' && detail) return detail
-  if (Array.isArray(detail) && detail.length) return String(detail[0])
-  return ''
+function focusField(field: string) {
+  nextTick(() => {
+    const el = document.getElementById(field)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    ;(el as HTMLElement | null)?.focus?.({ preventScroll: true })
+  })
 }
 
-function resetErrors() {
-  error.value = ''
-  fieldErrors.phone = ''
-  fieldErrors.password = ''
-  fieldErrors.first_name = ''
-  fieldErrors.last_name = ''
+function validate(): boolean {
+  clearErrors()
+
+  if (!form.phone) setField('phone', 'شماره موبایل الزامی است.')
+  else if (!/^09\d{9}$/.test(form.phone))
+    setField('phone', 'شماره موبایل باید ۱۱ رقم باشد و با ۰۹ شروع شود. مثال: ۰۹۱۲۳۴۵۶۷۸۹')
+
+  if (!form.password) setField('password', 'رمز عبور الزامی است.')
+  else if (mode.value === 'register' && form.password.length < 4)
+    setField('password', 'رمز عبور باید حداقل ۴ کاراکتر باشد.')
+
+  if (mode.value === 'register') {
+    if (!form.first_name.trim()) setField('first_name', 'نام الزامی است.')
+    if (!form.last_name.trim()) setField('last_name', 'نام خانوادگی الزامی است.')
+    if (!form.password_confirm) setField('password_confirm', 'تکرار رمز عبور الزامی است.')
+    else if (form.password && form.password !== form.password_confirm)
+      setField('password_confirm', 'رمز عبور و تکرار آن یکسان نیستند.')
+  }
+
+  const firstBadField = Object.keys(FIELD_LABELS).find(field => fieldErrors[field])
+  if (firstBadField) {
+    focusField(firstBadField)
+    return false
+  }
+  return true
 }
 
 async function submit() {
-  if (mode.value === 'register' && confirmError.value) return
-  resetErrors()
+  if (!validate()) return
   submitting.value = true
   try {
     const body = mode.value === 'login'
@@ -209,8 +238,8 @@ async function submit() {
       : {
           phone: form.phone,
           password: form.password,
-          first_name: form.first_name,
-          last_name: form.last_name,
+          first_name: form.first_name.trim(),
+          last_name: form.last_name.trim(),
         }
     const result = await apiFetch<{ access: string; refresh: string; user: User }>(
       mode.value === 'login' ? '/auth/login/' : '/auth/register/',
@@ -219,17 +248,11 @@ async function submit() {
     auth.setTokens(result.access, result.refresh, result.user)
     redirectAfterLogin(result.user)
   } catch (e: unknown) {
-    const err = e as { data?: Record<string, unknown> }
-    const data = err.data || {}
-    const general = pickGeneralError(data)
-    const phoneErr = pickFieldError(data, 'phone')
-    const passwordErr = pickFieldError(data, 'password')
-    if (phoneErr) fieldErrors.phone = phoneErr
-    if (passwordErr) fieldErrors.password = passwordErr
-    error.value = general
-      || pickFieldError(data, 'first_name')
-      || pickFieldError(data, 'last_name')
-      || (mode.value === 'login' ? 'شماره موبایل یا رمز عبور اشتباه است' : 'خطا در ثبت‌نام')
+    const fallback = mode.value === 'login'
+      ? 'شماره موبایل یا رمز عبور اشتباه است.'
+      : 'ثبت‌نام انجام نشد. لطفاً اطلاعات وارد شده را بررسی کنید.'
+    const firstBadField = setFromApi(e, fallback)
+    if (firstBadField) focusField(firstBadField)
   } finally {
     submitting.value = false
   }

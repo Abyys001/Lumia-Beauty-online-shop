@@ -1,5 +1,5 @@
 export interface SocialChannel {
-  id: 'whatsapp' | 'telegram' | 'instagram' | 'bale'
+  id: 'whatsapp' | 'telegram' | 'instagram' | 'bale' | 'sms'
   label: string
   subtitle: string
   url: string

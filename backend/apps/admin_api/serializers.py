@@ -264,7 +264,8 @@ class AdminStoreSettingsSerializer(serializers.ModelSerializer):
         model = StoreSettings
         fields = [
             'zarinpal_merchant_id', 'shipping_cost', 'free_shipping_threshold',
-            'contact_sms_phone', 'contact_telegram', 'contact_whatsapp', 'contact_bale',
+            'contact_person_name', 'contact_sms_phone', 'contact_telegram',
+            'contact_whatsapp', 'contact_bale',
             'default_low_stock_threshold', 'default_stock_pack_sizes',
         ]
 
@@ -434,9 +435,7 @@ class AdminPostSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def get_author_name(self, obj):
-        if obj.author:
-            return obj.author.get_full_name() or obj.author.phone
-        return ''
+        return obj.author.full_name if obj.author else ''
 
 
 # ── Auth Settings ─────────────────────────────────────────────────────────────

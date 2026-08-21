@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { isAccessTokenExpired } from '~/utils/jwt'
 import type { User } from '~/types'
+import { resolveClientApiBase } from '~/utils/apiBase'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -21,7 +22,7 @@ export const useAuthStore = defineStore('auth', {
       const config = useRuntimeConfig()
       try {
         const result = await $fetch<{ access: string }>('/auth/token/refresh/', {
-          baseURL: config.public.apiBase,
+          baseURL: resolveClientApiBase(config.public.apiBase),
           method: 'POST',
           body: { refresh: this.refreshToken },
         })

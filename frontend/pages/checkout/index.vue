@@ -36,30 +36,141 @@
           </div>
           
           <!-- Address Fields -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input v-model="form.shipping_name" class="input input-bordered rounded-xl text-right" placeholder="نام گیرنده (اختیاری)" :disabled="!!selectedAddress" />
-            <input v-model="form.shipping_phone" class="input input-bordered rounded-xl text-right" placeholder="شماره موبایل گیرنده" :disabled="!!selectedAddress" :required="!selectedAddress" />
-            
-            <!-- Province Dropdown -->
-            <select v-model="form.shipping_province" class="select select-bordered rounded-xl text-right" @change="onProvinceChange" :disabled="!!selectedAddress" :required="!selectedAddress">
-              <option value="" disabled selected>استان</option>
-              <option v-for="(cities, prov) in provincesAndCities" :key="prov" :value="prov">{{ prov }}</option>
-            </select>
+          <fieldset class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5" :disabled="!!selectedAddress">
+            <CheckoutField
+              id="shipping_name"
+              label="نام و نام خانوادگی گیرنده"
+              required
+              :error="fieldErrors.shipping_name"
+            >
+              <input
+                id="shipping_name"
+                v-model="form.shipping_name"
+                type="text"
+                class="input input-bordered w-full rounded-xl text-right"
+                :class="{ 'input-error': fieldErrors.shipping_name }"
+                placeholder="مثال: مریم رضایی"
+                autocomplete="name"
+              />
+            </CheckoutField>
 
-            <!-- City Dropdown -->
-            <select v-model="form.shipping_city" class="select select-bordered rounded-xl text-right" :disabled="!form.shipping_province || !!selectedAddress" :required="!selectedAddress">
-              <option value="" disabled selected>شهر</option>
-              <option v-for="city in availableCities" :key="city" :value="city">{{ city }}</option>
-            </select>
-            
-            <input v-model="form.shipping_postal_code" class="input input-bordered rounded-xl text-right" placeholder="کد پستی (اختیاری)" :disabled="!!selectedAddress" />
-            <input v-model="form.shipping_plate_number" class="input input-bordered rounded-xl text-right" placeholder="پلاک و واحد" dir="ltr" :disabled="!!selectedAddress" />
-            <textarea v-model="form.shipping_address" class="textarea textarea-bordered rounded-xl md:col-span-2 text-right" placeholder="آدرس دقیق پستی" :disabled="!!selectedAddress" :required="!selectedAddress" />
+            <CheckoutField
+              id="shipping_phone"
+              label="شماره موبایل گیرنده"
+              required
+              hint="برای هماهنگی ارسال و پیگیری مرسوله"
+              :error="fieldErrors.shipping_phone"
+            >
+              <input
+                id="shipping_phone"
+                v-model="form.shipping_phone"
+                type="tel"
+                inputmode="tel"
+                maxlength="11"
+                dir="ltr"
+                class="input input-bordered w-full rounded-xl text-left"
+                :class="{ 'input-error': fieldErrors.shipping_phone }"
+                placeholder="09123456789"
+                autocomplete="tel"
+                @input="form.shipping_phone = toEnDigits(form.shipping_phone).replace(/\D/g, '')"
+              />
+            </CheckoutField>
+
+            <CheckoutField id="shipping_province" label="استان" required :error="fieldErrors.shipping_province">
+              <select
+                id="shipping_province"
+                v-model="form.shipping_province"
+                class="select select-bordered w-full rounded-xl text-right"
+                :class="{ 'select-error': fieldErrors.shipping_province }"
+                @change="onProvinceChange"
+              >
+                <option value="" disabled>استان را انتخاب کنید</option>
+                <option v-for="(cities, prov) in provincesAndCities" :key="prov" :value="prov">{{ prov }}</option>
+              </select>
+            </CheckoutField>
+
+            <CheckoutField
+              id="shipping_city"
+              label="شهر"
+              required
+              :hint="form.shipping_province ? '' : 'ابتدا استان را انتخاب کنید'"
+              :error="fieldErrors.shipping_city"
+            >
+              <select
+                id="shipping_city"
+                v-model="form.shipping_city"
+                class="select select-bordered w-full rounded-xl text-right"
+                :class="{ 'select-error': fieldErrors.shipping_city }"
+                :disabled="!form.shipping_province"
+              >
+                <option value="" disabled>شهر را انتخاب کنید</option>
+                <option v-for="city in availableCities" :key="city" :value="city">{{ city }}</option>
+              </select>
+            </CheckoutField>
+
+            <CheckoutField
+              id="shipping_postal_code"
+              label="کد پستی"
+              required
+              hint="۱۰ رقم، بدون خط تیره"
+              :error="fieldErrors.shipping_postal_code"
+            >
+              <input
+                id="shipping_postal_code"
+                v-model="form.shipping_postal_code"
+                type="text"
+                inputmode="numeric"
+                maxlength="10"
+                dir="ltr"
+                class="input input-bordered w-full rounded-xl text-left tracking-widest"
+                :class="{ 'input-error': fieldErrors.shipping_postal_code }"
+                placeholder="1234567890"
+                autocomplete="postal-code"
+                @input="form.shipping_postal_code = toEnDigits(form.shipping_postal_code).replace(/\D/g, '')"
+              />
+            </CheckoutField>
+
+            <CheckoutField
+              id="shipping_plate_number"
+              label="پلاک و واحد"
+              hint="اختیاری"
+              :error="fieldErrors.shipping_plate_number"
+            >
+              <input
+                id="shipping_plate_number"
+                v-model="form.shipping_plate_number"
+                type="text"
+                dir="ltr"
+                class="input input-bordered w-full rounded-xl text-left"
+                :class="{ 'input-error': fieldErrors.shipping_plate_number }"
+                placeholder="12 — واحد 3"
+              />
+            </CheckoutField>
+
+            <CheckoutField
+              id="shipping_address"
+              label="آدرس دقیق پستی"
+              required
+              class="md:col-span-2"
+              hint="خیابان، کوچه و نشانی کامل — بدون نام استان و شهر"
+              :error="fieldErrors.shipping_address"
+            >
+              <textarea
+                id="shipping_address"
+                v-model="form.shipping_address"
+                rows="3"
+                class="textarea textarea-bordered w-full rounded-xl text-right leading-7"
+                :class="{ 'textarea-error': fieldErrors.shipping_address }"
+                placeholder="مثال: خیابان ولیعصر، کوچه شهید احمدی، ساختمان نگین"
+                autocomplete="street-address"
+              />
+            </CheckoutField>
+
             <label v-if="!selectedAddress" class="flex items-center gap-2 md:col-span-2 cursor-pointer">
               <input v-model="saveNewAddress" type="checkbox" class="checkbox checkbox-primary checkbox-sm" />
               <span class="text-sm">ذخیره این آدرس در دفترچه آدرس‌ها</span>
             </label>
-          </div>
+          </fieldset>
         </div>
 
         <!-- Coupon Card -->
@@ -129,12 +240,24 @@
             <span class="text-primary text-xl">{{ formatPrice(finalTotal) }} تومان</span>
           </div>
           
+          <!-- Everything wrong with the submission, in one place -->
+          <div v-if="summary.length" class="rounded-2xl border border-error/30 bg-error/5 p-4 mb-4 text-right" role="alert">
+            <p class="flex items-center gap-2 text-sm font-bold text-error mb-2">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <span>{{ summary.length === 1 ? 'سفارش ثبت نشد' : `سفارش ثبت نشد — ${toFaDigits(summary.length)} مورد را اصلاح کنید` }}</span>
+            </p>
+            <ul class="space-y-1 text-xs text-error/90 leading-6 list-disc pr-4">
+              <li v-for="message in summary" :key="message">{{ message }}</li>
+            </ul>
+          </div>
+
           <button @click="submitOrder" type="button" class="btn-lumia w-full py-4 text-center font-bold text-base shadow-lg transition-transform hover:scale-[1.01]" :disabled="submitting || redirecting || cart.itemCount === 0">
             <span v-if="redirecting">در حال آماده‌سازی کد خرید...</span>
             <span v-else-if="submitting" class="loading loading-spinner loading-sm" />
             <span v-else><i class="fas fa-receipt ml-2"></i> ثبت سفارش و دریافت کد خرید</span>
           </button>
-          <div v-if="submitError" class="alert alert-error text-sm mt-3">{{ submitError }}</div>
 
           <div class="mt-4 rounded-2xl border-r-4 border-lumia-gold bg-lumia-cream/60 p-4 text-right">
             <p class="text-sm font-black text-lumia-dark leading-7">
@@ -160,6 +283,21 @@ const cart = useCartStore()
 const { apiFetch, formatPrice } = useApi()
 const router = useRouter()
 
+const FIELD_LABELS: Record<string, string> = {
+  shipping_name: 'نام و نام خانوادگی گیرنده',
+  shipping_phone: 'شماره موبایل گیرنده',
+  shipping_province: 'استان',
+  shipping_city: 'شهر',
+  shipping_address: 'آدرس دقیق پستی',
+  shipping_postal_code: 'کد پستی',
+  shipping_plate_number: 'پلاک و واحد',
+  address_id: 'آدرس انتخاب‌شده',
+  coupon_code: 'کد تخفیف',
+  note: 'یادداشت سفارش',
+}
+
+const { fieldErrors, summary, clear: clearErrors, setField, setFromApi } = useFormErrors(FIELD_LABELS)
+
 const selectedAddress = ref('')
 const couponCode = ref('')
 const couponValid = ref(false)
@@ -167,7 +305,6 @@ const couponMessage = ref('')
 const discountAmount = ref(0)
 const submitting = ref(false)
 const redirecting = ref(false)
-const submitError = ref('')
 const saveNewAddress = ref(false)
 
 const form = reactive({
@@ -239,9 +376,54 @@ async function validateCoupon() {
   }
 }
 
+/**
+ * Mirrors the rules in `CreateOrderSerializer` so the customer is told what is
+ * wrong before a round trip. The server stays the authority — anything this
+ * misses still comes back as a field error and lands in the same slots.
+ */
+function validateForm(): boolean {
+  clearErrors()
+  if (selectedAddress.value) return true
+
+  const name = form.shipping_name.trim()
+  if (!name) setField('shipping_name', 'نام و نام خانوادگی گیرنده الزامی است.')
+  else if (name.length < 3) setField('shipping_name', 'نام گیرنده باید حداقل ۳ حرف باشد.')
+
+  if (!form.shipping_phone) setField('shipping_phone', 'شماره موبایل گیرنده الزامی است.')
+  else if (!/^09\d{9}$/.test(form.shipping_phone))
+    setField('shipping_phone', 'شماره موبایل باید ۱۱ رقم باشد و با ۰۹ شروع شود. مثال: ۰۹۱۲۳۴۵۶۷۸۹')
+
+  if (!form.shipping_province) setField('shipping_province', 'استان الزامی است.')
+  if (!form.shipping_city) setField('shipping_city', 'شهر الزامی است.')
+
+  if (!form.shipping_postal_code) setField('shipping_postal_code', 'کد پستی الزامی است.')
+  else if (!/^\d{10}$/.test(form.shipping_postal_code))
+    setField('shipping_postal_code', 'کد پستی باید دقیقاً ۱۰ رقم باشد (بدون خط تیره).')
+
+  const address = form.shipping_address.trim()
+  if (!address) setField('shipping_address', 'آدرس دقیق پستی الزامی است.')
+  else if (address.length < 10)
+    setField('shipping_address', 'آدرس را کامل‌تر بنویسید (حداقل ۱۰ حرف) تا بسته درست به دستتان برسد.')
+
+  const firstBadField = Object.keys(FIELD_LABELS).find(field => fieldErrors[field])
+  if (firstBadField) {
+    focusField(firstBadField)
+    return false
+  }
+  return true
+}
+
+function focusField(field: string) {
+  nextTick(() => {
+    const el = document.getElementById(field)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    ;(el as HTMLElement | null)?.focus?.({ preventScroll: true })
+  })
+}
+
 async function submitOrder() {
+  if (!validateForm()) return
   submitting.value = true
-  submitError.value = ''
   try {
     const body: Record<string, string> = {
       note: form.note,
@@ -273,8 +455,8 @@ async function submitOrder() {
     await navigateTo({ path: '/checkout/pending', query: { order: order.order_number } })
   } catch (e: unknown) {
     redirecting.value = false
-    const err = e as { data?: { detail?: string } }
-    submitError.value = err.data?.detail || 'خطا در ثبت سفارش'
+    const firstBadField = setFromApi(e, 'ثبت سفارش انجام نشد. لطفاً اطلاعات بالا را بررسی کنید و دوباره تلاش کنید.')
+    if (firstBadField) focusField(firstBadField)
   } finally {
     submitting.value = false
   }

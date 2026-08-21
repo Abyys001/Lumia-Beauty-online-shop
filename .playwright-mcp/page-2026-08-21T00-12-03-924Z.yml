@@ -1,0 +1,154 @@
+- generic [active] [ref=f4e14]:
+  - generic [ref=f4e16]:
+    - banner [ref=f4e18]:
+      - generic [ref=f4e20]:
+        - link "Lumia Beauty Logo Lumia Beauty" [ref=f4e22] [cursor=pointer]:
+          - /url: /
+          - img "Lumia Beauty Logo" [ref=f4e23]
+          - generic [ref=f4e24]: Lumia Beauty
+        - list [ref=f4e26]:
+          - listitem [ref=f4e27]:
+            - link "خانه" [ref=f4e28] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f4e29]:
+            - link "فروشگاه" [ref=f4e30] [cursor=pointer]:
+              - /url: /shop
+          - listitem [ref=f4e31]:
+            - link "وبلاگ" [ref=f4e32] [cursor=pointer]:
+              - /url: /blog
+          - listitem [ref=f4e33]:
+            - link "درباره ما" [ref=f4e34] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=f4e35]:
+            - link "تماس با ما" [ref=f4e36] [cursor=pointer]:
+              - /url: /contact
+        - generic [ref=f4e37]:
+          - searchbox "جستجوی محصول..." [ref=f4e40]
+          - button [ref=f4e213] [cursor=pointer]
+          - link [ref=f4e45] [cursor=pointer]:
+            - /url: /account
+    - main [ref=f4e48]:
+      - link "بازگشت به پرداخت" [ref=f4e214] [cursor=pointer]:
+        - /url: /checkout
+      - generic [ref=f4e216]:
+        - generic [ref=f4e218]:
+          - generic [ref=f4e220]:
+            - generic [ref=f4e221]: سفارش ثبت شد — در انتظار پرداخت
+            - paragraph [ref=f4e225]: کد خرید شما
+            - paragraph [ref=f4e226]: "291660"
+            - button "کپی کد خرید" [ref=f4e227] [cursor=pointer]
+            - paragraph [ref=f4e230]: این کد را یادداشت کنید — بدون آن سفارش شما قابل پیگیری نیست.
+            - paragraph [ref=f4e231]: مهلت پرداخت تا ۶ شهریور ۱۴۰۵ — ۷ روز باقی مانده
+          - generic [ref=f4e232]:
+            - heading "چطور سفارشم را پرداخت کنم؟" [level=2] [ref=f4e233]
+            - paragraph [ref=f4e234]:
+              - text: پرداخت این فروشگاه
+              - strong [ref=f4e235]: کارت به کارت
+              - text: "و با هماهنگی مستقیم فروشنده انجام می‌شود. فقط ۴ قدم ساده:"
+            - list [ref=f4e236]:
+              - listitem [ref=f4e237]:
+                - generic [ref=f4e238]: ۱
+                - paragraph [ref=f4e240]: کد خرید بالا را کپی کنید.
+              - listitem [ref=f4e241]:
+                - generic [ref=f4e242]: ۲
+                - paragraph [ref=f4e244]: از میان راه‌های ارتباطی زیر یکی را انتخاب کنید و پیام را برای فروشنده بفرستید.
+              - listitem [ref=f4e245]:
+                - generic [ref=f4e246]: ۳
+                - paragraph [ref=f4e248]: فروشنده شماره کارت را برای شما ارسال می‌کند؛ مبلغ فاکتور را کارت به کارت واریز کنید.
+              - listitem [ref=f4e249]:
+                - generic [ref=f4e250]: ۴
+                - paragraph [ref=f4e252]: رسید واریز را همان‌جا برای فروشنده بفرستید. پس از تأیید، سفارش شما بسته‌بندی و ارسال می‌شود.
+            - paragraph [ref=f4e254]: "⚠️ هشدار مهم: هرگز قبل از دریافت شماره کارت از فروشنده، وجهی واریز نکنید. شماره کارت فقط از طریق همین راه‌های ارتباطی رسمی به شما اعلام می‌شود."
+          - generic [ref=f4e255]:
+            - heading "از یکی از این راه‌ها با خانم قراچه تماس بگیرید" [level=2] [ref=f4e256]
+            - paragraph [ref=f4e257]: روی هر گزینه بزنید — برنامه باز می‌شود و متن پیام همراه با کد خرید شما از قبل آماده است. فقط دکمه ارسال را بزنید.
+            - generic [ref=f4e258]:
+              - link "پیامک (SMS) ارسال پیامک به 09166099383" [ref=f4e259] [cursor=pointer]:
+                - /url: sms:09166099383?&body=%D8%B3%D9%84%D8%A7%D9%85%D8%8C%20%D9%85%DB%8C%E2%80%8C%D8%AE%D9%88%D8%A7%D9%87%D9%85%20%D8%B3%D9%81%D8%A7%D8%B1%D8%B4%D9%85%20%D8%B1%D8%A7%20%D9%BE%D8%B1%D8%AF%D8%A7%D8%AE%D8%AA%20%DA%A9%D9%86%D9%85.%0A%DA%A9%D8%AF%20%D8%AE%D8%B1%DB%8C%D8%AF%3A%20291660%0A%D9%85%D8%A8%D9%84%D8%BA%20%D9%81%D8%A7%DA%A9%D8%AA%D9%88%D8%B1%3A%20%DB%B9%DB%B3%DB%B0%D9%AC%DB%B0%DB%B0%DB%B0%20%D8%AA%D9%88%D9%85%D8%A7%D9%86%0A%D9%84%D8%B7%D9%81%D8%A7%D9%8B%20%D8%B4%D9%85%D8%A7%D8%B1%D9%87%20%DA%A9%D8%A7%D8%B1%D8%AA%20%D8%B1%D8%A7%20%D8%A8%D8%B1%D8%A7%DB%8C%20%D9%85%D9%86%20%D8%A7%D8%B1%D8%B3%D8%A7%D9%84%20%DA%A9%D9%86%DB%8C%D8%AF.
+                - generic [ref=f4e263]:
+                  - generic [ref=f4e264]: پیامک (SMS)
+                  - generic [ref=f4e265]: ارسال پیامک به 09166099383
+              - generic [ref=f4e272]:
+                - generic [ref=f4e273]: تلگرام
+                - generic [ref=f4e274]: شناسه تلگرام ثبت نشده است
+              - link "واتس‌اپ ارسال پیام به 989166099383" [ref=f4e275] [cursor=pointer]:
+                - /url: https://wa.me/989166099383?text=%D8%B3%D9%84%D8%A7%D9%85%D8%8C%20%D9%85%DB%8C%E2%80%8C%D8%AE%D9%88%D8%A7%D9%87%D9%85%20%D8%B3%D9%81%D8%A7%D8%B1%D8%B4%D9%85%20%D8%B1%D8%A7%20%D9%BE%D8%B1%D8%AF%D8%A7%D8%AE%D8%AA%20%DA%A9%D9%86%D9%85.%0A%DA%A9%D8%AF%20%D8%AE%D8%B1%DB%8C%D8%AF%3A%20291660%0A%D9%85%D8%A8%D9%84%D8%BA%20%D9%81%D8%A7%DA%A9%D8%AA%D9%88%D8%B1%3A%20%DB%B9%DB%B3%DB%B0%D9%AC%DB%B0%DB%B0%DB%B0%20%D8%AA%D9%88%D9%85%D8%A7%D9%86%0A%D9%84%D8%B7%D9%81%D8%A7%D9%8B%20%D8%B4%D9%85%D8%A7%D8%B1%D9%87%20%DA%A9%D8%A7%D8%B1%D8%AA%20%D8%B1%D8%A7%20%D8%A8%D8%B1%D8%A7%DB%8C%20%D9%85%D9%86%20%D8%A7%D8%B1%D8%B3%D8%A7%D9%84%20%DA%A9%D9%86%DB%8C%D8%AF.
+                - generic [ref=f4e279]:
+                  - generic [ref=f4e280]: واتس‌اپ
+                  - generic [ref=f4e281]: ارسال پیام به 989166099383
+              - generic [ref=f4e288]:
+                - generic [ref=f4e289]: بله
+                - generic [ref=f4e290]: شناسه بله ثبت نشده است
+            - generic [ref=f4e291]:
+              - paragraph [ref=f4e292]: "متن پیشنهادی پیام:"
+              - paragraph [ref=f4e293]: "سلام، می‌خواهم سفارشم را پرداخت کنم. کد خرید: 291660 مبلغ فاکتور: ۹۳۰٬۰۰۰ تومان لطفاً شماره کارت را برای من ارسال کنید."
+              - button "کپی متن پیام" [ref=f4e294] [cursor=pointer]
+        - generic [ref=f4e296]:
+          - generic [ref=f4e297]:
+            - heading "فاکتور سفارش LB42880823" [level=2] [ref=f4e298]:
+              - generic [ref=f4e299]: فاکتور سفارش
+              - generic [ref=f4e300]: LB42880823
+            - generic [ref=f4e302]:
+              - generic [ref=f4e303]: روغن آرگان خالص مراکشی او جی ایکس
+              - generic [ref=f4e304]: × 1
+              - generic [ref=f4e305]: ۷۸۰٬۰۰۰ تومان
+            - generic [ref=f4e306]:
+              - generic [ref=f4e307]:
+                - generic [ref=f4e308]: جمع اقلام
+                - generic [ref=f4e309]: ۷۸۰٬۰۰۰ تومان
+              - generic [ref=f4e310]:
+                - generic [ref=f4e311]: هزینه ارسال
+                - generic [ref=f4e312]: ۱۵۰٬۰۰۰ تومان
+              - generic [ref=f4e313]:
+                - generic [ref=f4e314]: مبلغ قابل واریز
+                - generic [ref=f4e315]: ۹۳۰٬۰۰۰ تومان
+              - paragraph [ref=f4e316]: تومان
+          - generic [ref=f4e317]:
+            - heading "اطلاعات ارسال" [level=3] [ref=f4e318]
+            - paragraph [ref=f4e319]: مریم رضایی — 09121239876
+            - paragraph [ref=f4e320]: تهران، تهران — خیابان ولیعصر، کوچه شهید احمدی، ساختمان نگین
+            - paragraph [ref=f4e321]: "کد پستی: 1234567890"
+          - generic [ref=f4e322]:
+            - link "پیگیری وضعیت سفارش" [ref=f4e323] [cursor=pointer]:
+              - /url: /account/orders/LB42880823
+            - link "ادامه خرید" [ref=f4e324] [cursor=pointer]:
+              - /url: /shop
+    - contentinfo [ref=f4e174]:
+      - generic [ref=f4e175]:
+        - generic [ref=f4e176]:
+          - generic [ref=f4e177]:
+            - generic [ref=f4e178]:
+              - img "Lumia Beauty Logo" [ref=f4e179]
+              - heading "Lumia Beauty" [level=3] [ref=f4e180]
+            - paragraph [ref=f4e181]: فروشگاه آنلاین محصولات آرایشی، بهداشتی و خوش‌بوکننده با کیفیت اصل و ارسال سریع در سراسر ایران.
+          - generic [ref=f4e182]:
+            - heading "دسترسی سریع" [level=4] [ref=f4e183]
+            - list [ref=f4e184]:
+              - listitem [ref=f4e185]:
+                - link "فروشگاه" [ref=f4e186] [cursor=pointer]:
+                  - /url: /shop
+              - listitem [ref=f4e187]:
+                - link "وبلاگ" [ref=f4e188] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=f4e189]:
+                - link "حساب کاربری" [ref=f4e190] [cursor=pointer]:
+                  - /url: /account
+          - generic [ref=f4e191]:
+            - heading "تماس با ما" [level=4] [ref=f4e192]
+            - generic [ref=f4e193]:
+              - link "واتس‌اپ" [ref=f4e194] [cursor=pointer]:
+                - /url: https://wa.me/989121111111
+              - link "تلگرام" [ref=f4e198] [cursor=pointer]:
+                - /url: https://t.me/lumiabeauty
+              - link "اینستاگرام" [ref=f4e202] [cursor=pointer]:
+                - /url: https://instagram.com/lumia.beauty
+        - generic [ref=f4e206]: © 2026 Lumia Beauty — تمامی حقوق محفوظ است.
+  - generic [ref=f4e1]:
+    - button "Toggle Nuxt DevTools" [ref=f4e2] [cursor=pointer]
+    - generic "Page load time" [ref=f4e207]:
+      - generic [ref=f4e208]: "208"
+      - generic [ref=f4e7]: ms
+    - button "Toggle Component Inspector" [ref=f4e9] [cursor=pointer]
+  - link "چت در واتس‌اپ" [ref=f4e209] [cursor=pointer]:
+    - /url: https://wa.me/989121111111
+    - generic: پیام در واتس‌اپ

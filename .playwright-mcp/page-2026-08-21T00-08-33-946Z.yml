@@ -1,0 +1,205 @@
+- generic [ref=f3e1]:
+  - generic [ref=f3e3]:
+    - banner [ref=f3e5]:
+      - generic [ref=f3e7]:
+        - link "Lumia Beauty Logo Lumia Beauty" [ref=f3e9] [cursor=pointer]:
+          - /url: /
+          - img "Lumia Beauty Logo" [ref=f3e10]
+          - generic [ref=f3e11]: Lumia Beauty
+        - list [ref=f3e13]:
+          - listitem [ref=f3e14]:
+            - link "خانه" [ref=f3e15] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f3e16]:
+            - link "فروشگاه" [ref=f3e17] [cursor=pointer]:
+              - /url: /shop
+          - listitem [ref=f3e18]:
+            - link "وبلاگ" [ref=f3e19] [cursor=pointer]:
+              - /url: /blog
+          - listitem [ref=f3e20]:
+            - link "درباره ما" [ref=f3e21] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=f3e22]:
+            - link "تماس با ما" [ref=f3e23] [cursor=pointer]:
+              - /url: /contact
+        - generic [ref=f3e24]:
+          - searchbox "جستجوی محصول..." [ref=f3e27]
+          - button "1" [ref=f3e28] [cursor=pointer]
+          - link [ref=f3e32] [cursor=pointer]:
+            - /url: /account
+    - main [ref=f3e35]:
+      - link "بازگشت به خانه" [ref=f3e37] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f3e41]:
+        - heading "تکمیل خرید و تسویه حساب" [level=1] [ref=f3e42]
+        - generic [ref=f3e43]:
+          - generic [ref=f3e44]:
+            - generic [ref=f3e45]:
+              - heading "آدرس گیرنده و ارسال" [level=2] [ref=f3e46]
+              - group [ref=f3e48]:
+                - generic [ref=f3e49]:
+                  - generic [ref=f3e50]:
+                    - generic [ref=f3e51]: نام و نام خانوادگی گیرنده
+                    - generic [ref=f3e52]: "*"
+                    - generic [ref=f3e53]: (الزامی)
+                  - textbox "نام و نام خانوادگی گیرنده (الزامی)" [active] [ref=f3e54]:
+                    - /placeholder: "مثال: مریم رضایی"
+                  - alert [ref=f3e55]:
+                    - generic [ref=f3e58]: نام و نام خانوادگی گیرنده الزامی است.
+                - generic [ref=f3e59]:
+                  - generic [ref=f3e60]:
+                    - generic [ref=f3e61]: شماره موبایل گیرنده
+                    - generic [ref=f3e62]: "*"
+                    - generic [ref=f3e63]: (الزامی)
+                  - textbox "شماره موبایل گیرنده (الزامی)" [ref=f3e64]:
+                    - /placeholder: "09123456789"
+                  - alert [ref=f3e65]:
+                    - generic [ref=f3e68]: شماره موبایل گیرنده الزامی است.
+                - generic [ref=f3e69]:
+                  - generic [ref=f3e70]:
+                    - generic [ref=f3e71]: استان
+                    - generic [ref=f3e72]: "*"
+                    - generic [ref=f3e73]: (الزامی)
+                  - combobox "استان (الزامی)" [ref=f3e74] [cursor=pointer]:
+                    - option "استان را انتخاب کنید" [disabled] [selected]
+                    - option "آذربایجان شرقی"
+                    - option "آذربایجان غربی"
+                    - option "اردبیل"
+                    - option "اصفهان"
+                    - option "البرز"
+                    - option "ایلام"
+                    - option "بوشهر"
+                    - option "تهران"
+                    - option "چهارمحال و بختیاری"
+                    - option "خراسان جنوبی"
+                    - option "خراسان رضوی"
+                    - option "خراسان شمالی"
+                    - option "خوزستان"
+                    - option "زنجان"
+                    - option "سمنان"
+                    - option "سیستان و بلوچستان"
+                    - option "فارس"
+                    - option "قزوین"
+                    - option "قم"
+                    - option "کردستان"
+                    - option "کرمان"
+                    - option "کرمانشاه"
+                    - option "کهگیلویه وبویراحمد"
+                    - option "گلستان"
+                    - option "گیلان"
+                    - option "لرستان"
+                    - option "مازندران"
+                    - option "مرکزی"
+                    - option "هرمزگان"
+                    - option "همدان"
+                    - option "یزد"
+                  - alert [ref=f3e75]:
+                    - generic [ref=f3e78]: استان الزامی است.
+                - generic [ref=f3e79]:
+                  - generic [ref=f3e80]:
+                    - generic [ref=f3e81]: شهر
+                    - generic [ref=f3e82]: "*"
+                    - generic [ref=f3e83]: (الزامی)
+                  - combobox "شهر (الزامی)" [disabled] [ref=f3e84]:
+                    - option "شهر را انتخاب کنید" [disabled] [selected]
+                  - alert [ref=f3e85]:
+                    - generic [ref=f3e88]: شهر الزامی است.
+                - generic [ref=f3e89]:
+                  - generic [ref=f3e90]:
+                    - generic [ref=f3e91]: کد پستی
+                    - generic [ref=f3e92]: "*"
+                    - generic [ref=f3e93]: (الزامی)
+                  - textbox "کد پستی (الزامی)" [ref=f3e94]:
+                    - /placeholder: "1234567890"
+                  - alert [ref=f3e95]:
+                    - generic [ref=f3e98]: کد پستی الزامی است.
+                - generic [ref=f3e99]:
+                  - generic [ref=f3e100]: پلاک و واحد
+                  - textbox "پلاک و واحد" [ref=f3e102]:
+                    - /placeholder: 12 — واحد 3
+                  - paragraph [ref=f3e103]: اختیاری
+                - generic [ref=f3e104]:
+                  - generic [ref=f3e105]:
+                    - generic [ref=f3e106]: آدرس دقیق پستی
+                    - generic [ref=f3e107]: "*"
+                    - generic [ref=f3e108]: (الزامی)
+                  - textbox "آدرس دقیق پستی (الزامی)" [ref=f3e109]:
+                    - /placeholder: "مثال: خیابان ولیعصر، کوچه شهید احمدی، ساختمان نگین"
+                  - alert [ref=f3e110]:
+                    - generic [ref=f3e113]: آدرس دقیق پستی الزامی است.
+                - generic [ref=f3e114] [cursor=pointer]:
+                  - checkbox "ذخیره این آدرس در دفترچه آدرس‌ها" [ref=f3e115]
+                  - generic [ref=f3e116]: ذخیره این آدرس در دفترچه آدرس‌ها
+            - generic [ref=f3e117]:
+              - heading "کد تخفیف" [level=2] [ref=f3e118]
+              - generic [ref=f3e120]:
+                - textbox "کد تخفیف خود را وارد کنید" [ref=f3e121]
+                - button "اعمال کد" [ref=f3e122] [cursor=pointer]
+          - generic [ref=f3e124]:
+            - heading "فاکتور پرداخت" [level=2] [ref=f3e125]
+            - generic [ref=f3e128]:
+              - generic [ref=f3e129]: روغن آرگان خالص مراکشی او جی ایکس
+              - generic [ref=f3e131]: 1 ×۷۸۰٬۰۰۰ تومان
+            - generic [ref=f3e133]:
+              - generic [ref=f3e134]:
+                - generic [ref=f3e135]: "جمع اقلام (1 عدد):"
+                - generic [ref=f3e136]: ۷۸۰٬۰۰۰ تومان تومان
+              - generic [ref=f3e137]:
+                - generic [ref=f3e138]: "هزینه ارسال پستی:"
+                - generic [ref=f3e139]: ۱۵۰٬۰۰۰ تومان تومان
+            - generic [ref=f3e141]:
+              - generic [ref=f3e142]: "مبلغ قابل پرداخت:"
+              - generic [ref=f3e143]: ۹۳۰٬۰۰۰ تومان تومان
+            - alert [ref=f3e144]:
+              - paragraph [ref=f3e145]:
+                - generic [ref=f3e148]: سفارش ثبت نشد — ۶ مورد را اصلاح کنید
+              - list [ref=f3e149]:
+                - listitem [ref=f3e150]: "نام و نام خانوادگی گیرنده: نام و نام خانوادگی گیرنده الزامی است."
+                - listitem [ref=f3e151]: "شماره موبایل گیرنده: شماره موبایل گیرنده الزامی است."
+                - listitem [ref=f3e152]: "استان: استان الزامی است."
+                - listitem [ref=f3e153]: "شهر: شهر الزامی است."
+                - listitem [ref=f3e154]: "کد پستی: کد پستی الزامی است."
+                - listitem [ref=f3e155]: "آدرس دقیق پستی: آدرس دقیق پستی الزامی است."
+            - button "ثبت سفارش و دریافت کد خرید" [ref=f3e156] [cursor=pointer]
+            - generic [ref=f3e158]:
+              - paragraph [ref=f3e159]: پرداخت این فروشگاه کارت به کارت است.
+              - paragraph [ref=f3e160]: پس از ثبت سفارش، یک کد خرید ۶ رقمی دریافت می‌کنید. آن را از طریق پیامک، تلگرام، واتس‌اپ یا بله برای فروشنده بفرستید تا شماره کارت برای شما ارسال شود. راهنمای کامل در صفحه بعد نمایش داده می‌شود.
+    - contentinfo [ref=f3e161]:
+      - generic [ref=f3e162]:
+        - generic [ref=f3e163]:
+          - generic [ref=f3e164]:
+            - generic [ref=f3e165]:
+              - img "Lumia Beauty Logo" [ref=f3e166]
+              - heading "Lumia Beauty" [level=3] [ref=f3e167]
+            - paragraph [ref=f3e168]: فروشگاه آنلاین محصولات آرایشی، بهداشتی و خوش‌بوکننده با کیفیت اصل و ارسال سریع در سراسر ایران.
+          - generic [ref=f3e169]:
+            - heading "دسترسی سریع" [level=4] [ref=f3e170]
+            - list [ref=f3e171]:
+              - listitem [ref=f3e172]:
+                - link "فروشگاه" [ref=f3e173] [cursor=pointer]:
+                  - /url: /shop
+              - listitem [ref=f3e174]:
+                - link "وبلاگ" [ref=f3e175] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=f3e176]:
+                - link "حساب کاربری" [ref=f3e177] [cursor=pointer]:
+                  - /url: /account
+          - generic [ref=f3e178]:
+            - heading "تماس با ما" [level=4] [ref=f3e179]
+            - generic [ref=f3e180]:
+              - link "واتس‌اپ" [ref=f3e181] [cursor=pointer]:
+                - /url: https://wa.me/989121111111
+              - link "تلگرام" [ref=f3e185] [cursor=pointer]:
+                - /url: https://t.me/lumiabeauty
+              - link "اینستاگرام" [ref=f3e189] [cursor=pointer]:
+                - /url: https://instagram.com/lumia.beauty
+        - generic [ref=f3e193]: © 2026 Lumia Beauty — تمامی حقوق محفوظ است.
+  - generic [ref=f3e194]:
+    - button "Toggle Nuxt DevTools" [ref=f3e195] [cursor=pointer]
+    - generic "Page load time" [ref=f3e199]:
+      - generic [ref=f3e200]: "101"
+      - generic [ref=f3e201]: ms
+    - button "Toggle Component Inspector" [ref=f3e203] [cursor=pointer]
+  - link "چت در واتس‌اپ" [ref=f3e208] [cursor=pointer]:
+    - /url: https://wa.me/989121111111
+    - generic: پیام در واتس‌اپ

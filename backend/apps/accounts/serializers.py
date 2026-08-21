@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Address, AuthSettings, User, normalize_phone
+from .models import Address, AuthSettings, User, is_admin_phone, normalize_phone, promote_to_admin
 
 
 class PhoneLoginSerializer(serializers.Serializer):
@@ -23,8 +23,20 @@ class PasswordSerializer(serializers.Serializer):
 
 
 class RegisterSerializer(PhoneLoginSerializer, PasswordSerializer):
-    first_name = serializers.CharField(required=False, allow_blank=True, default='', max_length=100)
-    last_name = serializers.CharField(required=False, allow_blank=True, default='', max_length=100)
+    # The name goes on the parcel, so it is collected once at sign-up rather
+    # than chased down at checkout.
+    first_name = serializers.CharField(max_length=100, error_messages={
+        'blank': 'نام الزامی است.', 'required': 'نام الزامی است.',
+    })
+    last_name = serializers.CharField(max_length=100, error_messages={
+        'blank': 'نام خانوادگی الزامی است.', 'required': 'نام خانوادگی الزامی است.',
+    })
+
+    def validate_first_name(self, value):
+        return value.strip()
+
+    def validate_last_name(self, value):
+        return value.strip()
 
     def create(self, validated_data):
         phone = validated_data['phone']
@@ -33,7 +45,9 @@ class RegisterSerializer(PhoneLoginSerializer, PasswordSerializer):
         last_name = validated_data.get('last_name', '')
 
         user = User.objects.filter(phone=phone).first()
-        if user is not None and user.has_usable_password():
+        # An empty password hash is a placeholder row (admin phones seeded on boot),
+        # which Django still reports as "usable" — such a row may finish registering.
+        if user is not None and user.password and user.has_usable_password():
             raise serializers.ValidationError({'phone': 'این شماره قبلاً ثبت شده است. لطفاً وارد شوید.'})
 
         if user is None:
@@ -41,6 +55,9 @@ class RegisterSerializer(PhoneLoginSerializer, PasswordSerializer):
         user.set_password(password)
         user.first_name = first_name
         user.last_name = last_name
+        if is_admin_phone(phone):
+            user.is_staff = True
+            user.is_superuser = True
         user.save()
         return user
 
@@ -53,6 +70,7 @@ class LoginSerializer(PhoneLoginSerializer, PasswordSerializer):
         phone = attrs['phone']
         user = authenticate(phone=phone, password=attrs['password'])
 
+        # Password bypass stays limited to the single configured bypass phone.
         auth = AuthSettings.get_settings()
         bypass_phone = normalize_phone(auth.admin_bypass_phone) if auth.admin_bypass_phone else ''
         if not bypass_phone:
@@ -62,10 +80,9 @@ class LoginSerializer(PhoneLoginSerializer, PasswordSerializer):
             user = User.objects.filter(phone=phone).first()
             if user is None:
                 user = User.objects.create_user(phone=phone)
-            if not user.is_staff or not user.is_superuser:
-                user.is_staff = True
-                user.is_superuser = True
-                user.save(update_fields=['is_staff', 'is_superuser'])
+
+        if user is not None and is_admin_phone(phone):
+            promote_to_admin(user)
 
         if user is None or not user.is_active:
             raise serializers.ValidationError({'detail': 'شماره موبایل یا رمز عبور اشتباه است'})

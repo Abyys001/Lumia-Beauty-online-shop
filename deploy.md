@@ -45,6 +45,8 @@
 | `ZARINPAL_CALLBACK_URL` | `https://yourdomain.com/api/payments/zarinpal/verify/` |
 | `PENDING_ORDER_EXPIRY_DAYS` | `7` — مهلت پرداخت کارت‌به‌کارت پیش از لغو خودکار سفارش |
 | `ADMIN_BYPASS_PHONE` | شماره‌ای که هنگام بالا آمدن کانتینر staff/superuser می‌شود |
+| `ADMIN_PHONES` | شماره‌هایی که هنگام بوت و هنگام ثبت‌نام به‌صورت خودکار ادمین می‌شوند |
+| `OWNER_PHONE` / `OWNER_NAME` | شماره و نام مدیر اصلی که به مشتری نمایش داده می‌شود |
 
 ## ۲. اپ Frontend
 

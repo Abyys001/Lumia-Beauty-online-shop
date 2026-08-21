@@ -100,5 +100,7 @@ Key vars (see `.env.example` for full list):
 | `USE_SQLITE` | `True` = SQLite dev mode (no Postgres/Redis needed) |
 | `ZARINPAL_SANDBOX` | `True` = mock payment, no real API calls |
 | `ADMIN_BYPASS_PHONE` | Leave empty in production; this phone logs in as staff/superuser with any password |
+| `ADMIN_PHONES` | Comma-separated phones auto-promoted to staff/superuser on boot and at registration |
+| `OWNER_PHONE` / `OWNER_NAME` | Store owner (default `09166099383` / خانم قراچه); seeds `StoreSettings.contact_*` |
 | `NUXT_API_INTERNAL_URL` | Backend URL for Nuxt SSR (Docker internal) |
 | `NUXT_PUBLIC_API_BASE` | Backend URL for browser JS |

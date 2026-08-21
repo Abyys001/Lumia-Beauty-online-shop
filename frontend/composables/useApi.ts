@@ -1,5 +1,6 @@
 import { normalizeMediaUrlsInPayload } from '~/composables/useMediaUrl'
 import { isAccessTokenExpired } from '~/utils/jwt'
+import { resolveClientApiBase } from '~/utils/apiBase'
 
 export { isAccessTokenExpired, isUnauthorizedError } from '~/utils/jwt'
 
@@ -102,7 +103,7 @@ export function useApi() {
 
 
 
-    let baseURL = config.public.apiBase
+    let baseURL = resolveClientApiBase(config.public.apiBase)
 
     if (import.meta.server) {
 
