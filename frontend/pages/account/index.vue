@@ -198,24 +198,18 @@
             <div class="space-y-4">
               <div>
                 <label class="label py-1"><span class="label-text">رمز عبور جدید</span></label>
-                <input
+                <UiPasswordInput
                   v-model="passwordForm.new_password"
-                  type="password"
-                  class="input input-bordered w-full rounded-xl"
-                  :class="{ 'input-error': passwordErrors.confirm }"
+                  :input-class="passwordErrors.confirm ? 'input-error' : ''"
                   autocomplete="new-password"
-                  dir="ltr"
                 />
               </div>
               <div>
                 <label class="label py-1"><span class="label-text">تکرار رمز عبور جدید</span></label>
-                <input
+                <UiPasswordInput
                   v-model="passwordForm.confirm_password"
-                  type="password"
-                  class="input input-bordered w-full rounded-xl"
-                  :class="{ 'input-error': passwordErrors.confirm }"
+                  :input-class="passwordErrors.confirm ? 'input-error' : ''"
                   autocomplete="new-password"
-                  dir="ltr"
                 />
                 <p v-if="passwordErrors.confirm" class="text-error text-xs mt-1.5 pr-1">{{ passwordErrors.confirm }}</p>
               </div>

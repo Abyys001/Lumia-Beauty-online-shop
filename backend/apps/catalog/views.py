@@ -33,6 +33,7 @@ from .serializers import (
 class ProductFilter(filters.FilterSet):
     brand = filters.CharFilter(field_name='brand__slug')
     category = filters.CharFilter(field_name='category__slug')
+    categories = filters.CharFilter(method='filter_categories')
     mood = filters.CharFilter(field_name='category__mood', lookup_expr='icontains')
     min_price = filters.NumberFilter(field_name='price', lookup_expr='gte')
     max_price = filters.NumberFilter(field_name='price', lookup_expr='lte')
@@ -45,7 +46,13 @@ class ProductFilter(filters.FilterSet):
 
     class Meta:
         model = Product
-        fields = ['brand', 'category', 'mood', 'min_price', 'max_price', 'is_featured']
+        fields = ['brand', 'category', 'categories', 'mood', 'min_price', 'max_price', 'is_featured']
+
+    def filter_categories(self, queryset, name, value):
+        slugs = [s for s in (part.strip() for part in value.split(',')) if s]
+        if not slugs:
+            return queryset
+        return queryset.filter(category__slug__in=slugs)
 
     def filter_scent(self, queryset, name, value):
         return queryset.filter(

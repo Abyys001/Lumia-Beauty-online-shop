@@ -12,7 +12,7 @@
         <!-- Address card -->
         <div class="bg-base-100 p-6 rounded-3xl border border-base-200 text-right shadow-sm">
           <h2 class="text-xl font-bold mb-4 flex items-center gap-2 justify-start" style="flex-direction: row-reverse;">
-            <i class="fas fa-map-marker-alt text-primary"></i>
+            
             <span>آدرس گیرنده و ارسال</span>
           </h2>
           
@@ -176,7 +176,7 @@
         <!-- Coupon Card -->
         <div class="bg-base-100 p-6 rounded-3xl border border-base-200 text-right shadow-sm">
           <h2 class="text-xl font-bold mb-4 flex items-center gap-2 justify-start" style="flex-direction: row-reverse;">
-            <i class="fas fa-percent text-primary"></i>
+            
             <span>کد تخفیف</span>
           </h2>
           <div class="flex gap-2">
@@ -193,7 +193,7 @@
       <div class="space-y-6">
         <div class="bg-base-100 p-6 rounded-3xl border border-base-200 text-right shadow-sm sticky top-4">
           <h2 class="text-xl font-bold mb-4 flex items-center gap-2 justify-start" style="flex-direction: row-reverse;">
-            <i class="fas fa-receipt text-primary"></i>
+            
             <span>فاکتور پرداخت</span>
           </h2>
           
@@ -256,7 +256,7 @@
           <button @click="submitOrder" type="button" class="btn-lumia w-full py-4 text-center font-bold text-base shadow-lg transition-transform hover:scale-[1.01]" :disabled="submitting || redirecting || cart.itemCount === 0">
             <span v-if="redirecting">در حال آماده‌سازی کد خرید...</span>
             <span v-else-if="submitting" class="loading loading-spinner loading-sm" />
-            <span v-else><i class="fas fa-receipt ml-2"></i> ثبت سفارش و دریافت کد خرید</span>
+            <span v-else>ثبت سفارش و دریافت کد خرید</span>
           </button>
 
           <div class="mt-4 rounded-2xl border-r-4 border-lumia-gold bg-lumia-cream/60 p-4 text-right">

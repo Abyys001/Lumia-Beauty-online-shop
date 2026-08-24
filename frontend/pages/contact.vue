@@ -85,21 +85,12 @@
 <script setup lang="ts">
 import { h } from 'vue'
 import type { SocialChannel } from '~/composables/useSocialLinks'
-import type { StoreContact } from '~/types'
 
-const { channels: staticChannels } = useSocialLinks()
-const { apiFetch } = useApi()
-const { data: contact } = await usePublicData(
-  'store-contact',
-  () => apiFetch<StoreContact>('/store/contact/'),
-  {
-    default: () => ({ contact_person_name: '', contact_sms_phone: '', contact_telegram: '', contact_whatsapp: '', contact_bale: '' }),
-  },
-)
+const { channels: staticChannels, contact } = useSocialLinks()
 
-const whatsappFallback = staticChannels.find((c) => c.id === 'whatsapp')!
-const telegramFallback = staticChannels.find((c) => c.id === 'telegram')!
-const instagramChannel = staticChannels.find((c) => c.id === 'instagram')!
+const whatsappFallback = computed(() => staticChannels.value.find((c) => c.id === 'whatsapp')!)
+const telegramFallback = computed(() => staticChannels.value.find((c) => c.id === 'telegram')!)
+const instagramChannel = computed(() => staticChannels.value.find((c) => c.id === 'instagram')!)
 
 function handleOf(value: string | undefined, fallback: string): string {
   const v = (value || '').trim().replace(/^@/, '')
@@ -121,14 +112,14 @@ const channels = computed<SocialChannel[]>(() => {
   const list: SocialChannel[] = []
   if (contact.value?.contact_whatsapp?.trim()) {
     const digits = contact.value.contact_whatsapp.replace(/\D/g, '')
-    list.push({ ...whatsappFallback, url: `https://wa.me/${digits}`, subtitle: `پاسخگویی سریع — ${digits}` })
+    list.push({ ...whatsappFallback.value, url: `https://wa.me/${digits}`, subtitle: `پاسخگویی سریع — ${digits}` })
   } else {
-    list.push(whatsappFallback)
+    list.push(whatsappFallback.value)
   }
   if (contact.value?.contact_telegram?.trim()) {
-    list.push({ ...telegramFallback, url: `https://t.me/${handleOf(contact.value.contact_telegram, '')}` })
+    list.push({ ...telegramFallback.value, url: `https://t.me/${handleOf(contact.value.contact_telegram, '')}` })
   } else {
-    list.push(telegramFallback)
+    list.push(telegramFallback.value)
   }
   const baleHandle = handleOf(contact.value?.contact_bale, '')
   list.push({
@@ -148,7 +139,7 @@ const channels = computed<SocialChannel[]>(() => {
     color: '#6B7B8C',
     hoverColor: '#586675',
   })
-  list.push(instagramChannel)
+  list.push(instagramChannel.value)
   return list
 })
 

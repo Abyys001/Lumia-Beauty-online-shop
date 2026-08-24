@@ -33,6 +33,10 @@ export const useCartStore = defineStore('cart', {
     },
 
     async addItem(productId: string, quantity = 1): Promise<boolean> {
+      // The cart lives on the server, so a guest must sign in first — otherwise the
+      // 401 came back silently and the button looked broken.
+      if (!await ensureAuthenticated()) return false
+
       const { apiFetch } = useApi()
       try {
         this.cart = await apiFetch<Cart>('/cart/', {
@@ -45,6 +49,7 @@ export const useCartStore = defineStore('cart', {
         if (isUnauthorizedError(error)) {
           useAuthStore().logout()
           this.cart = null
+          await ensureAuthenticated()
           return false
         }
         throw error

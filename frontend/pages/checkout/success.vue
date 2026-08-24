@@ -36,7 +36,7 @@
           <i class="fab fa-telegram ml-1"></i> تلگرام
         </a>
         <a :href="`sms:${adminPhone}`" class="btn btn-sm btn-outline rounded-full">
-          <i class="fas fa-sms ml-1"></i> پیامک
+          پیامک
         </a>
       </div>
 

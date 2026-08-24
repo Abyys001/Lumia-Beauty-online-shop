@@ -65,7 +65,7 @@
             <span v-if="product.compare_at_price" class="text-base-content/30 line-through text-lg">
               {{ formatPrice(product.compare_at_price) }}
             </span>
-            <span class="text-3xl font-black text-primary">{{ formatPrice(product.price) }} تومان</span>
+            <span class="text-3xl font-black text-primary">{{ formatPrice(product.price) }}</span>
           </div>
           
           <!-- Stock Status Tag -->
@@ -103,7 +103,7 @@
             @click="addToCart"
           >
             <span v-if="adding" class="loading loading-spinner loading-sm" />
-            <span v-else-if="product.is_in_stock"><i class="fas fa-shopping-cart ml-2"></i> افزودن به سبد خرید</span>
+            <span v-else-if="product.is_in_stock">افزودن به سبد خرید</span>
             <span v-else>ناموجود</span>
           </button>
           <ClientOnly>
@@ -151,7 +151,7 @@
               </tr>
               <tr>
                 <td class="p-3 font-semibold text-sm text-base-content/60">ضمانت اصالت و سلامت</td>
-                <td class="p-3 text-sm font-medium text-success"><i class="fas fa-shield-check ml-1"></i> تضمین اصالت و سلامت فیزیکی</td>
+                <td class="p-3 text-sm font-medium text-success">تضمین اصالت و سلامت فیزیکی</td>
               </tr>
             </tbody>
           </table>
@@ -249,7 +249,6 @@
           </div>
           
           <div v-else class="flex flex-col items-center justify-center py-8 text-center bg-base-200/30 rounded-xl border border-dashed border-base-300">
-            <i class="fas fa-lock text-base-content/30 text-2xl mb-2"></i>
             <p class="text-base-content/60 text-sm mb-3">برای ثبت نظر، ابتدا باید وارد حساب کاربری خود شوید.</p>
             <NuxtLink to="/auth" class="btn btn-primary btn-sm px-6 font-bold" style="border-radius: 8px;">ورود / ثبت‌نام</NuxtLink>
           </div>

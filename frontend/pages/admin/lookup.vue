@@ -191,17 +191,66 @@
       </div>
     </div>
 
-    <!-- Empty state -->
-    <div v-else-if="!loading && searched === false" class="rounded-3xl border-2 border-dashed border-base-300 p-12 text-center">
-      <div class="mb-3 text-5xl">🔢</div>
-      <p class="font-bold text-lumia-dark">کد خرید مشتری را وارد کنید</p>
-      <p class="mt-1 text-sm text-lumia-dark/50">مشتری این کد را هنگام تماس در پیامک، تلگرام، واتس‌اپ یا بله برای شما می‌فرستد.</p>
+    <!-- Latest purchases -->
+    <div class="rounded-3xl border-2 border-base-200 bg-white shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-200 p-5">
+        <div>
+          <h2 class="font-black text-lumia-dark">آخرین خریدها</h2>
+          <p class="mt-0.5 text-xs text-lumia-dark/50">روی هر ردیف بزنید تا اطلاعات کامل آن سفارش باز شود.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm rounded-full" :disabled="recentPending" @click="refreshRecent()">
+          <span v-if="recentPending" class="loading loading-spinner loading-xs" />
+          <span v-else>به‌روزرسانی</span>
+        </button>
+      </div>
+
+      <div class="flex flex-wrap gap-2 px-5 pt-4">
+        <button
+          v-for="f in statusFilters"
+          :key="f.value"
+          type="button"
+          class="btn btn-xs rounded-full font-bold"
+          :class="statusFilter === f.value ? 'btn-primary' : 'btn-ghost border border-base-200'"
+          @click="statusFilter = f.value"
+        >
+          {{ f.label }}
+        </button>
+      </div>
+
+      <div v-if="recentPending && !recentOrders.length" class="p-5 space-y-2">
+        <div v-for="n in 4" :key="n" class="h-16 rounded-2xl bg-base-200/60 animate-pulse" />
+      </div>
+
+      <ul v-else-if="recentOrders.length" class="divide-y divide-base-200">
+        <li v-for="row in recentOrders" :key="row.id">
+          <button
+            type="button"
+            class="flex w-full flex-wrap items-center gap-3 p-4 text-right transition-colors hover:bg-lumia-cream/40"
+            :class="{ 'bg-lumia-gold/10': order?.id === row.id }"
+            @click="openOrder(row)"
+          >
+            <span class="font-mono text-xl font-black text-lumia-gold" dir="ltr">{{ row.purchase_code }}</span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate font-bold text-lumia-dark">{{ row.shipping_name || row.user_phone || '—' }}</span>
+              <span class="block text-xs text-lumia-dark/50">
+                {{ timeAgo(row.created_at) }} — {{ row.item_count }} قلم
+              </span>
+            </span>
+            <span class="shrink-0 font-bold text-lumia-dark">{{ formatPrice(row.total) }}</span>
+            <AdminBadge :status="row.status" />
+          </button>
+        </li>
+      </ul>
+
+      <p v-else class="p-10 text-center text-sm text-lumia-dark/50">
+        خریدی با این وضعیت ثبت نشده است.
+      </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Order } from '~/types'
+import type { Order, PaginatedResponse } from '~/types'
 
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 
@@ -211,13 +260,25 @@ interface AdminOrder extends Order {
   payment_status?: string | null
 }
 
+interface AdminOrderRow {
+  id: string
+  order_number: string
+  purchase_code: string
+  user_phone?: string
+  shipping_name?: string
+  status: string
+  status_display: string
+  item_count: number
+  total: number
+  created_at: string
+}
+
 const { apiFetch, formatPrice, formatDate } = useApi()
 
 const code = ref('')
 const codeInput = ref<HTMLInputElement | null>(null)
 const order = ref<AdminOrder | null>(null)
 const loading = ref(false)
-const searched = ref(false)
 const error = ref('')
 const marking = ref(false)
 const actionMsg = ref('')
@@ -230,6 +291,25 @@ const shipMsg = ref('')
 const shipOk = ref(false)
 
 const RECENT_KEY = 'lumia_recent_lookups'
+
+const statusFilters = [
+  { value: '', label: 'همه' },
+  { value: 'pending', label: 'در انتظار پرداخت' },
+  { value: 'paid', label: 'پرداخت شده' },
+  { value: 'shipped', label: 'ارسال شده' },
+] as const
+
+const statusFilter = ref<string>('')
+
+const { data: recentPage, pending: recentPending, refresh: refreshRecent } = await useAsyncData(
+  'admin-lookup-recent',
+  () => apiFetch<PaginatedResponse<AdminOrderRow>>('/admin/orders/', {
+    query: { page_size: 8, ...(statusFilter.value ? { status: statusFilter.value } : {}) },
+  }),
+  { server: false, watch: [statusFilter] },
+)
+
+const recentOrders = computed(() => recentPage.value?.results ?? [])
 
 const PAID_STATUSES = ['paid', 'processing', 'shipped', 'delivered']
 const isPaid = computed(() =>
@@ -283,6 +363,20 @@ function pushRecent(value: string) {
   if (import.meta.client) localStorage.setItem(RECENT_KEY, JSON.stringify(recent.value))
 }
 
+function openOrder(row: AdminOrderRow) {
+  code.value = row.purchase_code || row.order_number
+  lookup()
+}
+
+function timeAgo(iso: string) {
+  const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return 'همین حالا'
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} دقیقه پیش`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} ساعت پیش`
+  const days = Math.floor(seconds / 86400)
+  return days < 30 ? `${days} روز پیش` : formatDate(iso)
+}
+
 async function lookup() {
   if (!code.value) return
   loading.value = true
@@ -299,7 +393,6 @@ async function lookup() {
     error.value = err.data?.detail || 'سفارشی با این کد پیدا نشد'
   } finally {
     loading.value = false
-    searched.value = true
   }
 }
 
@@ -311,6 +404,7 @@ async function markPaid() {
     order.value = await apiFetch<AdminOrder>(`/admin/orders/${order.value.id}/mark-paid/`, { method: 'POST' })
     actionOk.value = true
     actionMsg.value = 'پرداخت ثبت شد — موجودی کسر و سفارش به وضعیت «پرداخت شده» رفت.'
+    refreshRecent()
   } catch (e: unknown) {
     const err = e as { data?: { detail?: string } }
     actionOk.value = false
@@ -331,6 +425,7 @@ async function saveTracking() {
     })
     shipOk.value = true
     shipMsg.value = 'کد رهگیری ثبت شد — سفارش «ارسال شده» است و مشتری کد را می‌بیند.'
+    refreshRecent()
   } catch (e: unknown) {
     const err = e as { data?: { tracking_number?: string; detail?: string } }
     shipOk.value = false

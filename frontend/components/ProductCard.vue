@@ -25,17 +25,20 @@
           class="absolute top-3 left-3 btn btn-circle btn-sm bg-white/90 border-0 shadow-md z-10"
           :class="isWishlisted ? 'text-error' : 'text-base-content/40'"
           :aria-label="isWishlisted ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'"
-          @click.prevent="toggleWishlist"
+          @click.stop.prevent="toggleWishlist"
         >
           {{ isWishlisted ? '♥' : '♡' }}
         </button>
       </ClientOnly>
       <button
         v-if="showQuickAdd && product.is_in_stock"
-        class="absolute bottom-3 left-3 btn btn-primary btn-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0"
-        @click.prevent="quickAdd"
+        type="button"
+        class="absolute bottom-3 left-3 z-10 btn btn-primary btn-sm rounded-full opacity-100 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 transition-all duration-300"
+        :disabled="adding"
+        @click.stop.prevent="quickAdd"
       >
-        افزودن به سبد
+        <span v-if="adding" class="loading loading-spinner loading-xs" />
+        <span v-else>افزودن به سبد</span>
       </button>
     </figure>
     <div class="card-body p-4">
@@ -72,6 +75,7 @@ const cart = useCartStore()
 const wishlist = useWishlistStore()
 const { formatPrice } = useApi()
 
+const adding = ref(false)
 const isWishlisted = computed(() => wishlist.has(props.product.id))
 
 onMounted(() => {
@@ -81,10 +85,13 @@ onMounted(() => {
 })
 
 async function quickAdd() {
+  adding.value = true
   try {
     await cart.addItem(props.product.id)
   } catch {
     // addItem redirects to login on auth failure; other errors are rare on quick add
+  } finally {
+    adding.value = false
   }
 }
 

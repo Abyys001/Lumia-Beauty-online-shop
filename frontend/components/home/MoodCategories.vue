@@ -5,28 +5,30 @@
     section-class="py-12 md:py-20"
   >
     <div class="flex flex-col gap-5 md:gap-8">
-      <!-- Fragrance block -->
-      <div class="rounded-3xl bg-white border border-lumia-cream shadow-sm overflow-hidden">
+      <div
+        v-for="block in blocks"
+        :key="block.id"
+        class="rounded-3xl bg-white border border-lumia-cream shadow-sm overflow-hidden"
+      >
         <div class="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-lumia-cream/80">
           <h3 class="text-lg sm:text-xl font-bold text-lumia-dark flex items-center gap-2">
-            <span class="text-2xl">✨</span>
-            <span>{{ fragranceParent?.name || 'دنیای خوش‌بوکننده‌ها' }}</span>
+            <span class="text-2xl">{{ block.emoji }}</span>
+            <span>{{ block.title }}</span>
           </h3>
           <NuxtLink
-            v-if="fragranceParent"
-            :to="`/shop?category=${fragranceParent.slug}`"
+            :to="block.shopLink"
             class="text-xs sm:text-sm font-semibold text-lumia-gold hover:underline shrink-0"
           >
             مشاهده همه
           </NuxtLink>
         </div>
 
-        <div v-if="fragranceItems.length" class="p-4 sm:p-6 overflow-hidden min-w-0">
-          <div class="category-scroll fragrance-grid">
+        <div v-if="block.categories.length" class="px-4 sm:px-6 pt-4 sm:pt-6 overflow-hidden min-w-0">
+          <div class="category-scroll">
             <NuxtLink
-              v-for="cat in fragranceItems"
+              v-for="cat in block.categories"
               :key="cat.id"
-              :to="categoryLink(cat)"
+              :to="`/shop?category=${cat.slug}`"
               class="category-card group"
             >
               <div class="category-avatar">
@@ -42,61 +44,45 @@
             </NuxtLink>
           </div>
         </div>
-        <p v-else class="text-sm text-base-content/50 text-center py-8 px-4">به‌زودی دسته‌بندی‌های جدید اضافه می‌شود.</p>
-      </div>
 
-      <!-- Hygiene block -->
-      <div class="rounded-3xl bg-white border border-lumia-cream shadow-sm overflow-hidden">
-        <div class="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-lumia-cream/80">
-          <h3 class="text-lg sm:text-xl font-bold text-lumia-dark flex items-center gap-2">
-            <span class="text-2xl">🧴</span>
-            <span>{{ hygieneParent?.name || 'محصولات بهداشتی' }}</span>
-          </h3>
-          <NuxtLink
-            v-if="hygieneParent"
-            :to="`/shop?category=${hygieneParent.slug}`"
-            class="text-xs sm:text-sm font-semibold text-lumia-gold hover:underline shrink-0"
-          >
-            مشاهده همه
-          </NuxtLink>
-        </div>
-
-        <div v-if="hygieneItems.length" class="p-4 sm:p-6 overflow-hidden min-w-0">
-          <div class="category-scroll hygiene-grid">
-            <NuxtLink
-              v-for="cat in hygieneItems"
-              :key="cat.id"
-              :to="categoryLink(cat)"
-              class="category-card group"
-            >
-              <div class="category-avatar category-avatar-sm">
-                <AppImage
-                  v-if="cat.image"
-                  :src="cat.image"
-                  :alt="cat.name"
-                  img-class="w-full h-full object-cover"
-                />
-                <span v-else class="text-xl sm:text-2xl">{{ moodEmoji(cat) }}</span>
-              </div>
-              <span class="category-label category-label-sm">{{ cat.name }}</span>
-            </NuxtLink>
+        <div class="p-4 sm:p-6">
+          <div v-if="pending && !block.products.length" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div v-for="n in 4" :key="n" class="aspect-[3/4] rounded-2xl bg-lumia-cream/40 animate-pulse" />
           </div>
+          <div v-else-if="block.products.length" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <ProductCard
+              v-for="product in block.products"
+              :key="product.id"
+              :product="product"
+              show-quick-add
+            />
+          </div>
+          <p v-else class="text-sm text-base-content/50 text-center py-8">
+            به‌زودی محصولات این بخش اضافه می‌شود.
+          </p>
         </div>
-        <p v-else class="text-sm text-base-content/50 text-center py-8 px-4">به‌زودی دسته‌بندی‌های جدید اضافه می‌شود.</p>
       </div>
     </div>
   </UiSectionShell>
 </template>
 
 <script setup lang="ts">
-import type { Category } from '~/types'
+import type { Category, PaginatedResponse, Product } from '~/types'
 
 const props = defineProps<{
   categories: Category[]
 }>()
 
-const FRAGRANCE_SLUGS = ['fragrances', 'fragrance', 'perfume', 'perfumes']
-const HYGIENE_SLUGS = ['hygiene', 'personal-care', 'skincare', 'haircare']
+const { apiFetch } = useApi()
+
+const PRODUCTS_PER_BLOCK = 4
+
+/** Keyword buckets — the live catalogue is a flat list of categories with no parents. */
+const FRAGRANCE_KEYWORDS = ['عطر', 'ادکلن', 'اسپری', 'دئودورانت', 'خوشبو', 'fragrance', 'perfume', 'deodorant']
+const HYGIENE_KEYWORDS = [
+  'بهداشت', 'شوینده', 'مراقب', 'پوست', 'مو', 'آرایش', 'دهان', 'دندان',
+  'hygiene', 'care', 'skincare', 'haircare', 'makeup',
+]
 
 const moodEmojis: Record<string, string> = {
   cool: '❄️',
@@ -112,28 +98,81 @@ const moodEmojis: Record<string, string> = {
   تلخ: '🌿',
 }
 
-function findParent(slugs: string[], nameHint: string) {
-  return props.categories.find(c =>
-    slugs.includes(c.slug)
-    || c.name.includes(nameHint),
-  ) ?? null
+function matches(cat: Category, keywords: string[]) {
+  const haystack = `${cat.name} ${cat.slug} ${cat.mood || ''}`.toLowerCase()
+  return keywords.some(k => haystack.includes(k.toLowerCase()))
 }
 
-const fragranceParent = computed(() => findParent(FRAGRANCE_SLUGS, 'خوشبو'))
-const hygieneParent = computed(() => findParent(HYGIENE_SLUGS, 'بهداشتی'))
-
-function sortedChildren(parent: Category | null) {
-  if (!parent?.children?.length) return []
-  return [...parent.children]
+/** A category and, when it is a parent, its children — all of them can hold products. */
+function withChildren(cats: Category[]): Category[] {
+  return cats.flatMap(cat => [cat, ...(cat.children || [])])
 }
 
-const fragranceItems = computed(() => sortedChildren(fragranceParent.value))
+const fragranceCategories = computed(() =>
+  withChildren(props.categories.filter(c => matches(c, FRAGRANCE_KEYWORDS))),
+)
 
-const hygieneItems = computed(() => sortedChildren(hygieneParent.value))
+const hygieneCategories = computed(() => {
+  const taken = new Set(fragranceCategories.value.map(c => c.slug))
+  return withChildren(
+    props.categories.filter(c => !taken.has(c.slug) && matches(c, HYGIENE_KEYWORDS)),
+  )
+})
 
-function categoryLink(cat: Category) {
-  return `/shop?category=${cat.slug}`
+async function fetchProducts(slugs: string[]): Promise<Product[]> {
+  const query: Record<string, string | number> = {
+    ordering: '-sales_count',
+    page_size: PRODUCTS_PER_BLOCK,
+  }
+  if (slugs.length) query.categories = slugs.join(',')
+
+  const page = await apiFetch<PaginatedResponse<Product>>('/products/', { query }).catch(() => null)
+  return page?.results || []
 }
+
+/** Never leave a block empty — fall back to the best sellers when a bucket has no stock. */
+async function fetchWithFallback(slugs: string[]): Promise<Product[]> {
+  const scoped = await fetchProducts(slugs)
+  return scoped.length ? scoped : await fetchProducts([])
+}
+
+const { data: blockProducts, pending } = await useAsyncData(
+  'mood-block-products',
+  async () => {
+    const [fragrance, hygiene] = await Promise.all([
+      fetchWithFallback(fragranceCategories.value.map(c => c.slug)),
+      fetchWithFallback(hygieneCategories.value.map(c => c.slug)),
+    ])
+    return { fragrance, hygiene }
+  },
+  {
+    default: () => ({ fragrance: [] as Product[], hygiene: [] as Product[] }),
+    watch: [fragranceCategories, hygieneCategories],
+  },
+)
+
+function shopLink(cats: Category[]) {
+  return cats.length ? `/shop?category=${cats[0].slug}` : '/shop'
+}
+
+const blocks = computed(() => [
+  {
+    id: 'fragrance',
+    emoji: '✨',
+    title: 'دنیای خوش‌بوکننده‌ها',
+    categories: fragranceCategories.value,
+    products: blockProducts.value?.fragrance || [],
+    shopLink: shopLink(fragranceCategories.value),
+  },
+  {
+    id: 'hygiene',
+    emoji: '🧴',
+    title: 'محصولات بهداشتی و مراقبتی',
+    categories: hygieneCategories.value,
+    products: blockProducts.value?.hygiene || [],
+    shopLink: shopLink(hygieneCategories.value),
+  },
+])
 
 function moodEmoji(cat: Category) {
   const key = (cat.mood || cat.slug).toLowerCase()
@@ -159,54 +198,17 @@ function moodEmoji(cat: Category) {
   display: none;
 }
 
-@media (min-width: 768px) {
-  .category-scroll {
-    display: grid;
-    overflow: visible;
-    padding-bottom: 0;
-    scroll-snap-type: none;
-  }
-  .fragrance-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-  }
-  .hygiene-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .fragrance-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
 .category-card {
   @apply flex flex-col items-center text-center shrink-0 snap-start;
-  width: 7.5rem;
-}
-@media (min-width: 640px) {
-  .category-card {
-    width: auto;
-  }
-}
-
-.category-card {
   @apply p-3 sm:p-4 rounded-2xl bg-lumia-cream/20 hover:bg-lumia-cream/50 transition-all duration-300 border border-transparent hover:border-lumia-gold/20;
+  width: 7rem;
 }
 
 .category-avatar {
   @apply w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-white shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform duration-300;
 }
-.category-avatar-sm {
-  @apply w-12 h-12 sm:w-14 sm:h-14;
-}
 
 .category-label {
   @apply font-semibold text-xs sm:text-sm mt-2.5 text-lumia-dark leading-snug line-clamp-2;
-}
-.category-label-sm {
-  @apply text-[11px] sm:text-xs;
 }
 </style>

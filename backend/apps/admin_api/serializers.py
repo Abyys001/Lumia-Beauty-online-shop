@@ -367,10 +367,15 @@ class AdminOrderSerializer(serializers.ModelSerializer):
 
 class AdminOrderListSerializer(serializers.ModelSerializer):
     user_phone = serializers.CharField(source='user.phone', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    item_count = serializers.IntegerField(source='items.count', read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'purchase_code', 'user_phone', 'status', 'total', 'created_at']
+        fields = [
+            'id', 'order_number', 'purchase_code', 'user_phone', 'shipping_name',
+            'status', 'status_display', 'item_count', 'total', 'created_at',
+        ]
         read_only_fields = fields
 
 
