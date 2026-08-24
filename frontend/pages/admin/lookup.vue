@@ -72,7 +72,6 @@
           <div class="rounded-2xl bg-lumia-cream/50 p-4 text-center">
             <p class="text-xs text-lumia-dark/50">مبلغ قابل دریافت</p>
             <p class="mt-1 text-2xl font-black text-lumia-dark">{{ formatPrice(order.total) }}</p>
-            <p class="text-xs text-lumia-dark/40">تومان</p>
           </div>
           <div class="rounded-2xl bg-lumia-cream/50 p-4 text-center">
             <p class="text-xs text-lumia-dark/50">تعداد اقلام</p>
@@ -82,7 +81,6 @@
           <div class="rounded-2xl bg-lumia-cream/50 p-4 text-center">
             <p class="text-xs text-lumia-dark/50">هزینه ارسال</p>
             <p class="mt-1 text-2xl font-black text-lumia-dark">{{ formatPrice(order.shipping_cost) }}</p>
-            <p class="text-xs text-lumia-dark/40">تومان</p>
           </div>
         </div>
 
@@ -301,12 +299,13 @@ const statusFilters = [
 
 const statusFilter = ref<string>('')
 
-const { data: recentPage, pending: recentPending, refresh: refreshRecent } = await useAsyncData(
+// lazy: the search box must paint immediately — this list is secondary.
+const { data: recentPage, pending: recentPending, refresh: refreshRecent } = useAsyncData(
   'admin-lookup-recent',
   () => apiFetch<PaginatedResponse<AdminOrderRow>>('/admin/orders/', {
     query: { page_size: 8, ...(statusFilter.value ? { status: statusFilter.value } : {}) },
   }),
-  { server: false, watch: [statusFilter] },
+  { server: false, lazy: true, watch: [statusFilter] },
 )
 
 const recentOrders = computed(() => recentPage.value?.results ?? [])

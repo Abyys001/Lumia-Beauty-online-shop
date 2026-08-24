@@ -158,7 +158,6 @@ const FIELD_LABELS: Record<string, string> = {
 }
 
 const auth = useAuthStore()
-const router = useRouter()
 const route = useRoute()
 const { apiFetch } = useApi()
 const { fieldErrors, summary, clear: clearErrors, setField, setFromApi } = useFormErrors(FIELD_LABELS)
@@ -225,7 +224,7 @@ async function submit() {
       { method: 'POST', body },
     )
     auth.setTokens(result.access, result.refresh, result.user)
-    redirectAfterLogin(result.user)
+    await redirectAfterLogin(result.user)
   } catch (e: unknown) {
     const fallback = mode.value === 'login'
       ? 'شماره موبایل یا رمز عبور اشتباه است.'
@@ -237,15 +236,15 @@ async function submit() {
   }
 }
 
-function redirectAfterLogin(user: User) {
+async function redirectAfterLogin(user: User) {
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
   if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
     if (!redirect.startsWith('/admin') || user.is_staff) {
-      router.push(redirect)
+      await navigateTo(redirect)
       return
     }
   }
-  router.push(user.is_staff ? '/admin' : '/account')
+  await navigateTo(user.is_staff ? '/admin' : '/account')
 }
 
 useSeoMeta({

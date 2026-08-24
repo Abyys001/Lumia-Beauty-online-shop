@@ -230,15 +230,15 @@
           <div class="space-y-3 text-sm">
             <div class="flex justify-between" style="flex-direction: row-reverse;">
               <span class="text-base-content/60">جمع اقلام ({{ cart.itemCount }} عدد):</span>
-              <span class="font-bold">{{ formatPrice(cart.total) }} تومان</span>
+              <span class="font-bold">{{ formatPrice(cart.total) }}</span>
             </div>
             <div v-if="discountAmount" class="flex justify-between text-success" style="flex-direction: row-reverse;">
               <span class="text-success/80">تخفیف:</span>
-              <span class="font-bold">− {{ formatPrice(discountAmount) }} تومان</span>
+              <span class="font-bold">− {{ formatPrice(discountAmount) }}</span>
             </div>
             <div class="flex justify-between" style="flex-direction: row-reverse;">
               <span class="text-base-content/60">هزینه ارسال پستی:</span>
-              <span class="font-bold">{{ formatPrice(shippingCost) }} تومان</span>
+              <span class="font-bold">{{ formatPrice(shippingCost) }}</span>
             </div>
           </div>
           
@@ -246,7 +246,7 @@
           
           <div class="flex justify-between font-black text-lg mb-6" style="flex-direction: row-reverse;">
             <span class="text-primary">مبلغ قابل پرداخت:</span>
-            <span class="text-primary text-xl">{{ formatPrice(finalTotal) }} تومان</span>
+            <span class="text-primary text-xl">{{ formatPrice(finalTotal) }}</span>
           </div>
           
           <!-- Everything wrong with the submission, in one place -->

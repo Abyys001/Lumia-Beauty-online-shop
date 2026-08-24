@@ -52,7 +52,6 @@
                 <span>مبلغ قابل واریز</span>
                 <span class="text-lumia-gold">{{ formatPrice(order.total) }}</span>
               </div>
-              <p class="text-left text-xs text-lumia-dark/40">تومان</p>
             </div>
           </div>
 

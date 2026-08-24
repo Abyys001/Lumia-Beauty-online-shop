@@ -88,7 +88,7 @@
             </div>
             
             <div class="flex items-center gap-1.5 mt-2 justify-start" style="flex-direction: row-reverse;">
-              <span class="font-bold text-sm text-primary">{{ formatPrice(product.price) }} تومان</span>
+              <span class="font-bold text-sm text-primary">{{ formatPrice(product.price) }}</span>
               <span v-if="product.compare_at_price" class="text-xs text-base-content/30 line-through">
                 {{ formatPrice(product.compare_at_price) }}
               </span>
