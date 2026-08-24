@@ -6,6 +6,10 @@ export default defineNuxtConfig({
 
   ssr: true,
 
+  // The auth/checkout/account/admin routes render client-side; without this the
+  // visitor stares at a blank white page while the bundle downloads.
+  spaLoadingTemplate: 'app/spa-loading-template.html',
+
   routeRules: {
     '/': { swr: 600 },
     '/about': { prerender: true },
