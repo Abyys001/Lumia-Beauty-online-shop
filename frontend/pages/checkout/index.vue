@@ -2,6 +2,15 @@
   <div class="container-lumia py-8">
     <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-base-content text-right mb-6 sm:mb-8">تکمیل خرید و تسویه حساب</h1>
 
+    <!-- Auth state is client-only, so SSR must not pick a branch (it mismatched
+         and flashed the sign-in form at signed-in customers). -->
+    <ClientOnly>
+      <template #fallback>
+        <div class="flex justify-center py-20">
+          <span class="loading loading-spinner loading-lg text-primary" />
+        </div>
+      </template>
+
     <!-- Not Authenticated State -->
     <CheckoutAuth v-if="!auth.isAuthenticated" @authenticated="onAuthenticated" />
 
@@ -270,6 +279,7 @@
         </div>
       </div>
     </div>
+    </ClientOnly>
   </div>
 </template>
 

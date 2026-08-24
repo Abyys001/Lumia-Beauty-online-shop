@@ -33,10 +33,6 @@ export const useCartStore = defineStore('cart', {
     },
 
     async addItem(productId: string, quantity = 1): Promise<boolean> {
-      // The cart lives on the server, so a guest must sign in first — otherwise the
-      // 401 came back silently and the button looked broken.
-      if (!await ensureAuthenticated()) return false
-
       const { apiFetch } = useApi()
       try {
         this.cart = await apiFetch<Cart>('/cart/', {
@@ -47,10 +43,15 @@ export const useCartStore = defineStore('cart', {
         return true
       } catch (error) {
         if (isUnauthorizedError(error)) {
+          // Stale token: drop it and retry as a guest — the server keeps a
+          // session cart and merges it into the account at sign-in.
           useAuthStore().logout()
-          this.cart = null
-          await ensureAuthenticated()
-          return false
+          this.cart = await apiFetch<Cart>('/cart/', {
+            method: 'POST',
+            body: { product_id: productId, quantity },
+          })
+          this.drawerOpen = true
+          return true
         }
         throw error
       }

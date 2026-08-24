@@ -47,7 +47,8 @@
                       class="btn btn-sm btn-circle"
                       :class="item.quantity === 1 ? 'btn-ghost text-error hover:bg-error/10' : 'btn-outline'"
                       :aria-label="item.quantity === 1 ? 'حذف از سبد' : 'کاهش تعداد'"
-                      @click="item.quantity === 1 ? cart.removeItem(item.id) : cart.updateItem(item.id, item.quantity - 1)"
+                      :disabled="busyItem === item.id"
+                      @click="item.quantity === 1 ? changeItem(item.id, 0) : changeItem(item.id, item.quantity - 1)"
                     >
                       <svg
                         v-if="item.quantity === 1"
@@ -66,7 +67,8 @@
                       type="button"
                       class="btn btn-sm btn-circle btn-outline"
                       aria-label="افزایش تعداد"
-                      @click="cart.updateItem(item.id, item.quantity + 1)"
+                      :disabled="busyItem === item.id || item.quantity >= item.product.stock"
+                      @click="changeItem(item.id, item.quantity + 1)"
                     >
                       +
                     </button>
@@ -76,12 +78,15 @@
             </ul>
 
             <div class="p-4 border-t border-base-200 space-y-3">
+              <p v-if="itemError" class="rounded-xl bg-error/10 px-3 py-2 text-sm font-bold text-error">
+                {{ itemError }}
+              </p>
               <div class="flex justify-between font-bold">
                 <span>جمع کل</span>
                 <span class="text-primary">{{ formatPrice(cart.total) }}</span>
               </div>
-              <NuxtLink to="/cart" class="btn btn-outline w-full rounded-full" @click="cart.closeDrawer()">
-                مشاهده سبد
+              <NuxtLink to="/shop" class="btn btn-outline w-full rounded-full" @click="cart.closeDrawer()">
+                ادامه خرید
               </NuxtLink>
               <NuxtLink to="/checkout" class="btn btn-primary w-full rounded-full" @click="cart.closeDrawer()">
                 تسویه حساب
@@ -98,10 +103,28 @@
 import { useCartStore } from '~/stores/cart'
 
 const cart = useCartStore()
-const { formatPrice } = useApi()
+const { formatPrice, extractApiError } = useApi()
 const { normalizeMediaUrl } = useMediaUrl()
 
+const busyItem = ref<string | null>(null)
+const itemError = ref('')
+
+/** Quantity 0 removes the line. Errors (stock ran out) were unhandled rejections before. */
+async function changeItem(itemId: string, quantity: number) {
+  busyItem.value = itemId
+  itemError.value = ''
+  try {
+    if (quantity <= 0) await cart.removeItem(itemId)
+    else await cart.updateItem(itemId, quantity)
+  } catch (error) {
+    itemError.value = extractApiError(error, 'به‌روزرسانی سبد خرید انجام نشد')
+  } finally {
+    busyItem.value = null
+  }
+}
+
 watch(() => cart.drawerOpen, (isOpen) => {
+  if (isOpen) itemError.value = ''
   document.body.style.overflow = isOpen ? 'hidden' : ''
 })
 </script>

@@ -165,6 +165,7 @@ const ordering = ref((route.query.ordering as string) || '-created_at')
 
 // Filters State
 const filters = ref<Record<string, string>>({
+  search: (route.query.search as string) || '',
   category: (route.query.category as string) || '',
   brand: (route.query.brand as string) || '',
   mood: (route.query.mood as string) || '',
@@ -178,6 +179,7 @@ const filters = ref<Record<string, string>>({
 // Update local state if URL changes
 watch(() => route.query, (newQuery) => {
   filters.value = {
+    search: (newQuery.search as string) || '',
     category: (newQuery.category as string) || '',
     brand: (newQuery.brand as string) || '',
     mood: (newQuery.mood as string) || '',
@@ -282,6 +284,7 @@ const activeFiltersCount = computed(() => {
 // Human readable labels for active filters
 function getFilterLabel(key: string, val: string) {
   const labels: Record<string, string> = {
+    search: 'جستجو: ' + val,
     category: 'دسته: ' + val,
     brand: 'برند: ' + val,
     mood: 'طبع: ' + val,

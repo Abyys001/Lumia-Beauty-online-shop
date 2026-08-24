@@ -118,8 +118,6 @@ const channels = computed<SocialChannel[]>(() => {
   }
   if (contact.value?.contact_telegram?.trim()) {
     list.push({ ...telegramFallback.value, url: `https://t.me/${handleOf(contact.value.contact_telegram, '')}` })
-  } else {
-    list.push(telegramFallback.value)
   }
   const baleHandle = handleOf(contact.value?.contact_bale, '')
   list.push({

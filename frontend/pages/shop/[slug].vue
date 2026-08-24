@@ -201,6 +201,7 @@
         <div class="bg-base-100 p-6 rounded-2xl border border-base-200 text-right md:col-span-2">
           <h3 class="font-bold text-lg mb-4">ثبت نظر جدید</h3>
           
+          <ClientOnly>
           <div v-if="auth.isAuthenticated">
             <form @submit.prevent="submitReview" class="space-y-4">
               <div>
@@ -252,6 +253,14 @@
             <p class="text-base-content/60 text-sm mb-3">برای ثبت نظر، ابتدا باید وارد حساب کاربری خود شوید.</p>
             <NuxtLink to="/auth" class="btn btn-primary btn-sm px-6 font-bold" style="border-radius: 8px;">ورود / ثبت‌نام</NuxtLink>
           </div>
+
+          <template #fallback>
+            <div class="flex flex-col items-center justify-center py-8 text-center bg-base-200/30 rounded-xl border border-dashed border-base-300">
+              <p class="text-base-content/60 text-sm mb-3">برای ثبت نظر، ابتدا باید وارد حساب کاربری خود شوید.</p>
+              <NuxtLink to="/auth" class="btn btn-primary btn-sm px-6 font-bold" style="border-radius: 8px;">ورود / ثبت‌نام</NuxtLink>
+            </div>
+          </template>
+          </ClientOnly>
         </div>
       </div>
       

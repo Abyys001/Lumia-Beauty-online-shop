@@ -9,6 +9,7 @@
         class="input input-bordered input-sm w-40 lg:w-56 rounded-full bg-base-100"
         @focus="showResults = true"
         @blur="onBlur"
+        @keyup.enter="submitSearch"
       />
     </div>
 
@@ -37,6 +38,7 @@
           class="input input-bordered input-sm flex-1 rounded-full bg-base-100"
           @focus="showResults = true"
           @blur="onMobileBlur"
+          @keyup.enter="submitSearch"
         />
         <button type="button" class="btn btn-ghost btn-sm btn-circle" @click="closeMobileSearch">✕</button>
       </div>
@@ -64,6 +66,14 @@
             </NuxtLink>
           </li>
         </ul>
+        <button
+          v-if="results.length"
+          type="button"
+          class="w-full border-t border-base-200 p-3 text-center text-sm font-bold text-primary hover:bg-base-200 transition-colors"
+          @mousedown.prevent="submitSearch"
+        >
+          مشاهده همه نتایج «{{ query }}»
+        </button>
       </div>
     </div>
 
@@ -95,6 +105,14 @@
           </NuxtLink>
         </li>
       </ul>
+      <button
+        v-if="results.length"
+        type="button"
+        class="w-full border-t border-base-200 p-3 text-center text-sm font-bold text-primary hover:bg-base-200 transition-colors"
+        @mousedown.prevent="submitSearch"
+      >
+        مشاهده همه نتایج «{{ query }}»
+      </button>
     </div>
   </div>
 </template>
@@ -129,6 +147,14 @@ watch(query, (val) => {
     }
   }, 300)
 })
+
+async function submitSearch() {
+  const term = query.value.trim()
+  if (!term) return
+  showResults.value = false
+  mobileSearchOpen.value = false
+  await navigateTo({ path: '/shop', query: { search: term } })
+}
 
 function onBlur() {
   setTimeout(() => { showResults.value = false }, 200)

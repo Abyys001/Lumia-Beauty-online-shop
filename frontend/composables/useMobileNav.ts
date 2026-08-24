@@ -1,6 +1,7 @@
-const open = ref(false)
-
 export function useMobileNav() {
+  // useState, not a module-level ref: a module ref is shared by every SSR request.
+  const open = useState('mobile-nav-open', () => false)
+
   function openNav() {
     open.value = true
   }

@@ -174,11 +174,8 @@ onMounted(async () => {
     const { apiFetch } = useApi()
     brands.value = await apiFetch<{ name: string; slug: string }[]>('/brands/')
   } catch {
-    brands.value = [
-      { name: 'لومیا اسنس', slug: 'lumia-essence' },
-      { name: 'شنل', slug: 'chanel' },
-      { name: 'دیور', slug: 'dior' },
-    ]
+    // Better an empty brand list than demo brands that filter down to nothing.
+    brands.value = []
   }
 })
 

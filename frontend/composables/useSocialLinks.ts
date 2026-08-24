@@ -61,17 +61,20 @@ export function useSocialLinks() {
     { default: () => null },
   )
 
+  const telegramHandle = computed(() => (contact.value?.contact_telegram || '').trim().replace(/^@/, ''))
+
   const channels = computed<SocialChannel[]>(() =>
-    FALLBACK_CHANNELS.map((channel) => {
+    FALLBACK_CHANNELS.flatMap((channel) => {
       if (channel.id === 'whatsapp') {
         const wa = toInternational(contact.value?.contact_whatsapp || '')
-        return wa ? { ...channel, url: `https://wa.me/${wa}` } : channel
+        return [wa ? { ...channel, url: `https://wa.me/${wa}` } : channel]
       }
       if (channel.id === 'telegram') {
-        const tg = (contact.value?.contact_telegram || '').trim().replace(/^@/, '')
-        return tg ? { ...channel, url: `https://t.me/${tg}`, subtitle: `@${tg}` } : channel
+        // No handle configured means no Telegram account — a dead link is worse than no button.
+        const tg = telegramHandle.value
+        return tg ? [{ ...channel, url: `https://t.me/${tg}`, subtitle: `@${tg}` }] : []
       }
-      return channel
+      return [channel]
     }),
   )
 
