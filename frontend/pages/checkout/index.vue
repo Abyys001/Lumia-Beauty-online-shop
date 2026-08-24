@@ -238,8 +238,12 @@
             </div>
             <div class="flex justify-between" style="flex-direction: row-reverse;">
               <span class="text-base-content/60">هزینه ارسال پستی:</span>
-              <span class="font-bold">{{ formatPrice(shippingCost) }}</span>
+              <span v-if="hasFreeShipping" class="font-bold text-success">رایگان</span>
+              <span v-else class="font-bold">{{ formatPrice(appliedShippingCost) }}</span>
             </div>
+            <p v-if="amountToFreeShipping" class="rounded-xl bg-lumia-cream/40 px-3 py-2 text-xs font-bold text-lumia-dark/70">
+              با {{ formatPrice(amountToFreeShipping) }} خرید بیشتر، ارسال رایگان می‌شود.
+            </p>
           </div>
           
           <div class="divider my-4"></div>
@@ -313,6 +317,7 @@ const couponCode = ref('')
 const couponValid = ref(false)
 const couponMessage = ref('')
 const discountAmount = ref(0)
+const couponFreeShipping = ref(false)
 const submitting = ref(false)
 const redirecting = ref(false)
 const saveNewAddress = ref(false)
@@ -359,8 +364,20 @@ const { data: shippingSettings } = await usePublicData(
 )
 
 const shippingCost = computed(() => shippingSettings.value?.shipping_cost ?? 150000)
+const freeShippingThreshold = computed(() => shippingSettings.value?.free_shipping_threshold ?? 0)
 
-const appliedShippingCost = computed(() => shippingCost.value)
+/** Mirrors `apps/catalog/shipping.py`; the server stays the authority on the saved order. */
+const hasFreeShipping = computed(() =>
+  couponFreeShipping.value
+  || (freeShippingThreshold.value > 0 && cart.total >= freeShippingThreshold.value),
+)
+
+const appliedShippingCost = computed(() => (hasFreeShipping.value ? 0 : shippingCost.value))
+
+const amountToFreeShipping = computed(() => {
+  if (hasFreeShipping.value || !freeShippingThreshold.value || !cart.total) return 0
+  return freeShippingThreshold.value - cart.total
+})
 
 const finalTotal = computed(() =>
   Math.max(cart.total - discountAmount.value + appliedShippingCost.value, 0),
@@ -372,6 +389,7 @@ async function validateCoupon() {
     const result = await apiFetch<{
       valid: boolean
       discount_amount: number
+      free_shipping?: boolean
       detail?: string
     }>('/coupons/validate/', {
       method: 'POST',
@@ -379,10 +397,12 @@ async function validateCoupon() {
     })
     couponValid.value = result.valid
     discountAmount.value = result.discount_amount
-    couponMessage.value = 'کد تخفیف اعمال شد'
+    couponFreeShipping.value = !!result.free_shipping
+    couponMessage.value = couponFreeShipping.value ? 'کد ارسال رایگان اعمال شد' : 'کد تخفیف اعمال شد'
   } catch (e: unknown) {
     couponValid.value = false
     discountAmount.value = 0
+    couponFreeShipping.value = false
     const err = e as { data?: { detail?: string } }
     couponMessage.value = err.data?.detail || 'کد نامعتبر'
   }
