@@ -1,17 +1,6 @@
 <template>
   <div class="container-lumia py-6 sm:py-8">
-    <!-- Auth gate -->
-    <div v-if="!auth.isAuthenticated" class="max-w-md mx-auto">
-      <AccountEmptyState
-        icon="🔒"
-        title="ورود به حساب کاربری"
-        description="برای مشاهده سفارشات، آدرس‌ها و پروفایل خود وارد شوید."
-        action-label="ورود / ثبت‌نام"
-        to="/auth"
-      />
-    </div>
-
-    <AccountShell v-else>
+    <AccountShell>
       <template #header>
         <AccountHeader
           :display-name="displayName"
@@ -43,7 +32,8 @@
           >
             <div class="flex justify-between items-start gap-3">
               <div class="min-w-0">
-                <p class="font-bold text-lumia-dark">{{ order.order_number }}</p>
+                <p class="font-bold text-lumia-dark">{{ order.purchase_code || order.order_number }}</p>
+                <p class="text-xs text-base-content/40 font-mono mt-0.5" dir="ltr">{{ order.order_number }}</p>
                 <p class="text-sm text-base-content/60 mt-0.5">{{ formatDate(order.created_at) }}</p>
               </div>
               <span class="badge shrink-0" :class="statusBadge(order.status)">{{ order.status_display }}</span>
@@ -260,10 +250,12 @@ const displayName = computed(() => {
 
 const { data: orders, pending: ordersPending } = await useAsyncData('user-orders', () =>
   auth.isAuthenticated ? apiFetch<Order[]>('/user/orders/') : Promise.resolve([]),
+  { server: false },
 )
 
 const { data: addresses, refresh: refreshAddresses } = await useAsyncData('user-addresses', () =>
   auth.isAuthenticated ? apiFetch<Address[]>('/user/addresses/') : Promise.resolve([]),
+  { server: false },
 )
 
 function orderItemCount(order: Order) {

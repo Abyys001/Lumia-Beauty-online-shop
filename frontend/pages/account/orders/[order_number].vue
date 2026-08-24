@@ -140,18 +140,16 @@ import type { Order } from '~/types'
 import { useCartStore } from '~/stores/cart'
 
 const route = useRoute()
-const auth = useAuthStore()
 const cart = useCartStore()
 const { apiFetch, formatPrice, formatDate } = useApi()
 
 const orderNumber = computed(() => route.params.order_number as string)
 const reordering = ref(false)
 
-const { data: order, pending } = await useAsyncData(
+const { data: order, pending, error } = await useAsyncData(
   () => `order-${orderNumber.value}`,
-  () => auth.isAuthenticated
-    ? apiFetch<Order>(`/orders/${orderNumber.value}/`)
-    : Promise.resolve(null as Order | null),
+  () => apiFetch<Order>(`/orders/${orderNumber.value}/`),
+  { server: false },
 )
 
 const STATUS_FLOW = ['pending', 'paid', 'processing', 'shipped', 'delivered'] as const

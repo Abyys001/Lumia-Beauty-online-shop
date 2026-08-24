@@ -203,6 +203,10 @@ export default defineNuxtConfig({
         target: process.env.NUXT_API_PROXY || 'http://backend:8000/api',
         changeOrigin: true,
       },
+      '/media': {
+        target: process.env.NUXT_MEDIA_PROXY || 'http://backend:8000',
+        changeOrigin: true,
+      },
     },
   },
 
