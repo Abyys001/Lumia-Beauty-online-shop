@@ -98,7 +98,7 @@ class Address(models.Model):
 
 class AuthSettings(models.Model):
     access_token_lifetime_minutes = models.PositiveSmallIntegerField('عمر Access Token (دقیقه)', default=15)
-    refresh_token_lifetime_days = models.PositiveSmallIntegerField('عمر Refresh Token (روز)', default=7)
+    refresh_token_lifetime_days = models.PositiveSmallIntegerField('عمر Refresh Token (روز)', default=90)
     rotate_refresh_tokens = models.BooleanField('چرخش Refresh Token', default=True)
     admin_bypass_phone = models.CharField('شماره bypass ادمین', max_length=11, blank=True)
     admin_phones = models.JSONField(
