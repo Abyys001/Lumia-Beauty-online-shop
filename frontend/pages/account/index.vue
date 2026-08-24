@@ -290,14 +290,14 @@ const displayName = computed(() => {
   return user?.full_name || 'کاربر لومیا'
 })
 
-const { data: orders, pending: ordersPending } = await useAsyncData('user-orders', () =>
+const { data: orders, pending: ordersPending } = useAsyncData('user-orders', () =>
   auth.isAuthenticated ? apiFetch<Order[]>('/user/orders/') : Promise.resolve([]),
-  { server: false },
+  { server: false, lazy: true, default: () => [] as Order[] },
 )
 
-const { data: addresses, refresh: refreshAddresses } = await useAsyncData('user-addresses', () =>
+const { data: addresses, refresh: refreshAddresses } = useAsyncData('user-addresses', () =>
   auth.isAuthenticated ? apiFetch<Address[]>('/user/addresses/') : Promise.resolve([]),
-  { server: false },
+  { server: false, lazy: true, default: () => [] as Address[] },
 )
 
 function orderItemCount(order: Order) {

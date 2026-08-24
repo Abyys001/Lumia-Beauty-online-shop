@@ -340,8 +340,10 @@ function onProvinceChange() {
   form.shipping_city = ''
 }
 
-const { data: addresses } = await useAsyncData('addresses', () =>
+// lazy: this route is client-rendered, so awaiting here would hold back the paint.
+const { data: addresses } = useAsyncData('addresses', () =>
   auth.isAuthenticated ? apiFetch<Address[]>('/user/addresses/') : Promise.resolve([]),
+  { lazy: true, default: () => [] as Address[] },
 )
 
 onMounted(() => cart.fetchCart())
@@ -353,7 +355,7 @@ function onAuthenticated() {
 const { data: shippingSettings } = await usePublicData(
   'shipping-settings',
   () => apiFetch<ShippingSettings>('/store/shipping/'),
-  { default: () => ({ shipping_cost: 150000, free_shipping_threshold: 0 }) },
+  { lazy: true, default: () => ({ shipping_cost: 150000, free_shipping_threshold: 0 }) },
 )
 
 const shippingCost = computed(() => shippingSettings.value?.shipping_cost ?? 150000)

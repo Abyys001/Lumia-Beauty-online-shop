@@ -146,10 +146,10 @@ const { apiFetch, formatPrice, formatDate } = useApi()
 const orderNumber = computed(() => route.params.order_number as string)
 const reordering = ref(false)
 
-const { data: order, pending, error } = await useAsyncData(
+const { data: order, pending, error } = useAsyncData(
   () => `order-${orderNumber.value}`,
   () => apiFetch<Order>(`/orders/${orderNumber.value}/`),
-  { server: false },
+  { server: false, lazy: true },
 )
 
 const STATUS_FLOW = ['pending', 'paid', 'processing', 'shipped', 'delivered'] as const
