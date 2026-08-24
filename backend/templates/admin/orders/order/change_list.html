@@ -48,9 +48,17 @@
                                     
                                     <div class="d-flex justify-content-between align-items-center" style="flex-direction: row-reverse;">
                                         <span class="font-weight-bold text-success" style="font-size: 1.1rem;">{{ order.total_formatted }} تومان</span>
-                                        <button onclick="shipOrder('{{ order.id }}')" class="btn btn-sm btn-danger font-weight-bold px-3 py-1_5" style="border-radius: 6px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(220, 53, 69, 0.15);">
-                                            <i class="fas fa-shipping-fast ml-1"></i> ۲. تحویل به پست
-                                        </button>
+                                        <div class="d-flex gap-1">
+                                            {% if order.status == 'pending' %}
+                                            <button onclick="confirmPayment('{{ order.id }}')" class="btn btn-sm btn-success font-weight-bold px-3 py-1_5" style="border-radius: 6px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.15);">
+                                                <i class="fas fa-check ml-1"></i> تأیید پرداخت
+                                            </button>
+                                            {% else %}
+                                            <button onclick="shipOrder('{{ order.id }}')" class="btn btn-sm btn-danger font-weight-bold px-3 py-1_5" style="border-radius: 6px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(220, 53, 69, 0.15);">
+                                                <i class="fas fa-shipping-fast ml-1"></i> ۲. تحویل به پست
+                                            </button>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -152,6 +160,32 @@ function shipOrder(orderId) {
     document.getElementById('trackingInput').value = '';
     document.getElementById('trackingError').style.display = 'none';
     $('#shipModal').modal('show');
+}
+
+function confirmPayment(orderId) {
+    if (!confirm('آیا از تأیید پرداخت این سفارش اطمینان دارید؟ موجودی کاهش خواهد یافت.')) {
+        return;
+    }
+    
+    fetch(`/admin/orders/order/${orderId}/confirm-payment/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'خطایی رخ داد!');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('خطای ارتباط با سرور!');
+    });
 }
 
 function submitShipment() {

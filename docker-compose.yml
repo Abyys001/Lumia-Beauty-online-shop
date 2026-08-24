@@ -91,7 +91,11 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - lumia_net
+      lumia_net:
+        # Project-unique alias: the default `backend` alias is shared with any
+        # other stack attached to this network, so nginx must not rely on it.
+        aliases:
+          - lumia-backend
 
   frontend:
     image: ${FRONTEND_IMAGE:-siavashdev/lumia-frontend:latest}
@@ -108,7 +112,11 @@ services:
     depends_on:
       - backend
     networks:
-      - lumia_net
+      lumia_net:
+        # See the backend alias note: tradebot's `frontend` service also joins
+        # lumia_net, so the bare `frontend` name resolves to either container.
+        aliases:
+          - lumia-frontend
 
 volumes:
   postgres_data:

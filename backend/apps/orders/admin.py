@@ -7,6 +7,7 @@ from django.utils.decorators import method_decorator
 import json
 
 from .models import Order, OrderItem
+from apps.payments.services import confirm_manual_payment
 
 _ORDER_STATUS_COLORS = {
     'pending':    '#6c757d',
@@ -29,7 +30,7 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['order_number', 'shipping_name', 'shipping_phone', 'colored_status', 'total', 'created_at']
     list_filter = ['status', 'created_at']
-    search_fields = ['order_number', 'shipping_phone', 'shipping_name']
+    search_fields = ['order_number', 'purchase_code', 'shipping_phone', 'shipping_name']
     readonly_fields = ['order_number', 'subtotal', 'total', 'created_at', 'updated_at']
     inlines = [OrderItemInline]
     list_per_page = 20
@@ -46,6 +47,7 @@ class OrderAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path('<str:order_id>/ship/', self.admin_site.admin_view(self.ship_order_view), name='order-ship'),
+            path('<str:order_id>/confirm-payment/', self.admin_site.admin_view(self.confirm_payment_view), name='order-confirm-payment'),
         ]
         return custom_urls + urls
 
@@ -83,4 +85,21 @@ class OrderAdmin(admin.ModelAdmin):
         print(f"سلام {order.shipping_name} عزیز، سفارش شما با شماره {order.order_number} تحویل پست شد.")
         print(f"کد رهگیری ۲۴ رقمی پست شما: {order.tracking_number}")
         print("=" * 80 + "\n")
+
+    @method_decorator(csrf_protect)
+    def confirm_payment_view(self, request, order_id):
+        if request.method == 'POST':
+            try:
+                order = Order.objects.get(pk=order_id)
+            except Order.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'سفارش یافت نشد.'}, status=404)
+
+            if order.status != Order.STATUS_PENDING:
+                return JsonResponse({'success': False, 'error': 'فقط سفارشات در انتظار پرداخت قابل تأیید هستند.'}, status=400)
+
+            result_order, result, msg = confirm_manual_payment(order, initiated_by=request.user)
+            if result == 'success':
+                return JsonResponse({'success': True, 'ref_id': msg})
+            return JsonResponse({'success': False, 'error': msg or 'تأیید پرداخت ناموفق بود.'}, status=400)
+        return JsonResponse({'success': False, 'error': 'درخواست نامعتبر است.'}, status=405)
 

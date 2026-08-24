@@ -62,22 +62,39 @@ fi
 
 # Seed when DB is empty OR when product images are missing from the media volume
 # (common after volume reset while Postgres data persists).
+NEED_SEED=0
 python manage.py shell -c "
 from apps.catalog.models import Product, ProductImage
 from django.conf import settings
-import os
-import sys
+import os, sys
 
 if not Product.objects.exists():
+    print('SEED_REASON: no products in DB')
     sys.exit(1)
 
-img = ProductImage.objects.order_by('id').first()
-if not img or not img.image:
+imgs = list(ProductImage.objects.filter(is_primary=True)[:3])
+if not imgs:
+    print('SEED_REASON: no primary ProductImages found')
     sys.exit(1)
 
-path = os.path.join(settings.MEDIA_ROOT, str(img.image))
-sys.exit(0 if os.path.isfile(path) else 1)
-" 2>/dev/null || python seed_db.py
+for img in imgs:
+    if not img.image:
+        print(f'SEED_REASON: ProductImage id={img.id} has no image field')
+        sys.exit(1)
+    path = os.path.join(settings.MEDIA_ROOT, str(img.image))
+    if not os.path.isfile(path):
+        print(f'SEED_REASON: file missing at {path}')
+        sys.exit(1)
+
+print('SEED_REASON: images OK, skipping seed')
+sys.exit(0)
+" 2>&1 || NEED_SEED=1
+
+if [ "$NEED_SEED" = "1" ]; then
+  echo ">>> Seeding database..."
+  python seed_db.py
+  echo ">>> Seed complete."
+fi
 
 # Drop stale product caches (may contain old absolute image URLs).
 python manage.py shell -c "

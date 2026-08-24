@@ -37,6 +37,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='order',
             name='purchase_code',
-            field=models.CharField(db_index=True, max_length=6, unique=True, verbose_name='کد خرید'),
+            field=models.CharField(max_length=6, unique=True, verbose_name='کد خرید'),
         ),
     ]
