@@ -162,11 +162,13 @@ class AuthAuditLog(models.Model):
     ACTION_LOGIN_BLOCKED = 'login_blocked'
     ACTION_TOKEN_REFRESHED = 'token_refreshed'
     ACTION_LOGOUT = 'logout'
+    ACTION_PASSWORD_CHANGED = 'password_changed'
     ACTION_CHOICES = [
         (ACTION_LOGIN_SUCCESS, 'ورود موفق'),
         (ACTION_LOGIN_BLOCKED, 'مسدود شده'),
         (ACTION_TOKEN_REFRESHED, 'تازه‌سازی توکن'),
         (ACTION_LOGOUT, 'خروج'),
+        (ACTION_PASSWORD_CHANGED, 'تغییر رمز عبور'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

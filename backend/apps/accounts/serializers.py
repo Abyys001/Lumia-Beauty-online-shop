@@ -62,6 +62,23 @@ class RegisterSerializer(PhoneLoginSerializer, PasswordSerializer):
         return user
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    # Deliberately no current-password field: the store asked for a
+    # low-friction form (new + confirm) for an already-signed-in device.
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate_new_password(self, value):
+        if len(value) < 4:
+            raise serializers.ValidationError('رمز عبور باید حداقل ۴ کاراکتر باشد')
+        return value
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({'confirm_password': 'رمزها یکسان نیستند'})
+        return attrs
+
+
 class LoginSerializer(PhoneLoginSerializer, PasswordSerializer):
     def validate(self, attrs):
         from django.conf import settings as django_settings

@@ -190,6 +190,48 @@
             </div>
           </form>
         </div>
+
+        <div class="bg-white rounded-3xl border border-base-200 shadow-sm p-5 sm:p-6 max-w-lg mt-6">
+          <h2 class="font-bold text-lg text-lumia-dark mb-1">تغییر رمز عبور</h2>
+          <p class="text-xs text-base-content/60 mb-4">رمز جدید را وارد کنید؛ نیازی به رمز فعلی نیست.</p>
+          <form @submit.prevent="changePassword">
+            <div class="space-y-4">
+              <div>
+                <label class="label py-1"><span class="label-text">رمز عبور جدید</span></label>
+                <input
+                  v-model="passwordForm.new_password"
+                  type="password"
+                  class="input input-bordered w-full rounded-xl"
+                  :class="{ 'input-error': passwordErrors.confirm }"
+                  autocomplete="new-password"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label class="label py-1"><span class="label-text">تکرار رمز عبور جدید</span></label>
+                <input
+                  v-model="passwordForm.confirm_password"
+                  type="password"
+                  class="input input-bordered w-full rounded-xl"
+                  :class="{ 'input-error': passwordErrors.confirm }"
+                  autocomplete="new-password"
+                  dir="ltr"
+                />
+                <p v-if="passwordErrors.confirm" class="text-error text-xs mt-1.5 pr-1">{{ passwordErrors.confirm }}</p>
+              </div>
+              <div v-if="passwordSuccess" class="alert alert-success text-sm py-2 rounded-xl">
+                {{ passwordSuccess }}
+              </div>
+              <div v-if="passwordError" class="alert alert-error text-sm py-2 rounded-xl">
+                {{ passwordError }}
+              </div>
+              <button type="submit" class="btn btn-outline rounded-full w-full sm:w-auto" :disabled="changingPassword">
+                <span v-if="changingPassword" class="loading loading-spinner loading-sm" />
+                <span v-else>تغییر رمز عبور</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </AccountShell>
   </div>
@@ -212,6 +254,12 @@ const saving = ref(false)
 const profileSuccess = ref(false)
 const profileError = ref('')
 const addressModal = ref<{ open: (addr?: Address) => void } | null>(null)
+
+const changingPassword = ref(false)
+const passwordSuccess = ref('')
+const passwordError = ref('')
+const passwordErrors = reactive<{ confirm: string }>({ confirm: '' })
+const passwordForm = reactive({ new_password: '', confirm_password: '' })
 
 let profileSuccessTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -309,6 +357,39 @@ async function saveProfile() {
     profileError.value = err.data?.detail || 'ذخیره تغییرات انجام نشد. دوباره تلاش کنید.'
   } finally {
     saving.value = false
+  }
+}
+
+async function changePassword() {
+  passwordSuccess.value = ''
+  passwordError.value = ''
+  passwordErrors.confirm = ''
+
+  if (passwordForm.new_password.length < 4) {
+    passwordErrors.confirm = 'رمز عبور باید حداقل ۴ کاراکتر باشد'
+    return
+  }
+  if (passwordForm.new_password !== passwordForm.confirm_password) {
+    passwordErrors.confirm = 'رمزها یکسان نیستند'
+    return
+  }
+
+  changingPassword.value = true
+  try {
+    const res = await apiFetch<{ detail: string }>('/user/password/', { method: 'POST', body: { ...passwordForm } })
+    passwordSuccess.value = res.detail || 'رمز عبور با موفقیت تغییر کرد'
+    passwordForm.new_password = ''
+    passwordForm.confirm_password = ''
+  } catch (e: unknown) {
+    const err = e as { data?: Record<string, string | string[]>; statusCode?: number }
+    const first = (field: string) => {
+      const v = err.data?.[field]
+      return Array.isArray(v) ? v[0] : v
+    }
+    passwordErrors.confirm = first('confirm_password') || ''
+    passwordError.value = first('new_password') || err.data?.detail as string || 'تغییر رمز عبور انجام نشد. دوباره تلاش کنید.'
+  } finally {
+    changingPassword.value = false
   }
 }
 

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import AuthAuditLog
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
+from .serializers import ChangePasswordSerializer, LoginSerializer, RegisterSerializer, UserSerializer
 from .services.audit import AuthAuditService
 from .services.tokens import issue_tokens
 
@@ -62,3 +62,21 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save(update_fields=['password'])
+        AuthAuditService.log(
+            AuthAuditLog.ACTION_PASSWORD_CHANGED,
+            phone=request.user.phone,
+            user=request.user,
+            ip_address=_client_ip(request),
+            metadata={'method': 'self_change'},
+        )
+        return Response({'detail': 'رمز عبور با موفقیت تغییر کرد'})
