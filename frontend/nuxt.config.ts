@@ -11,13 +11,17 @@ export default defineNuxtConfig({
   spaLoadingTemplate: 'app/spa-loading-template.html',
 
   routeRules: {
-    '/': { swr: 600 },
+    // Catalog pages render per request. A product edit invalidates the Django
+    // caches, but nothing can invalidate an already-rendered page — an SWR copy
+    // kept serving the pre-edit photo while /shop and the admin showed the new
+    // one, which is how a product ended up next to someone else's picture.
+    '/': { ssr: true },
     '/about': { prerender: true },
     '/contact': { prerender: true },
     '/faq': { prerender: true },
     '/blog': { swr: 3600 },
     '/blog/**': { swr: 3600 },
-    '/shop/**': { swr: 600 },
+    '/shop/**': { ssr: true },
     '/shop': { ssr: true },
     '/auth': { ssr: false },
     '/account/**': { ssr: false, headers: { 'cache-control': 'no-store' } },
@@ -25,34 +29,6 @@ export default defineNuxtConfig({
     '/admin/**': { ssr: false },
     '/sitemap.xml': { swr: 3600 },
     '/__sitemap__/**': { swr: 3600 },
-  },
-
-  hooks: {
-    async 'nitro:config'(nitroConfig) {
-      const staticRoutes = ['/about', '/contact', '/faq']
-      let dynamicRoutes: string[] = []
-      try {
-        const apiUrl = process.env.NUXT_API_INTERNAL_URL || 'http://backend:8000/api'
-        const entries = await fetch(`${apiUrl}/sitemap-urls/`).then((r) => r.json()) as Array<{ loc: string }>
-        dynamicRoutes = entries
-          .map((entry) => {
-            try {
-              return new URL(entry.loc).pathname.replace(/\/$/, '') || '/'
-            } catch {
-              return entry.loc.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '') || '/'
-            }
-          })
-          .filter((path) => path.startsWith('/shop/') || path.startsWith('/blog/'))
-      } catch {
-        // Backend unavailable at build time — SWR handles first visit
-      }
-      nitroConfig.prerender = nitroConfig.prerender || {}
-      nitroConfig.prerender.routes = [
-        ...(nitroConfig.prerender.routes || []),
-        ...staticRoutes,
-        ...dynamicRoutes,
-      ]
-    },
   },
 
   app: {

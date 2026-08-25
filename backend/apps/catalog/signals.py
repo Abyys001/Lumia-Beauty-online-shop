@@ -27,6 +27,12 @@ def invalidate_catalog_taxonomy_cache():
 @receiver(post_save, sender=Product)
 def product_saved(sender, instance, **kwargs):
     invalidate_product_cache(product_id=instance.id, slug=instance.slug)
+    # A rename changes the cache key, so the pre-rename snapshot — old photos,
+    # old specs — would otherwise be served under the old slug for its full TTL.
+    previous_slug = getattr(instance, '_loaded_slug', None)
+    if previous_slug and previous_slug != instance.slug:
+        invalidate_product_cache(slug=previous_slug)
+    instance._loaded_slug = instance.slug
 
 
 @receiver(post_delete, sender=Product)

@@ -102,6 +102,12 @@ class Product(models.Model):
             models.Index(fields=['-sales_count']),
         ]
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        instance._loaded_slug = instance.slug
+        return instance
+
     def __str__(self):
         return self.name
 
