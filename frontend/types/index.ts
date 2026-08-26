@@ -94,6 +94,25 @@ export interface User {
   full_name: string
   email: string
   is_staff?: boolean
+  is_superuser?: boolean
+}
+
+/** The rotating secret behind auto-login. Replaced on every use — never reuse one. */
+export interface TrustedDeviceGrant {
+  id: string
+  token: string
+  name: string
+  expires_at: string
+}
+
+export interface TrustedDevice {
+  id: string
+  name: string
+  ip_address: string | null
+  created_at: string
+  last_used_at: string
+  expires_at: string
+  is_current?: boolean
 }
 
 export interface Address {
@@ -423,3 +442,27 @@ export interface AdminTrustBadge {
   created_at?: string
 }
 
+
+
+export interface AdminUser {
+  id: string
+  phone: string
+  first_name: string
+  last_name: string
+  email: string
+  is_active: boolean
+  is_staff: boolean
+  is_superuser: boolean
+  last_login: string | null
+  date_joined: string
+  address_count: number
+  device_count: number
+}
+
+export interface AdminUserDetail extends AdminUser {
+  order_count: number
+  addresses: Address[]
+  trusted_devices: TrustedDevice[]
+  /** Phone sits on the admin allow-list, so a demotion would be undone at next login. */
+  is_protected_phone: boolean
+}

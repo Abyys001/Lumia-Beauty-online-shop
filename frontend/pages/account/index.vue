@@ -226,6 +226,43 @@
             </div>
           </form>
         </div>
+
+        <div class="bg-white rounded-3xl border border-base-200 shadow-sm p-5 sm:p-6 max-w-lg mt-6">
+          <h2 class="font-bold text-lg text-lumia-dark mb-1">دستگاه‌های به‌خاطر سپرده‌شده</h2>
+          <p class="text-xs text-base-content/60 mb-4">
+            روی این دستگاه‌ها بدون رمز عبور وارد می‌شوید. هر کدام را نمی‌شناسید حذف کنید.
+          </p>
+
+          <p v-if="devicesLoading" class="text-sm text-base-content/50">در حال بارگذاری...</p>
+          <p v-else-if="!devices.length" class="text-sm text-base-content/50">
+            هیچ دستگاهی به خاطر سپرده نشده است.
+          </p>
+          <ul v-else class="space-y-2">
+            <li
+              v-for="device in devices"
+              :key="device.id"
+              class="flex items-center justify-between gap-3 rounded-2xl border border-base-200 bg-base-200/30 p-3"
+            >
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-lumia-dark truncate">
+                  {{ device.name }}
+                  <span v-if="device.id === auth.device?.id" class="badge badge-sm badge-primary mr-1">این دستگاه</span>
+                </p>
+                <p class="text-xs text-base-content/50 mt-0.5">
+                  آخرین استفاده: {{ formatDate(device.last_used_at) }}
+                  <span v-if="device.ip_address"> · {{ device.ip_address }}</span>
+                </p>
+              </div>
+              <button
+                class="btn btn-ghost btn-xs text-error flex-shrink-0"
+                :disabled="revokingDevice === device.id"
+                @click="revokeDevice(device)"
+              >
+                حذف
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
     </AccountShell>
   </div>
@@ -233,7 +270,7 @@
 
 <script setup lang="ts">
 import type { AccountTab } from '~/components/account/AccountNav.vue'
-import type { Address, Order, User } from '~/types'
+import type { Address, Order, TrustedDevice, TrustedDeviceGrant, User } from '~/types'
 import { useWishlistStore } from '~/stores/wishlist'
 
 const VALID_TABS: AccountTab[] = ['orders', 'wishlist', 'addresses', 'profile']
@@ -254,6 +291,33 @@ const passwordSuccess = ref('')
 const passwordError = ref('')
 const passwordErrors = reactive<{ confirm: string }>({ confirm: '' })
 const passwordForm = reactive({ new_password: '', confirm_password: '' })
+
+const devices = ref<TrustedDevice[]>([])
+const devicesLoading = ref(false)
+const revokingDevice = ref('')
+
+async function loadDevices() {
+  devicesLoading.value = true
+  try {
+    devices.value = await apiFetch<TrustedDevice[]>('/user/devices/')
+  } catch {
+    devices.value = []
+  } finally {
+    devicesLoading.value = false
+  }
+}
+
+async function revokeDevice(device: TrustedDevice) {
+  revokingDevice.value = device.id
+  try {
+    await apiFetch(`/user/devices/${device.id}/`, { method: 'DELETE' })
+    devices.value = devices.value.filter(d => d.id !== device.id)
+    // Dropping the browser you are sitting at means no more auto-login here.
+    if (device.id === auth.device?.id) auth.setDevice(null)
+  } finally {
+    revokingDevice.value = ''
+  }
+}
 
 let profileSuccessTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -370,8 +434,20 @@ async function changePassword() {
 
   changingPassword.value = true
   try {
-    const res = await apiFetch<{ detail: string }>('/user/password/', { method: 'POST', body: { ...passwordForm } })
+    // Changing the password kills every other session, so this browser has to
+    // adopt the pair the server hands back or it signs itself out.
+    const res = await apiFetch<{
+      detail: string
+      access: string
+      refresh: string
+      device: TrustedDeviceGrant | null
+    }>('/user/password/', {
+      method: 'POST',
+      body: { ...passwordForm, remember_device: auth.isDeviceRemembered, device_name: describeThisDevice() },
+    })
+    if (auth.user) auth.setTokens(res.access, res.refresh, auth.user, res.device)
     passwordSuccess.value = res.detail || 'رمز عبور با موفقیت تغییر کرد'
+    await loadDevices()
     passwordForm.new_password = ''
     passwordForm.confirm_password = ''
   } catch (e: unknown) {
@@ -387,14 +463,15 @@ async function changePassword() {
   }
 }
 
-function logout() {
+async function logout() {
   wishlist.reset()
-  auth.logout()
+  await auth.signOut()
   router.push('/')
 }
 
 onMounted(() => {
   if (tab.value === 'wishlist') wishlist.loadProducts()
+  loadDevices()
 })
 
 onUnmounted(() => {

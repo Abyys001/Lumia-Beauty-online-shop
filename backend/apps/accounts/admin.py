@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Address, User
+from .models import Address, TrustedDevice, User
 
 
 class AddressInline(admin.TabularInline):
@@ -31,3 +31,12 @@ class AddressAdmin(admin.ModelAdmin):
     list_display = ['user', 'title', 'city', 'province', 'is_default']
     list_filter = ['province', 'is_default']
     search_fields = ['user__phone', 'city', 'receiver_name']
+
+
+@admin.register(TrustedDevice)
+class TrustedDeviceAdmin(admin.ModelAdmin):
+    list_display = ['user', 'name', 'ip_address', 'last_used_at', 'expires_at', 'revoked_at']
+    list_filter = ['revoked_at']
+    search_fields = ['user__phone', 'name', 'ip_address']
+    # The hashes are the credential; nothing here should ever be editable.
+    readonly_fields = [f.name for f in TrustedDevice._meta.fields]

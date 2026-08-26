@@ -39,3 +39,6 @@ npm-debug.log*
 
 # Docker
 *.pid
+
+# Secrets (VPS credentials, keys)
+.secrets/

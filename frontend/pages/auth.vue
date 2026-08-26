@@ -118,6 +118,22 @@
           />
         </CheckoutField>
 
+        <label class="flex items-start gap-3 cursor-pointer rounded-2xl border border-lumia-cream bg-base-200/40 p-4 transition-colors hover:border-lumia-gold/40">
+          <input
+            v-model="form.remember_device"
+            type="checkbox"
+            class="checkbox checkbox-sm checkbox-primary mt-0.5 flex-shrink-0"
+          />
+          <span class="text-right">
+            <span class="block text-sm font-bold text-lumia-dark">این دستگاه را به خاطر بسپار</span>
+            <span class="block text-xs text-base-content/55 mt-1 leading-relaxed">
+              دفعه‌ی بعد بدون وارد کردن رمز عبور وارد می‌شوید.
+              <template v-if="rememberDays">تا {{ rememberDaysLabel }} روز روی همین مرورگر فعال است.</template>
+              روی دستگاه‌های عمومی این گزینه را بردارید.
+            </span>
+          </span>
+        </label>
+
         <div v-if="summary.length" class="rounded-2xl border border-error/30 bg-error/5 p-4 text-right" role="alert">
           <p class="text-sm font-bold text-error mb-1">
             {{ mode === 'login' ? 'ورود انجام نشد' : 'ثبت‌نام انجام نشد' }}
@@ -145,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import type { User } from '~/types'
+import type { TrustedDeviceGrant, User } from '~/types'
 
 definePageMeta({ layout: 'auth' })
 
@@ -163,8 +179,33 @@ const { apiFetch } = useApi()
 const { fieldErrors, summary, clear: clearErrors, setField, setFromApi } = useFormErrors(FIELD_LABELS)
 
 const mode = ref<'login' | 'register'>('login')
-const form = reactive({ phone: '', first_name: '', last_name: '', password: '', password_confirm: '' })
+const form = reactive({
+  phone: '', first_name: '', last_name: '', password: '', password_confirm: '',
+  remember_device: true,
+})
 const submitting = ref(false)
+const rememberDays = ref(0)
+const rememberDaysLabel = computed(() => new Intl.NumberFormat('fa-IR').format(rememberDays.value))
+
+// The seller controls the default tick and the window from /admin/settings; a
+// failed lookup just leaves the checkbox on, which is the behaviour we want.
+onMounted(async () => {
+  // A remembered device is signed in by the auth plugin before this runs, so
+  // landing on the sign-in form means there is nothing left to sign in to.
+  if (auth.isAuthenticated && auth.user) {
+    await redirectAfterLogin(auth.user)
+    return
+  }
+  try {
+    const policy = await apiFetch<{ remember_device_default: boolean; trusted_device_lifetime_days: number }>(
+      '/auth/device/policy/',
+    )
+    form.remember_device = policy.remember_device_default
+    rememberDays.value = policy.trusted_device_lifetime_days
+  } catch {
+    // Keep the pre-ticked default.
+  }
+})
 
 function switchMode(next: 'login' | 'register') {
   if (mode.value === next) return
@@ -211,19 +252,25 @@ async function submit() {
   if (!validate()) return
   submitting.value = true
   try {
+    const shared = {
+      phone: form.phone,
+      password: form.password,
+      remember_device: form.remember_device,
+      device_name: describeThisDevice(),
+    }
     const body = mode.value === 'login'
-      ? { phone: form.phone, password: form.password }
-      : {
-          phone: form.phone,
-          password: form.password,
-          first_name: form.first_name.trim(),
-          last_name: form.last_name.trim(),
-        }
-    const result = await apiFetch<{ access: string; refresh: string; user: User }>(
+      ? shared
+      : { ...shared, first_name: form.first_name.trim(), last_name: form.last_name.trim() }
+    const result = await apiFetch<{
+      access: string
+      refresh: string
+      user: User
+      device: TrustedDeviceGrant | null
+    }>(
       mode.value === 'login' ? '/auth/login/' : '/auth/register/',
       { method: 'POST', body },
     )
-    auth.setTokens(result.access, result.refresh, result.user)
+    auth.setTokens(result.access, result.refresh, result.user, result.device)
     await redirectAfterLogin(result.user)
   } catch (e: unknown) {
     const fallback = mode.value === 'login'

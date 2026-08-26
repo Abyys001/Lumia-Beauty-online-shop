@@ -45,7 +45,7 @@ export const useCartStore = defineStore('cart', {
         if (isUnauthorizedError(error)) {
           // Stale token: drop it and retry as a guest — the server keeps a
           // session cart and merges it into the account at sign-in.
-          useAuthStore().logout()
+          useAuthStore().logout(false)
           this.cart = await apiFetch<Cart>('/cart/', {
             method: 'POST',
             body: { product_id: productId, quantity },

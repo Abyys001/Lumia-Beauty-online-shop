@@ -1,6 +1,26 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.exceptions import InvalidToken
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Address, AuthSettings, User, is_admin_phone, normalize_phone, promote_to_admin
+from .authentication import SESSION_EPOCH_CLAIM
+
+from .models import (
+    Address,
+    AuthSettings,
+    TrustedDevice,
+    User,
+    is_admin_phone,
+    normalize_phone,
+    promote_to_admin,
+)
+
+
+class RememberDeviceMixin(serializers.Serializer):
+    # Offered on login *and* sign-up: the customer should never have to type the
+    # password again on a phone they own.
+    remember_device = serializers.BooleanField(required=False, default=True)
+    device_name = serializers.CharField(required=False, allow_blank=True, max_length=120)
 
 
 class PhoneLoginSerializer(serializers.Serializer):
@@ -22,7 +42,7 @@ class PasswordSerializer(serializers.Serializer):
         return value
 
 
-class RegisterSerializer(PhoneLoginSerializer, PasswordSerializer):
+class RegisterSerializer(PhoneLoginSerializer, PasswordSerializer, RememberDeviceMixin):
     # The name goes on the parcel, so it is collected once at sign-up rather
     # than chased down at checkout.
     first_name = serializers.CharField(max_length=100, error_messages={
@@ -79,7 +99,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
 
-class LoginSerializer(PhoneLoginSerializer, PasswordSerializer):
+class LoginSerializer(PhoneLoginSerializer, PasswordSerializer, RememberDeviceMixin):
     def validate(self, attrs):
         from django.conf import settings as django_settings
         from django.contrib.auth import authenticate
@@ -113,8 +133,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'phone', 'first_name', 'last_name', 'full_name', 'email', 'date_joined', 'is_staff']
-        read_only_fields = ['id', 'phone', 'date_joined', 'is_staff']
+        fields = ['id', 'phone', 'first_name', 'last_name', 'full_name', 'email',
+                  'date_joined', 'is_staff', 'is_superuser']
+        read_only_fields = ['id', 'phone', 'date_joined', 'is_staff', 'is_superuser']
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -129,3 +150,36 @@ class AddressSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
+
+class DeviceLoginSerializer(serializers.Serializer):
+    device_id = serializers.UUIDField()
+    device_token = serializers.CharField(max_length=200, trim_whitespace=False)
+
+
+class TrustedDeviceSerializer(serializers.ModelSerializer):
+    is_current = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TrustedDevice
+        fields = ['id', 'name', 'ip_address', 'created_at', 'last_used_at', 'expires_at', 'is_current']
+
+    def get_is_current(self, obj):
+        return str(obj.id) == str(self.context.get('current_device_id') or '')
+
+
+class EpochTokenRefreshSerializer(TokenRefreshSerializer):
+    """Refuses a refresh token that predates the user's last session revocation.
+
+    Without this the endpoint would happily mint an access token that every
+    view then rejects, so the client would burn a retry before falling back to
+    its remembered device.
+    """
+
+    def validate(self, attrs):
+        token = RefreshToken(attrs['refresh'])
+        user = User.objects.filter(pk=token.get('user_id')).only('session_epoch', 'is_active').first()
+        epoch = token.get(SESSION_EPOCH_CLAIM)
+        if user is None or not user.is_active or epoch is None or int(epoch) != user.session_epoch:
+            raise InvalidToken('نشست شما باطل شده است. دوباره وارد شوید.')
+        return super().validate(attrs)

@@ -36,7 +36,7 @@ export function extractApiError(error: unknown, fallback: string): string {
 
     statusCode?: number
 
-    data?: { message?: string; detail?: string | string[] }
+    data?: Record<string, unknown> & { message?: string; detail?: string | string[] }
 
   }
 
@@ -47,6 +47,17 @@ export function extractApiError(error: unknown, fallback: string): string {
   if (Array.isArray(detail) && detail.length) return detail.join(' ')
 
   if (err.data?.message) return err.data.message
+
+  // A DRF 400 carries per-field lists and no `detail` at all; without this the
+  // caller would report a generic failure and hide the real reason.
+
+  for (const value of Object.values(err.data ?? {})) {
+
+    if (typeof value === 'string' && value) return value
+
+    if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
+
+  }
 
   if (err.statusCode === 401) {
 
@@ -85,11 +96,15 @@ export function useApi() {
     if (import.meta.client && auth.accessToken && isAccessTokenExpired(auth.accessToken)) {
       const refreshed = await auth.refreshAccessToken()
       if (!refreshed) {
-        auth.logout()
-        if (url.startsWith('/admin/')) {
-          await navigateTo({ path: '/auth', query: { redirect: useRoute().fullPath } })
+        auth.logout(false)
+        const reclaimed = await auth.tryDeviceLogin()
+        if (!reclaimed) {
+          auth.logout()
+          if (url.startsWith('/admin/')) {
+            await navigateTo({ path: '/auth', query: { redirect: useRoute().fullPath } })
+          }
+          throw createSessionExpiredError()
         }
-        throw createSessionExpiredError()
       }
     }
 
@@ -151,11 +166,11 @@ export function useApi() {
 
       const err = error as { statusCode?: number }
 
-      if (import.meta.client && err.statusCode === 401 && auth.refreshToken) {
+      if (import.meta.client && err.statusCode === 401 && (auth.refreshToken || auth.device)) {
 
-        const refreshed = await auth.refreshAccessToken()
+        const recovered = await auth.refreshAccessToken() || await auth.tryDeviceLogin()
 
-        if (refreshed && auth.accessToken) {
+        if (recovered && auth.accessToken) {
 
           headers.Authorization = `Bearer ${auth.accessToken}`
 

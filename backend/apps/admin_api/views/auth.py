@@ -14,9 +14,16 @@ class AdminAuthSettingsView(APIView):
         obj = AuthSettings.get_settings()
         return Response(AdminAuthSettingsSerializer(obj).data)
 
+    # Editing these hands out admin rights at the next login, so they are
+    # superuser-only even though the rest of the page is open to staff.
+    PRIVILEGED_FIELDS = ('admin_phones', 'admin_bypass_phone')
+
     def patch(self, request):
         obj = AuthSettings.get_settings()
-        serializer = AdminAuthSettingsSerializer(obj, data=request.data, partial=True)
+        data = request.data
+        if not request.user.is_superuser:
+            data = {k: v for k, v in data.items() if k not in self.PRIVILEGED_FIELDS}
+        serializer = AdminAuthSettingsSerializer(obj, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)

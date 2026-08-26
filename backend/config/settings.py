@@ -187,7 +187,7 @@ SESSION_CACHE_ALIAS = 'default'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.accounts.authentication.EpochJWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -200,6 +200,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_RATES': {
         'anon': os.environ.get('DRF_THROTTLE_ANON', '120/min'),
+        'device_login': os.environ.get('DRF_THROTTLE_DEVICE_LOGIN', '20/min'),
         'user': os.environ.get('DRF_THROTTLE_USER', '600/min'),
         'payment': os.environ.get('DRF_THROTTLE_PAYMENT', '30/min'),
     },

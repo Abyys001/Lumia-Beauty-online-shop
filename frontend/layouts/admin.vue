@@ -151,7 +151,7 @@ const pageTitle = computed(() => {
 })
 
 async function handleLogout() {
-  auth.logout()
+  await auth.signOut()
   await router.push('/')
 }
 </script>

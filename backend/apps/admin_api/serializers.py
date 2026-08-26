@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from apps.accounts.models import Address, AuthAuditLog, AuthSettings, User
+from apps.accounts.models import (
+    Address, AuthAuditLog, AuthSettings, TrustedDevice, User, normalize_phone,
+)
 from apps.blog.models import Post, PostCategory, Tag
 from apps.catalog.media_utils import relative_media_url
 from apps.catalog.models import (
@@ -22,31 +24,116 @@ class AdminAddressSerializer(serializers.ModelSerializer):
                   'postal_code', 'receiver_name', 'receiver_phone', 'is_default', 'created_at']
 
 
-class AdminUserSerializer(serializers.ModelSerializer):
+class AdminTrustedDeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrustedDevice
+        fields = ['id', 'name', 'ip_address', 'user_agent', 'created_at', 'last_used_at', 'expires_at']
+
+
+class PhoneUniqueMixin:
+    """The phone is the username here, so an edit has to re-check uniqueness."""
+
+    def validate_phone(self, value):
+        phone = normalize_phone(value)
+        if not phone.startswith('09') or len(phone) != 11:
+            raise serializers.ValidationError('شماره موبایل باید ۱۱ رقم باشد و با ۰۹ شروع شود.')
+        clash = User.objects.filter(phone=phone)
+        if self.instance is not None:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError('این شماره قبلاً برای کاربر دیگری ثبت شده است.')
+        return phone
+
+
+class AdminUserSerializer(PhoneUniqueMixin, serializers.ModelSerializer):
     address_count = serializers.SerializerMethodField()
+    order_count = serializers.SerializerMethodField()
+    device_count = serializers.SerializerMethodField()
     addresses = AdminAddressSerializer(many=True, read_only=True)
+    trusted_devices = serializers.SerializerMethodField()
+    is_protected_phone = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'phone', 'first_name', 'last_name', 'email',
-                  'is_active', 'is_staff', 'date_joined', 'address_count', 'addresses']
-        read_only_fields = ['id', 'phone', 'date_joined']
+                  'is_active', 'is_staff', 'is_superuser', 'last_login', 'date_joined',
+                  'address_count', 'order_count', 'device_count',
+                  'addresses', 'trusted_devices', 'is_protected_phone']
+        # Roles move through the dedicated role endpoint, which enforces who may
+        # grant what — a plain PATCH must never be able to mint an admin.
+        read_only_fields = ['id', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
 
     def get_address_count(self, obj):
         return obj.addresses.count()
+
+    def get_order_count(self, obj):
+        return obj.orders.count()
+
+    def get_device_count(self, obj):
+        return obj.trusted_devices.filter(revoked_at__isnull=True).count()
+
+    def get_trusted_devices(self, obj):
+        devices = obj.trusted_devices.filter(revoked_at__isnull=True)
+        return AdminTrustedDeviceSerializer(devices, many=True).data
+
+    def get_is_protected_phone(self, obj):
+        from apps.accounts.models import is_admin_phone
+        return is_admin_phone(obj.phone)
 
 
 class AdminUserListSerializer(serializers.ModelSerializer):
     address_count = serializers.SerializerMethodField()
+    device_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'phone', 'first_name', 'last_name', 'email',
-                  'is_active', 'is_staff', 'date_joined', 'address_count']
-        read_only_fields = ['id', 'phone', 'date_joined', 'is_staff']
+                  'is_active', 'is_staff', 'is_superuser', 'last_login', 'date_joined',
+                  'address_count', 'device_count']
+        read_only_fields = ['id', 'phone', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
 
     def get_address_count(self, obj):
         return obj.addresses.count()
+
+    def get_device_count(self, obj):
+        return obj.trusted_devices.filter(revoked_at__isnull=True).count()
+
+
+class AdminUserCreateSerializer(PhoneUniqueMixin, serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=4)
+    is_staff = serializers.BooleanField(required=False, default=False)
+    is_superuser = serializers.BooleanField(required=False, default=False)
+
+    class Meta:
+        model = User
+        fields = ['id', 'phone', 'first_name', 'last_name', 'email',
+                  'password', 'is_active', 'is_staff', 'is_superuser']
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
+
+
+class AdminSetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, min_length=4, error_messages={
+        'min_length': 'رمز عبور باید حداقل ۴ کاراکتر باشد.',
+        'blank': 'رمز عبور الزامی است.', 'required': 'رمز عبور الزامی است.',
+    })
+    revoke_sessions = serializers.BooleanField(required=False, default=True)
+
+
+class AdminUserRoleSerializer(serializers.Serializer):
+    is_staff = serializers.BooleanField(required=False)
+    is_superuser = serializers.BooleanField(required=False)
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError({'detail': 'هیچ تغییری ارسال نشده است.'})
+        return attrs
 
 
 # ── Catalog ───────────────────────────────────────────────────────────────────
@@ -451,7 +538,9 @@ class AdminAuthSettingsSerializer(serializers.ModelSerializer):
         fields = [
             'access_token_lifetime_minutes',
             'refresh_token_lifetime_days', 'rotate_refresh_tokens',
-            'admin_bypass_phone', 'updated_at',
+            'admin_bypass_phone', 'admin_phones',
+            'trusted_device_lifetime_days', 'remember_device_default',
+            'updated_at',
         ]
         read_only_fields = ['updated_at']
 

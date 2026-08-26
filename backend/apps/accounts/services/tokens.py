@@ -2,12 +2,14 @@ from datetime import timedelta
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.accounts.authentication import SESSION_EPOCH_CLAIM
 from apps.accounts.models import AuthSettings
 
 
 def issue_tokens(user):
     auth_settings = AuthSettings.get_settings()
     refresh = RefreshToken.for_user(user)
+    refresh[SESSION_EPOCH_CLAIM] = user.session_epoch
     refresh.set_exp(
         lifetime=timedelta(days=auth_settings.refresh_token_lifetime_days),
     )

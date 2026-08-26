@@ -45,7 +45,14 @@ from .views.zarinpal import (
     AdminZarinpalTestView,
 )
 from .views.auth import AdminAuthAuditLogListView, AdminAuthSettingsView
-from .views.users import AdminUserDetailView, AdminUserListView
+from .views.users import (
+    AdminUserDetailView,
+    AdminUserDeviceView,
+    AdminUserListCreateView,
+    AdminUserRevokeSessionsView,
+    AdminUserRolesView,
+    AdminUserSetPasswordView,
+)
 
 urlpatterns = [
     path('dashboard/', DashboardStatsView.as_view()),
@@ -76,8 +83,13 @@ urlpatterns = [
     path('orders/<uuid:id>/', AdminOrderDetailView.as_view()),
     path('orders/<uuid:id>/mark-paid/', AdminOrderMarkPaidView.as_view()),
 
-    path('users/', AdminUserListView.as_view()),
+    path('users/', AdminUserListCreateView.as_view()),
     path('users/<uuid:id>/', AdminUserDetailView.as_view()),
+    path('users/<uuid:id>/set-password/', AdminUserSetPasswordView.as_view()),
+    path('users/<uuid:id>/roles/', AdminUserRolesView.as_view()),
+    path('users/<uuid:id>/revoke-sessions/', AdminUserRevokeSessionsView.as_view()),
+    path('users/<uuid:id>/devices/', AdminUserDeviceView.as_view()),
+    path('users/<uuid:id>/devices/<uuid:device_id>/', AdminUserDeviceView.as_view()),
 
     path('coupons/', AdminCouponListCreateView.as_view()),
     path('coupons/<uuid:id>/', AdminCouponDetailView.as_view()),

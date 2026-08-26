@@ -45,6 +45,19 @@
       </NuxtLink>
 
       <NuxtLink
+        to="/admin/settings/security"
+        class="bg-white rounded-2xl p-5 border border-base-200 shadow-sm hover:border-lumia-gold/50 hover:shadow-md transition-all group"
+      >
+        <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center mb-3 group-hover:bg-indigo-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 class="font-bold text-lumia-dark mb-1">ورود و امنیت</h2>
+        <p class="text-xs text-lumia-dark/50">«مرا به خاطر بسپار»، عمر نشست‌ها و شماره‌های ادمین</p>
+      </NuxtLink>
+
+      <NuxtLink
         to="/admin/cms"
         class="bg-white rounded-2xl p-5 border border-base-200 shadow-sm hover:border-lumia-gold/50 hover:shadow-md transition-all group"
       >
